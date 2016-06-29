@@ -1,0 +1,19 @@
+{
+    "name" : "Get a genome Assembly as a FASTA file",
+    "short_description" : 
+        "KBase Assembly represent assembled sequence data.  Use this method to access the data as a FASTA file.",
+
+    "long_description" : "todo: write longer description",
+
+    "tags" : {
+        "categories" : [],
+        "input": {
+            "file_types": [],
+            "kb_types": ["KBaseGenomeAnnotations.Assembly", "KBaseGenomes.ContigSet"]
+        },
+        "output": {
+            "file_types": ["fasta"],
+            "kb_types": []
+        }
+    }
+}

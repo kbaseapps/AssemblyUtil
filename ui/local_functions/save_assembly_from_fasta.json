@@ -1,0 +1,19 @@
+{
+    "name" : "Save a genome Assembly from a FASTA file",
+    "short_description" : 
+        "KBase Assembly represent assembled sequence data.  Use this method to create a new KBase Assembly from a FASTA file.",
+
+    "long_description" : "todo: write longer description",
+
+    "tags" : {
+        "categories" : [],
+        "input": {
+            "file_types": ["fasta"],
+            "kb_types": []
+        },
+        "output": {
+            "file_types": [],
+            "kb_types": ["KBaseGenomeAnnotations.Assembly"]
+        }
+    }
+}
