@@ -2,6 +2,7 @@ import unittest
 import os
 import json
 import time
+import shutil
 
 from os import environ
 try:
@@ -14,6 +15,7 @@ from pprint import pprint
 from biokbase.workspace.client import Workspace as workspaceService
 from AssemblyUtil.AssemblyUtilImpl import AssemblyUtil
 from AssemblyUtil.AssemblyUtilServer import MethodContext
+from shock_util.shock_utilClient import shock_util
 
 
 class AssemblyUtilTest(unittest.TestCase):
@@ -70,18 +72,35 @@ class AssemblyUtilTest(unittest.TestCase):
     def test_stuff(self):
         assemblyUtil = self.getImpl()
 
-        print('attempting download')
-        fasta = assemblyUtil.get_assembly_as_fasta(self.getContext(), {'ref':'8378/13'})[0]
-        pprint(fasta)
-
+        tmp_dir = self.__class__.cfg['scratch']
+        file_name = "test.fna"
+        shutil.copy(os.path.join("data", file_name), tmp_dir)
+        fasta_path = os.path.join(tmp_dir, file_name)
         print('attempting upload')
         result = assemblyUtil.save_assembly_from_fasta(self.getContext(), 
             {
-                'file':{'path':fasta['path']},
-                'workspace_name':'msneddon:1467226122342',
+                'file':{'path':fasta_path},
+                'workspace_name':self.getWsName(),
                 'assembly_name':'MyNewAssembly'
             });
         pprint(result)
 
+        print('attempting download')
+        fasta = assemblyUtil.get_assembly_as_fasta(self.getContext(), 
+            {'ref':self.getWsName() + "/MyNewAssembly"})[0]
+        pprint(fasta)
+
+        print('attempting upload through shock')
+        shock_cli = shock_util(os.environ['SDK_CALLBACK_URL'], token=
+                               self.__class__.ctx['token'],
+                               service_ver='dev')
+        shock_id = shock_cli.file_to_node({'file_path': fasta_path})['shock_id']
+        result2 = assemblyUtil.save_assembly_from_fasta(self.getContext(), 
+            {
+                'shock_id':shock_id,
+                'workspace_name':self.getWsName(),
+                'assembly_name':'MyNewAssembly.2'
+            });
+        pprint(result2)
 
 

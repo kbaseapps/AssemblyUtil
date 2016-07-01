@@ -25,10 +25,13 @@ module AssemblyUtil {
 
 
 
+    typedef string ShockNodeId;
+
     /*
         Options supported:
-            workspace_name
-            assembly_name
+            file and shock_id - mutualy exclusive parameters pointing to file content
+            workspace_name - target workspace
+            assembly_name - target object name
 
         Uploader options not yet supported
             taxon_reference: The ws reference the assembly points to.  (Optional)
@@ -38,6 +41,7 @@ module AssemblyUtil {
     */
     typedef structure {
         FastaAssemblyFile file;
+        ShockNodeId shock_id;
 
         string workspace_name;
         string assembly_name;
