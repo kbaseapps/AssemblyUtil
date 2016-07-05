@@ -12,7 +12,7 @@ from biokbase.workspace.client import Workspace
 from doekbase.data_api.sequence.assembly import api
 
 import trns_transform_FASTA_DNA_Assembly_to_KBaseGenomeAnnotations_Assembly as uploader
-from shock_util.shock_utilClient import shock_util
+from DataFileUtil.DataFileUtilClient import DataFileUtil
 
 #END_HEADER
 
@@ -137,9 +137,9 @@ class AssemblyUtil:
         if 'file' not in params:
             if 'shock_id' not in params:
                 raise ValueError('Neither file field nor shock_id field was defined')
-            shock_cli = shock_util(os.environ['SDK_CALLBACK_URL'], token=ctx['token'],
+            data_file_cli = DataFileUtil(os.environ['SDK_CALLBACK_URL'], token=ctx['token'],
                                    service_ver='dev')
-            file_name = shock_cli.node_to_file({'file_path': input_directory,
+            file_name = data_file_cli.shock_to_file({'file_path': input_directory,
                 'shock_id': params['shock_id']})['node_file_name']
             temp_path = os.path.join(input_directory, file_name)
             print("temp_path=" + temp_path)

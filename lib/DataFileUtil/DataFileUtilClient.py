@@ -17,7 +17,7 @@ except:
 import time
 
 
-class shock_util(object):
+class DataFileUtil(object):
 
     def __init__(
             self, url=None, timeout=30 * 60, user_id=None,
@@ -37,42 +37,42 @@ class shock_util(object):
             async_job_check_time_ms=async_job_check_time_ms)
 
     def _check_job(self, job_id):
-        return self._client._check_job('shock_util', job_id)
+        return self._client._check_job('DataFileUtil', job_id)
 
-    def _node_to_file_submit(self, params, context=None):
+    def _shock_to_file_submit(self, params, context=None):
         return self._client._submit_job(
-             'shock_util.node_to_file', [params],
+             'DataFileUtil.shock_to_file', [params],
              self._service_ver, context)
 
-    def node_to_file(self, params, context=None):
+    def shock_to_file(self, params, context=None):
         """
-        :param params: instance of type "NodeToFileParams" -> structure:
+        :param params: instance of type "ShockToFileParams" -> structure:
            parameter "shock_id" of String, parameter "file_path" of String
-        :returns: instance of type "NodeToFileOutput" -> structure: parameter
-           "node_file_name" of String, parameter "attributes" of mapping from
-           String to String
+        :returns: instance of type "ShockToFileOutput" -> structure:
+           parameter "node_file_name" of String, parameter "attributes" of
+           mapping from String to String
         """
-        job_id = self._node_to_file_submit(params, context)
+        job_id = self._shock_to_file_submit(params, context)
         while True:
             time.sleep(self._client.async_job_check_time)
             job_state = self._check_job(job_id)
             if job_state['finished']:
                 return job_state['result'][0]
 
-    def _file_to_node_submit(self, params, context=None):
+    def _file_to_shock_submit(self, params, context=None):
         return self._client._submit_job(
-             'shock_util.file_to_node', [params],
+             'DataFileUtil.file_to_shock', [params],
              self._service_ver, context)
 
-    def file_to_node(self, params, context=None):
+    def file_to_shock(self, params, context=None):
         """
-        :param params: instance of type "FileToNodeParams" -> structure:
+        :param params: instance of type "FileToShockParams" -> structure:
            parameter "file_path" of String, parameter "attributes" of mapping
            from String to String
-        :returns: instance of type "FileToNodeOutput" -> structure: parameter
-           "shock_id" of String
+        :returns: instance of type "FileToShockOutput" -> structure:
+           parameter "shock_id" of String
         """
-        job_id = self._file_to_node_submit(params, context)
+        job_id = self._file_to_shock_submit(params, context)
         while True:
             time.sleep(self._client.async_job_check_time)
             job_state = self._check_job(job_id)
@@ -80,7 +80,7 @@ class shock_util(object):
                 return job_state['result'][0]
 
     def status(self, context=None):
-        job_id = self._client._submit_job('shock_util.status', 
+        job_id = self._client._submit_job('DataFileUtil.status', 
             [], self._service_ver, context)
         while True:
             time.sleep(self._client.async_job_check_time)
