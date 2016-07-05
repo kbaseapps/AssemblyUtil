@@ -12,6 +12,7 @@ from biokbase.workspace.client import Workspace
 from doekbase.data_api.sequence.assembly import api
 
 import trns_transform_FASTA_DNA_Assembly_to_KBaseGenomeAnnotations_Assembly as uploader
+from DataFileUtil.DataFileUtilClient import DataFileUtil
 
 #END_HEADER
 
@@ -126,18 +127,28 @@ class AssemblyUtil:
         if 'assembly_name' not in params:
             raise ValueError('assembly_name field was not defined')
 
-        if 'file' not in params:
-            raise ValueError('file field was not defined')
-
-        if 'path' not in params['file']:
-            raise ValueError('file.path field was not defined')
-
         # transform scripts assume the file gets dumped in its own unique directory, so create that special
         # directory and move the file there temporarily
         input_directory =  os.path.join(self.sharedFolder, 'assembly-upload-staging-'+str(uuid.uuid4()))
         os.makedirs(input_directory)
 
-        os.rename(params['file']['path'], os.path.join(input_directory, os.path.basename(params['file']['path'])))
+        orig_path = None
+        temp_path = None
+        if 'file' not in params:
+            if 'shock_id' not in params:
+                raise ValueError('Neither file field nor shock_id field was defined')
+            data_file_cli = DataFileUtil(os.environ['SDK_CALLBACK_URL'], token=ctx['token'],
+                                   service_ver='dev')
+            file_name = data_file_cli.shock_to_file({'file_path': input_directory,
+                'shock_id': params['shock_id']})['node_file_name']
+            temp_path = os.path.join(input_directory, file_name)
+            print("temp_path=" + temp_path)
+        else:
+            if 'path' not in params['file']:
+                raise ValueError('file.path field was not defined')
+            orig_path = params['file']['path']
+            temp_path = os.path.join(input_directory, os.path.basename(orig_path))
+            os.rename(orig_path, temp_path)
 
         
         # do the upload
@@ -160,8 +171,11 @@ class AssemblyUtil:
 #                    logger = None):
 
 
-        # move the file back and trash that temporary directory
-        os.rename(os.path.join(input_directory, os.path.basename(params['file']['path'])),params['file']['path'])
+        if orig_path:
+            # move the file back and trash that temporary directory
+            os.rename(temp_path, orig_path)
+        else:
+            os.remove(temp_path)
         shutil.rmtree(input_directory)
 
 
