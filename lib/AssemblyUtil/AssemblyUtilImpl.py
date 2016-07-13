@@ -11,6 +11,8 @@ from biokbase.workspace.client import Workspace
 
 from doekbase.data_api.sequence.assembly import api
 
+import biokbase.Transform.script_utils as script_utils
+
 import trns_transform_FASTA_DNA_Assembly_to_KBaseGenomeAnnotations_Assembly as uploader
 from DataFileUtil.DataFileUtilClient import DataFileUtil
 
@@ -121,6 +123,9 @@ class AssemblyUtil:
         # return variables are: ref
         #BEGIN save_assembly_from_fasta
 
+        print('save_assembly_from_fasta -- paramaters = ')
+        pprint(params)
+
         if 'workspace_name' not in params:
             raise ValueError('workspace_name field was not defined')
 
@@ -132,25 +137,63 @@ class AssemblyUtil:
         input_directory =  os.path.join(self.sharedFolder, 'assembly-upload-staging-'+str(uuid.uuid4()))
         os.makedirs(input_directory)
 
-        orig_path = None
-        temp_path = None
+        fasta_file_path = None
         if 'file' not in params:
             if 'shock_id' not in params:
-                raise ValueError('Neither file field nor shock_id field was defined')
-            data_file_cli = DataFileUtil(os.environ['SDK_CALLBACK_URL'], token=ctx['token'],
-                                   service_ver='dev')
-            file_name = data_file_cli.shock_to_file({'file_path': input_directory,
-                'shock_id': params['shock_id']})['node_file_name']
-            temp_path = os.path.join(input_directory, file_name)
-            print("temp_path=" + temp_path)
+                if 'ftp_url' not in params:
+                    raise ValueError('No input file (either file.path, shock_id, or ftp_url) provided')
+                else:
+                    # TODO handle ftp - this creates a directory for us, so update the input directory
+                    print('calling Transform download utility: script_utils.download');
+                    print('URL provided = '+params['ftp_url']);
+                    script_utils.download_from_urls(
+                            working_directory = input_directory,
+                            token = ctx['token'], # not sure why this requires a token to download from a url...
+                            urls  = {
+                                        'ftpfiles': params['ftp_url']
+                                    }
+                        );
+                    input_directory = os.path.join(input_directory,'ftpfiles')
+                    # unpack everything in input directory
+                    dir_contents = os.listdir(input_directory)
+                    print('downloaded directory listing:')
+                    pprint(dir_contents)
+                    dir_files = []
+                    for f in dir_contents:
+                        if os.path.isfile(os.path.join(input_directory, f)):
+                            dir_files.append(f)
+
+                    print('processing files in directory...')
+                    for f in dir_files:
+                        # unpack if needed using the standard transform utility
+                        print('unpacking '+f)
+                        script_utils.extract_data(filePath=os.path.join(input_directory,f))
+
+            else:
+                # handle shock file
+                dfUtil = DataFileUtil(os.environ['SDK_CALLBACK_URL'], token=ctx['token'])
+                file_name = dfUtil.shock_to_file({
+                                    'file_path': input_directory,
+                                    'shock_id': params['shock_id']
+                                })['node_file_name']
+                fasta_file_path = os.path.join(input_directory, file_name)
         else:
+            # copy the local file to the input staging directory
+            # (NOTE: could just move it, but then this method would have the side effect of moving your
+            # file which another SDK module might have an open handle on - could also get around this
+            # by having the script take a file list directly rather working in a directory)
             if 'path' not in params['file']:
                 raise ValueError('file.path field was not defined')
-            orig_path = params['file']['path']
-            temp_path = os.path.join(input_directory, os.path.basename(orig_path))
-            os.rename(orig_path, temp_path)
+            local_file_path = params['file']['path']
+            fasta_file_path = os.path.join(input_directory, os.path.basename(local_file_path))
+            shutil.copy2(local_file_path, fasta_file_path)
 
-        
+        if fasta_file_path is not None:
+            print("input fasta file =" + fasta_file_path)
+
+            # unpack if needed using the standard transform utility
+            script_utils.extract_data(filePath=fasta_file_path)
+
         # do the upload
         result = uploader.upload_assembly(
                 logger=None,
@@ -170,14 +213,8 @@ class AssemblyUtil:
 #                    contig_information_dict = None,
 #                    logger = None):
 
-
-        if orig_path:
-            # move the file back and trash that temporary directory
-            os.rename(temp_path, orig_path)
-        else:
-            os.remove(temp_path)
+        # clear the temp directory
         shutil.rmtree(input_directory)
-
 
         # get WS metadata to return the reference to the object
         ws = Workspace(url=self.workspaceURL)

@@ -1,10 +1,10 @@
 #
 # Define basic display information
 #
-name     : SDK UPLOAD FROM FASTA FILE
+name     : SDK IMPORT FROM FTP
 subtitle : none
 tooltip  : |
-    Upload DNA sequence(s) in FASTA format (creating an Assembly).
+    Upload assembled DNA sequence(s) in FASTA format via FTP.
 
 screenshots :
     []
@@ -29,25 +29,23 @@ suggestions :
 # Configure the display and description of the parameters
 #
 parameters :
-    fastaFile :
+    ftpFolder :
         ui-name : |
-            FASTA file
+            Name of FTP file
         short-hint : |
-            File with DNA data (one or more sequences) in FASTA format
+            Provide a path to an FTP file with contigs in FASTA format (e.g., ftp://ftp.ncbi.nlm.nih.gov/genomes/Bacteria/Shewanella_MR_4_uid58345/NC_008321.fna)
         long-hint  : |
-            Recognized extensions for the FASTA input file are .fasta, .fna, or .fa
+            Provide a path to an FTP file with contigs in FASTA format (e.g., ftp://ftp.ncbi.nlm.nih.gov/genomes/Bacteria/Shewanella_MR_4_uid58345/NC_008321.fna)
 
     outputObject :
         ui-name : |
-            Assembly name
+            Name of Assembly
         short-hint : |
             Provide a name for the Assembly that will be created by this upload
         long-hint  : |
             Provide a name for the Assembly that will be created by this upload
 
-description : |
-    Upload DNA sequence(s) in FASTA format (creating an Assembly)
+description : none
 
 
-technical-description : |
-    Upload DNA sequence(s) in FASTA format (creating an Assembly)
+technical-description : none

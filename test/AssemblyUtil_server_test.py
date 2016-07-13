@@ -118,4 +118,15 @@ class AssemblyUtilTest(unittest.TestCase):
         pprint(result2)
         self.check_fasta_file(ws_obj_name2, fasta_path)
 
+        print('attempting upload via ftp url')
+        ftp_url = 'ftp://ftp.ensemblgenomes.org/pub/release-29/bacteria//fasta/bacteria_8_collection/acaryochloris_marina_mbic11017/dna/Acaryochloris_marina_mbic11017.GCA_000018105.1.29.dna.genome.fa.gz'
+        ws_obj_name3 = 'MyNewAssembly.3'
+        result3 = assemblyUtil.save_assembly_from_fasta(self.getContext(), 
+            {
+                'ftp_url':ftp_url,
+                'workspace_name':self.getWsName(),
+                'assembly_name':ws_obj_name3
+            });
+        pprint(result3)
+        #todo: add checks here on ws object
 

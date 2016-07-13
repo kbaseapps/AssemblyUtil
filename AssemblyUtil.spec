@@ -29,7 +29,7 @@ module AssemblyUtil {
 
     /*
         Options supported:
-            file and shock_id - mutualy exclusive parameters pointing to file content
+            file / shock_id / ftp_url - mutualy exclusive parameters pointing to file content
             workspace_name - target workspace
             assembly_name - target object name
 
@@ -42,6 +42,7 @@ module AssemblyUtil {
     typedef structure {
         FastaAssemblyFile file;
         ShockNodeId shock_id;
+        string ftp_url;
 
         string workspace_name;
         string assembly_name;
