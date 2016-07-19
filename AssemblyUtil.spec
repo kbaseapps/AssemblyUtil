@@ -21,7 +21,25 @@ module AssemblyUtil {
         construct a local Fasta file with the sequence data.  If filename is set, attempt to save to the
         specified filename.  Otherwise, a random name will be generated.
     */
-    funcdef get_assembly_as_fasta(GetAssemblyParams params) returns (FastaAssemblyFile file) authentication required;
+    funcdef get_assembly_as_fasta(GetAssemblyParams params) 
+                returns (FastaAssemblyFile file) authentication required;
+
+
+    typedef structure {
+        string input_ref;
+    } ExportParams;
+
+    typedef structure {
+        string shock_id;
+    } ExportOutput;
+
+    /*
+        A method designed especially for download, this calls 'get_assembly_as_fasta' to do
+        the work, but then packages the output with WS provenance and object info into
+        a zip file and saves to shock.
+    */
+    funcdef export_assembly_as_fasta(ExportParams params)
+                returns (ExportOutput output) authentication required;
 
 
 

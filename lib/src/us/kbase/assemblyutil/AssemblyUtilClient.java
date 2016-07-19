@@ -167,6 +167,26 @@ public class AssemblyUtilClient {
     }
 
     /**
+     * <p>Original spec-file function name: export_assembly_as_fasta</p>
+     * <pre>
+     * A method designed especially for download, this calls 'get_assembly_as_fasta' to do
+     * the work, but then packages the output with WS provenance and object info into
+     * a zip file and saves to shock.
+     * </pre>
+     * @param   params   instance of type {@link us.kbase.assemblyutil.ExportParams ExportParams}
+     * @return   parameter "output" of type {@link us.kbase.assemblyutil.ExportOutput ExportOutput}
+     * @throws IOException if an IO exception occurs
+     * @throws JsonClientException if a JSON RPC exception occurs
+     */
+    public ExportOutput exportAssemblyAsFasta(ExportParams params, RpcContext... jsonRpcContext) throws IOException, JsonClientException {
+        List<Object> args = new ArrayList<Object>();
+        args.add(params);
+        TypeReference<List<ExportOutput>> retType = new TypeReference<List<ExportOutput>>() {};
+        List<ExportOutput> res = caller.jsonrpcCall("AssemblyUtil.export_assembly_as_fasta", args, retType, true, true, jsonRpcContext, this.serviceVersion);
+        return res.get(0);
+    }
+
+    /**
      * <p>Original spec-file function name: save_assembly_from_fasta</p>
      * <pre>
      * WARNING: has the side effect of moving the file to a temporary staging directory, because the upload

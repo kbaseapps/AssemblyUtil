@@ -203,6 +203,98 @@ specified filename.  Otherwise, a random name will be generated.
  
 
 
+=head2 export_assembly_as_fasta
+
+  $output = $obj->export_assembly_as_fasta($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an AssemblyUtil.ExportParams
+$output is an AssemblyUtil.ExportOutput
+ExportParams is a reference to a hash where the following keys are defined:
+	input_ref has a value which is a string
+ExportOutput is a reference to a hash where the following keys are defined:
+	shock_id has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an AssemblyUtil.ExportParams
+$output is an AssemblyUtil.ExportOutput
+ExportParams is a reference to a hash where the following keys are defined:
+	input_ref has a value which is a string
+ExportOutput is a reference to a hash where the following keys are defined:
+	shock_id has a value which is a string
+
+
+=end text
+
+=item Description
+
+A method designed especially for download, this calls 'get_assembly_as_fasta' to do
+the work, but then packages the output with WS provenance and object info into
+a zip file and saves to shock.
+
+=back
+
+=cut
+
+ sub export_assembly_as_fasta
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function export_assembly_as_fasta (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to export_assembly_as_fasta:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'export_assembly_as_fasta');
+	}
+    }
+
+    my $url = $self->{url};
+    my $result = $self->{client}->call($url, $self->{headers}, {
+	    method => "AssemblyUtil.export_assembly_as_fasta",
+	    params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'export_assembly_as_fasta',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method export_assembly_as_fasta",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'export_assembly_as_fasta',
+				       );
+    }
+}
+ 
+
+
 =head2 save_assembly_from_fasta
 
   $ref = $obj->save_assembly_from_fasta($params)
@@ -218,10 +310,13 @@ $params is an AssemblyUtil.SaveAssemblyParams
 $ref is a string
 SaveAssemblyParams is a reference to a hash where the following keys are defined:
 	file has a value which is an AssemblyUtil.FastaAssemblyFile
+	shock_id has a value which is an AssemblyUtil.ShockNodeId
+	ftp_url has a value which is a string
 	workspace_name has a value which is a string
 	assembly_name has a value which is a string
 FastaAssemblyFile is a reference to a hash where the following keys are defined:
 	path has a value which is a string
+ShockNodeId is a string
 
 </pre>
 
@@ -233,10 +328,13 @@ $params is an AssemblyUtil.SaveAssemblyParams
 $ref is a string
 SaveAssemblyParams is a reference to a hash where the following keys are defined:
 	file has a value which is an AssemblyUtil.FastaAssemblyFile
+	shock_id has a value which is an AssemblyUtil.ShockNodeId
+	ftp_url has a value which is a string
 	workspace_name has a value which is a string
 	assembly_name has a value which is a string
 FastaAssemblyFile is a reference to a hash where the following keys are defined:
 	path has a value which is a string
+ShockNodeId is a string
 
 
 =end text
@@ -425,6 +523,92 @@ filename has a value which is a string
 
 
 
+=head2 ExportParams
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+input_ref has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+input_ref has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 ExportOutput
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+shock_id has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+shock_id has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 ShockNodeId
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
 =head2 SaveAssemblyParams
 
 =over 4
@@ -434,8 +618,9 @@ filename has a value which is a string
 =item Description
 
 Options supported:
-    workspace_name
-    assembly_name
+    file / shock_id / ftp_url - mutualy exclusive parameters pointing to file content
+    workspace_name - target workspace
+    assembly_name - target object name
 
 Uploader options not yet supported
     taxon_reference: The ws reference the assembly points to.  (Optional)
@@ -451,6 +636,8 @@ Uploader options not yet supported
 <pre>
 a reference to a hash where the following keys are defined:
 file has a value which is an AssemblyUtil.FastaAssemblyFile
+shock_id has a value which is an AssemblyUtil.ShockNodeId
+ftp_url has a value which is a string
 workspace_name has a value which is a string
 assembly_name has a value which is a string
 
@@ -462,6 +649,8 @@ assembly_name has a value which is a string
 
 a reference to a hash where the following keys are defined:
 file has a value which is an AssemblyUtil.FastaAssemblyFile
+shock_id has a value which is an AssemblyUtil.ShockNodeId
+ftp_url has a value which is a string
 workspace_name has a value which is a string
 assembly_name has a value which is a string
 

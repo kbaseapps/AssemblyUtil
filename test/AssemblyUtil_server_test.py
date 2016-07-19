@@ -130,3 +130,16 @@ class AssemblyUtilTest(unittest.TestCase):
         pprint(result3)
         #todo: add checks here on ws object
 
+
+        print('attempting export to download package ')
+        ftp_url = 'ftp://ftp.ensemblgenomes.org/pub/release-29/bacteria//fasta/bacteria_8_collection/acaryochloris_marina_mbic11017/dna/Acaryochloris_marina_mbic11017.GCA_000018105.1.29.dna.genome.fa.gz'
+        ws_obj_name3 = 'MyNewAssembly.3'
+        result4 = assemblyUtil.export_assembly_as_fasta(self.getContext(), 
+            {
+                'input_ref':self.getWsName() + '/' + ws_obj_name3
+            });
+        pprint(result4)
+
+
+
+

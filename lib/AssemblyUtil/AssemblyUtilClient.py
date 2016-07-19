@@ -47,6 +47,20 @@ class AssemblyUtil(object):
             'AssemblyUtil.get_assembly_as_fasta',
             [params], self._service_ver, context)
 
+    def export_assembly_as_fasta(self, params, context=None):
+        """
+        A method designed especially for download, this calls 'get_assembly_as_fasta' to do
+        the work, but then packages the output with WS provenance and object info into
+        a zip file and saves to shock.
+        :param params: instance of type "ExportParams" -> structure:
+           parameter "input_ref" of String
+        :returns: instance of type "ExportOutput" -> structure: parameter
+           "shock_id" of String
+        """
+        return self._client.call_method(
+            'AssemblyUtil.export_assembly_as_fasta',
+            [params], self._service_ver, context)
+
     def save_assembly_from_fasta(self, params, context=None):
         """
         WARNING: has the side effect of moving the file to a temporary staging directory, because the upload
@@ -55,15 +69,18 @@ class AssemblyUtil(object):
         if you are trying to keep an open file handle or are trying to do things concurrently to that file,
         this will break.  So this method is certainly NOT thread safe on the input file.
         :param params: instance of type "SaveAssemblyParams" (Options
-           supported: workspace_name assembly_name Uploader options not yet
-           supported taxon_reference: The ws reference the assembly points
-           to.  (Optional) source: The source of the data (Ex: Refseq)
+           supported: file / shock_id / ftp_url - mutualy exclusive
+           parameters pointing to file content workspace_name - target
+           workspace assembly_name - target object name Uploader options not
+           yet supported taxon_reference: The ws reference the assembly
+           points to.  (Optional) source: The source of the data (Ex: Refseq)
            date_string: Date (or date range) associated with data. (Optional)
            contig_information_dict: A mapping that has is_circular and
            description information (Optional)) -> structure: parameter "file"
            of type "FastaAssemblyFile" -> structure: parameter "path" of
-           String, parameter "workspace_name" of String, parameter
-           "assembly_name" of String
+           String, parameter "shock_id" of type "ShockNodeId", parameter
+           "ftp_url" of String, parameter "workspace_name" of String,
+           parameter "assembly_name" of String
         :returns: instance of String
         """
         return self._client.call_method(

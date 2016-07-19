@@ -331,6 +331,10 @@ class Application(object):
                              name='AssemblyUtil.get_assembly_as_fasta',
                              types=[dict])
         self.method_authentication['AssemblyUtil.get_assembly_as_fasta'] = 'required'
+        self.rpc_service.add(impl_AssemblyUtil.export_assembly_as_fasta,
+                             name='AssemblyUtil.export_assembly_as_fasta',
+                             types=[dict])
+        self.method_authentication['AssemblyUtil.export_assembly_as_fasta'] = 'required'
         self.rpc_service.add(impl_AssemblyUtil.save_assembly_from_fasta,
                              name='AssemblyUtil.save_assembly_from_fasta',
                              types=[dict])

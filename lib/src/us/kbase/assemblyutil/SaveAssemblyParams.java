@@ -15,8 +15,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * <p>Original spec-file type: SaveAssemblyParams</p>
  * <pre>
  * Options supported:
- *     workspace_name
- *     assembly_name
+ *     file / shock_id / ftp_url - mutualy exclusive parameters pointing to file content
+ *     workspace_name - target workspace
+ *     assembly_name - target object name
  * Uploader options not yet supported
  *     taxon_reference: The ws reference the assembly points to.  (Optional)
  *     source: The source of the data (Ex: Refseq)
@@ -29,6 +30,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
     "file",
+    "shock_id",
+    "ftp_url",
     "workspace_name",
     "assembly_name"
 })
@@ -41,6 +44,10 @@ public class SaveAssemblyParams {
      */
     @JsonProperty("file")
     private FastaAssemblyFile file;
+    @JsonProperty("shock_id")
+    private String shockId;
+    @JsonProperty("ftp_url")
+    private String ftpUrl;
     @JsonProperty("workspace_name")
     private String workspaceName;
     @JsonProperty("assembly_name")
@@ -69,6 +76,36 @@ public class SaveAssemblyParams {
 
     public SaveAssemblyParams withFile(FastaAssemblyFile file) {
         this.file = file;
+        return this;
+    }
+
+    @JsonProperty("shock_id")
+    public String getShockId() {
+        return shockId;
+    }
+
+    @JsonProperty("shock_id")
+    public void setShockId(String shockId) {
+        this.shockId = shockId;
+    }
+
+    public SaveAssemblyParams withShockId(String shockId) {
+        this.shockId = shockId;
+        return this;
+    }
+
+    @JsonProperty("ftp_url")
+    public String getFtpUrl() {
+        return ftpUrl;
+    }
+
+    @JsonProperty("ftp_url")
+    public void setFtpUrl(String ftpUrl) {
+        this.ftpUrl = ftpUrl;
+    }
+
+    public SaveAssemblyParams withFtpUrl(String ftpUrl) {
+        this.ftpUrl = ftpUrl;
         return this;
     }
 
@@ -114,7 +151,7 @@ public class SaveAssemblyParams {
 
     @Override
     public String toString() {
-        return ((((((((("SaveAssemblyParams"+" [file=")+ file)+", workspaceName=")+ workspaceName)+", assemblyName=")+ assemblyName)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((("SaveAssemblyParams"+" [file=")+ file)+", shockId=")+ shockId)+", ftpUrl=")+ ftpUrl)+", workspaceName=")+ workspaceName)+", assemblyName=")+ assemblyName)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

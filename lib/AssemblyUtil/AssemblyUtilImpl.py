@@ -34,9 +34,9 @@ class AssemblyUtil:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     #########################################
-    VERSION = "0.0.1"
-    GIT_URL = ""
-    GIT_COMMIT_HASH = ""
+    VERSION = "0.0.2"
+    GIT_URL = "git@github.com:msneddon/AssemblyUtil"
+    GIT_COMMIT_HASH = "0e69269f04200f9ad5455e2af6cad5edee2ba142"
     
     #BEGIN_CLASS_HEADER
 
@@ -50,6 +50,7 @@ class AssemblyUtil:
         self.shockURL = config['shock-url']
         self.handleURL = config['handle-service-url']
         self.sharedFolder = config['scratch']
+        self.callback_url = os.environ['SDK_CALLBACK_URL']
         #END_CONSTRUCTOR
         pass
     
@@ -100,6 +101,56 @@ class AssemblyUtil:
         # return the results
         return [file]
 
+    def export_assembly_as_fasta(self, ctx, params):
+        """
+        A method designed especially for download, this calls 'get_assembly_as_fasta' to do
+        the work, but then packages the output with WS provenance and object info into
+        a zip file and saves to shock.
+        :param params: instance of type "ExportParams" -> structure:
+           parameter "input_ref" of String
+        :returns: instance of type "ExportOutput" -> structure: parameter
+           "shock_id" of String
+        """
+        # ctx is the context object
+        # return variables are: output
+        #BEGIN export_assembly_as_fasta
+
+        # validate parameters
+        if 'input_ref' not in params:
+            raise ValueError('Cannot export Assembly- not input_ref field defined.')
+
+        # get WS metadata to get ws_name and obj_name
+        ws = Workspace(url=self.workspaceURL)
+        info = ws.get_object_info_new({'objects':[{'ref': params['input_ref'] }],'includeMetadata':0, 'ignoreErrors':0})[0]
+
+        # export to a file
+        file = self.get_assembly_as_fasta(ctx, { 
+                            'ref': params['input_ref'], 
+                            'filename': info[1]+'.fasta' })[0]
+
+        # create the output directory and move the file there
+        export_package_dir = os.path.join(self.sharedFolder, info[1])
+        os.makedirs(export_package_dir)
+        shutil.move(file['path'], os.path.join(export_package_dir, os.path.basename(file['path'])))
+
+        # package it up and be done
+        dfUtil = DataFileUtil(self.callback_url)
+        package_details = dfUtil.package_for_download({
+                                    'file_path': export_package_dir,
+                                    'ws_refs': [ params['input_ref'] ]
+                                })
+
+        output = { 'shock_id': package_details['shock_id'] }
+
+        #END export_assembly_as_fasta
+
+        # At some point might do deeper type checking...
+        if not isinstance(output, dict):
+            raise ValueError('Method export_assembly_as_fasta return value ' +
+                             'output is not type dict as required.')
+        # return the results
+        return [output]
+
     def save_assembly_from_fasta(self, ctx, params):
         """
         WARNING: has the side effect of moving the file to a temporary staging directory, because the upload
@@ -108,15 +159,18 @@ class AssemblyUtil:
         if you are trying to keep an open file handle or are trying to do things concurrently to that file,
         this will break.  So this method is certainly NOT thread safe on the input file.
         :param params: instance of type "SaveAssemblyParams" (Options
-           supported: workspace_name assembly_name Uploader options not yet
-           supported taxon_reference: The ws reference the assembly points
-           to.  (Optional) source: The source of the data (Ex: Refseq)
+           supported: file / shock_id / ftp_url - mutualy exclusive
+           parameters pointing to file content workspace_name - target
+           workspace assembly_name - target object name Uploader options not
+           yet supported taxon_reference: The ws reference the assembly
+           points to.  (Optional) source: The source of the data (Ex: Refseq)
            date_string: Date (or date range) associated with data. (Optional)
            contig_information_dict: A mapping that has is_circular and
            description information (Optional)) -> structure: parameter "file"
            of type "FastaAssemblyFile" -> structure: parameter "path" of
-           String, parameter "workspace_name" of String, parameter
-           "assembly_name" of String
+           String, parameter "shock_id" of type "ShockNodeId", parameter
+           "ftp_url" of String, parameter "workspace_name" of String,
+           parameter "assembly_name" of String
         :returns: instance of String
         """
         # ctx is the context object
@@ -171,7 +225,7 @@ class AssemblyUtil:
 
             else:
                 # handle shock file
-                dfUtil = DataFileUtil(os.environ['SDK_CALLBACK_URL'], token=ctx['token'])
+                dfUtil = DataFileUtil(self.callback_url)
                 file_name = dfUtil.shock_to_file({
                                     'file_path': input_directory,
                                     'shock_id': params['shock_id']
