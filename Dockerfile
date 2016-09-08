@@ -17,7 +17,7 @@ RUN apt-get install python-dev libffi-dev libssl-dev \
 
 # Install KBase Data API Library + dependencies
 RUN mkdir -p /kb/module && cd /kb/module && git clone https://github.com/kbase/data_api && \
-    cd data_api && git checkout f421cae && cd /kb/module && \
+    cd data_api && git checkout 0.4.0-dev && cd /kb/module && \
     mkdir -p lib/ && cp -a data_api/lib/doekbase lib/ && \
     pip install -r /kb/module/data_api/requirements.txt
 
