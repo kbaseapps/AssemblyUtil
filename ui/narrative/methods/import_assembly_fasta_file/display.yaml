@@ -1,7 +1,7 @@
 #
 # Define basic display information
 #
-name     : SDK UPLOAD FROM FASTA FILE
+name     : UPLOAD FROM FASTA FILE
 subtitle : none
 tooltip  : |
     Upload DNA sequence(s) in FASTA format (creating an Assembly).

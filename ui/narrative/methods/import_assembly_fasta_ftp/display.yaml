@@ -1,7 +1,7 @@
 #
 # Define basic display information
 #
-name     : SDK IMPORT FROM FTP
+name     : IMPORT FROM FTP
 subtitle : none
 tooltip  : |
     Upload assembled DNA sequence(s) in FASTA format via FTP.
