@@ -27,7 +27,6 @@ RUN mkdir -p /kb/module && cd /kb/module && git clone https://github.com/kbase/d
 RUN mkdir -p /kb/module && cd /kb/module && git clone https://github.com/kbase/transform && \
     cd transform && git checkout 53633ed && cd /kb/module && \
     mkdir -p lib/ && cp -a transform/lib/biokbase /kb/deployment/lib/ && \
-    cp transform/plugins/scripts/upload/trns_transform_FASTA_DNA_Assembly_to_KBaseGenomeAnnotations_Assembly.py lib/. && \
     pip install -r /kb/module/data_api/requirements.txt
 
 
