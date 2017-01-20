@@ -90,7 +90,12 @@ class AssemblyUtil:
         f = open(filepath, 'w')
         obj.get_fasta().to_file(f)
 
-        file = { 'path': filepath }
+        # get ws metadata
+        ws = Workspace(url=self.workspaceURL)
+        info = ws.get_object_info_new({'objects': [{'ref': params['ref']}], 'includeMetadata': 1, 'ignoreErrors': 0})[0]
+
+        # construct the output
+        file = {'path': filepath, 'assembly_name': info[1]}
 
         #END get_assembly_as_fasta
 

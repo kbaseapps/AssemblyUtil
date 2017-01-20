@@ -105,8 +105,7 @@ class AssemblyUtilTest(unittest.TestCase):
 
         print('attempting upload through shock')
         data_file_cli = DataFileUtil(os.environ['SDK_CALLBACK_URL'], token=
-                               self.__class__.ctx['token'],
-                               service_ver='dev')
+                               self.__class__.ctx['token'])
         shock_id = data_file_cli.file_to_shock({'file_path': fasta_path})['shock_id']
         ws_obj_name2 = 'MyNewAssembly.2'
         result2 = assemblyUtil.save_assembly_from_fasta(self.getContext(), 

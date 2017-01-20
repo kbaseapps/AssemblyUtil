@@ -6,6 +6,7 @@ module AssemblyUtil {
 
     typedef structure {
         string path;
+        string assembly_name;
     } FastaAssemblyFile;
 
     /*
