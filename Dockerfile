@@ -33,7 +33,7 @@ RUN mkdir -p /kb/module && cd /kb/module && git clone https://github.com/kbase/t
 # Copy module files to image
 COPY ./ /kb/module
 RUN mkdir -p /kb/module/work
-RUN chmod 777 /kb/module
+RUN chmod 777 -R /kb/module
 
 WORKDIR /kb/module
 
