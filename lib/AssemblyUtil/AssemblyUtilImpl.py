@@ -263,7 +263,9 @@ class AssemblyUtil:
 
                 input_directory=input_directory,
                 workspace_name=params['workspace_name'],
-                assembly_name=params['assembly_name']
+                assembly_name=params['assembly_name'],
+
+                provenance=ctx.provenance()
             )
 
 #                    taxon_reference = None, 
