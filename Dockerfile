@@ -10,10 +10,13 @@ MAINTAINER Michael Sneddon (mwsneddon@lbl.gov)
 # -----------------------------------------
 
 # Make sure SSL certs are properly installed
-RUN apt-get install python-dev libffi-dev libssl-dev \
-    && pip install pyopenssl ndg-httpsclient pyasn1 \
-    && pip install requests --upgrade \
-    && pip install 'requests[security]' --upgrade
+RUN apt-get install python-dev libffi-dev libssl-dev
+RUN pip install cffi --upgrade
+RUN pip install pyopenssl --upgrade
+RUN pip install ndg-httpsclient --upgrade
+RUN pip install pyasn1 --upgrade
+RUN pip install requests --upgrade && \
+    pip install 'requests[security]' --upgrade
 
 # Install KBase Data API Library + dependencies
 RUN mkdir -p /kb/module && cd /kb/module && git clone https://github.com/kbase/data_api && \
@@ -33,7 +36,7 @@ RUN mkdir -p /kb/module && cd /kb/module && git clone https://github.com/kbase/t
 # Copy module files to image
 COPY ./ /kb/module
 RUN mkdir -p /kb/module/work
-RUN chmod 777 -R /kb/module
+RUN chmod -R a+rw /kb/module
 
 WORKDIR /kb/module
 

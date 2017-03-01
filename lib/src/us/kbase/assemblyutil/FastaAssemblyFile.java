@@ -19,12 +19,15 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
-    "path"
+    "path",
+    "assembly_name"
 })
 public class FastaAssemblyFile {
 
     @JsonProperty("path")
     private String path;
+    @JsonProperty("assembly_name")
+    private String assemblyName;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonProperty("path")
@@ -42,6 +45,21 @@ public class FastaAssemblyFile {
         return this;
     }
 
+    @JsonProperty("assembly_name")
+    public String getAssemblyName() {
+        return assemblyName;
+    }
+
+    @JsonProperty("assembly_name")
+    public void setAssemblyName(String assemblyName) {
+        this.assemblyName = assemblyName;
+    }
+
+    public FastaAssemblyFile withAssemblyName(String assemblyName) {
+        this.assemblyName = assemblyName;
+        return this;
+    }
+
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -54,7 +72,7 @@ public class FastaAssemblyFile {
 
     @Override
     public String toString() {
-        return ((((("FastaAssemblyFile"+" [path=")+ path)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((("FastaAssemblyFile"+" [path=")+ path)+", assemblyName=")+ assemblyName)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

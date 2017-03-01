@@ -127,6 +127,7 @@ GetAssemblyParams is a reference to a hash where the following keys are defined:
 	filename has a value which is a string
 FastaAssemblyFile is a reference to a hash where the following keys are defined:
 	path has a value which is a string
+	assembly_name has a value which is a string
 
 </pre>
 
@@ -141,6 +142,7 @@ GetAssemblyParams is a reference to a hash where the following keys are defined:
 	filename has a value which is a string
 FastaAssemblyFile is a reference to a hash where the following keys are defined:
 	path has a value which is a string
+	assembly_name has a value which is a string
 
 
 =end text
@@ -316,6 +318,7 @@ SaveAssemblyParams is a reference to a hash where the following keys are defined
 	assembly_name has a value which is a string
 FastaAssemblyFile is a reference to a hash where the following keys are defined:
 	path has a value which is a string
+	assembly_name has a value which is a string
 ShockNodeId is a string
 
 </pre>
@@ -334,6 +337,7 @@ SaveAssemblyParams is a reference to a hash where the following keys are defined
 	assembly_name has a value which is a string
 FastaAssemblyFile is a reference to a hash where the following keys are defined:
 	path has a value which is a string
+	assembly_name has a value which is a string
 ShockNodeId is a string
 
 
@@ -398,6 +402,36 @@ this will break.  So this method is certainly NOT thread safe on the input file.
 }
  
   
+sub status
+{
+    my($self, @args) = @_;
+    if ((my $n = @args) != 0) {
+        Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+                                   "Invalid argument count for function status (received $n, expecting 0)");
+    }
+    my $url = $self->{url};
+    my $result = $self->{client}->call($url, $self->{headers}, {
+        method => "AssemblyUtil.status",
+        params => \@args,
+    });
+    if ($result) {
+        if ($result->is_error) {
+            Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+                           code => $result->content->{error}->{code},
+                           method_name => 'status',
+                           data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+                          );
+        } else {
+            return wantarray ? @{$result->result} : $result->result->[0];
+        }
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method status",
+                        status_line => $self->{client}->status_line,
+                        method_name => 'status',
+                       );
+    }
+}
+   
 
 sub version {
     my ($self) = @_;
@@ -469,6 +503,7 @@ sub _validate_version {
 <pre>
 a reference to a hash where the following keys are defined:
 path has a value which is a string
+assembly_name has a value which is a string
 
 </pre>
 
@@ -478,6 +513,7 @@ path has a value which is a string
 
 a reference to a hash where the following keys are defined:
 path has a value which is a string
+assembly_name has a value which is a string
 
 
 =end text
