@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #BEGIN_HEADER
 
 import os
@@ -28,16 +29,16 @@ class AssemblyUtil:
     
     '''
 
-    ######## WARNING FOR GEVENT USERS #######
+    ######## WARNING FOR GEVENT USERS ####### noqa
     # Since asynchronous IO can lead to methods - even the same method -
     # interrupting each other, you must be *very* careful when using global
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
-    #########################################
-    VERSION = "0.0.2"
-    GIT_URL = "git@github.com:msneddon/AssemblyUtil"
-    GIT_COMMIT_HASH = "0e69269f04200f9ad5455e2af6cad5edee2ba142"
-    
+    ######################################### noqa
+    VERSION = "0.0.7"
+    GIT_URL = "https://github.com/rsutormin/AssemblyUtil"
+    GIT_COMMIT_HASH = "e44e6dfde2c0426502f4343e897bbfc7825dbb0f"
+
     #BEGIN_CLASS_HEADER
 
     #END_CLASS_HEADER
@@ -53,7 +54,7 @@ class AssemblyUtil:
         self.callback_url = os.environ['SDK_CALLBACK_URL']
         #END_CONSTRUCTOR
         pass
-    
+
 
     def get_assembly_as_fasta(self, ctx, params):
         """
@@ -64,7 +65,7 @@ class AssemblyUtil:
            filename) -> structure: parameter "ref" of String, parameter
            "filename" of String
         :returns: instance of type "FastaAssemblyFile" -> structure:
-           parameter "path" of String
+           parameter "path" of String, parameter "assembly_name" of String
         """
         # ctx is the context object
         # return variables are: file
@@ -173,9 +174,9 @@ class AssemblyUtil:
            contig_information_dict: A mapping that has is_circular and
            description information (Optional)) -> structure: parameter "file"
            of type "FastaAssemblyFile" -> structure: parameter "path" of
-           String, parameter "shock_id" of type "ShockNodeId", parameter
-           "ftp_url" of String, parameter "workspace_name" of String,
-           parameter "assembly_name" of String
+           String, parameter "assembly_name" of String, parameter "shock_id"
+           of type "ShockNodeId", parameter "ftp_url" of String, parameter
+           "workspace_name" of String, parameter "assembly_name" of String
         :returns: instance of String
         """
         # ctx is the context object
@@ -291,7 +292,6 @@ class AssemblyUtil:
                              'ref is not type basestring as required.')
         # return the results
         return [ref]
-
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK", 'message': "", 'version': self.VERSION, 

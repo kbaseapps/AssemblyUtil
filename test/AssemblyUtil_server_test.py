@@ -16,6 +16,7 @@ from biokbase.workspace.client import Workspace as workspaceService
 from AssemblyUtil.AssemblyUtilImpl import AssemblyUtil
 from AssemblyUtil.AssemblyUtilServer import MethodContext
 from DataFileUtil.DataFileUtilClient import DataFileUtil
+from AssemblyUtil.authclient import KBaseAuth as _KBaseAuth
 
 
 class AssemblyUtilTest(unittest.TestCase):
@@ -23,22 +24,27 @@ class AssemblyUtilTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         token = environ.get('KB_AUTH_TOKEN', None)
-        # WARNING: don't call any logging methods on the context object,
-        # it'll result in a NoneType error
-        cls.ctx = MethodContext(None)
-        cls.ctx.update({'token': token,
-                        'provenance': [
-                            {'service': 'AssemblyUtil',
-                             'method': 'please_never_use_it_in_production',
-                             'method_params': []
-                             }],
-                        'authenticated': 1})
         config_file = environ.get('KB_DEPLOYMENT_CONFIG', None)
         cls.cfg = {}
         config = ConfigParser()
         config.read(config_file)
         for nameval in config.items('AssemblyUtil'):
             cls.cfg[nameval[0]] = nameval[1]
+        authServiceUrl = cls.cfg.get('auth-service-url', 
+                "https://kbase.us/services/authorization/Sessions/Login")
+        auth_client = _KBaseAuth(authServiceUrl)
+        user_id = auth_client.get_user(token)
+        # WARNING: don't call any logging methods on the context object,
+        # it'll result in a NoneType error
+        cls.ctx = MethodContext(None)
+        cls.ctx.update({'token': token,
+                        'user_id': user_id,
+                        'provenance': [
+                            {'service': 'AssemblyUtil',
+                             'method': 'please_never_use_it_in_production',
+                             'method_params': []
+                             }],
+                        'authenticated': 1})
         cls.wsURL = cls.cfg['workspace-url']
         cls.wsClient = workspaceService(cls.wsURL, token=token)
         cls.serviceImpl = AssemblyUtil(cls.cfg)
