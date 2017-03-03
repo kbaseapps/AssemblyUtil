@@ -254,6 +254,7 @@ class AssemblyUtil:
             # unpack if needed using the standard transform utility
             script_utils.extract_data(filePath=fasta_file_path)
 
+        print("Handle URL: " + self.handleURL)
         # do the upload
         result = uploader.upload_assembly(
                 logger=None,
