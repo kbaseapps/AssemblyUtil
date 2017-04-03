@@ -36,8 +36,8 @@ class AssemblyUtil:
     # the latter method is running.
     ######################################### noqa
     VERSION = "0.0.7"
-    GIT_URL = "https://github.com/rsutormin/AssemblyUtil"
-    GIT_COMMIT_HASH = "e44e6dfde2c0426502f4343e897bbfc7825dbb0f"
+    GIT_URL = "git@github.com:kbaseapps/AssemblyUtil"
+    GIT_COMMIT_HASH = "55bfb839464f67f3daee55cd30b3c6f8b5f8f703"
 
     #BEGIN_CLASS_HEADER
 
