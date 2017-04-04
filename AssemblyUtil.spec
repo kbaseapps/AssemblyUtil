@@ -52,6 +52,12 @@ module AssemblyUtil {
             workspace_name - target workspace
             assembly_name - target object name
 
+            type - should be one of isolate', 'metagenome', (maybe 'transcriptome')
+
+            min_contig_length - if set and value is greater than 1, this will only include sequences
+                                with length greater or equal to the min_contig_length specified, discarding
+                                all other sequences
+
         Uploader options not yet supported
             taxon_reference: The ws reference the assembly points to.  (Optional)
             source: The source of the data (Ex: Refseq)
@@ -65,6 +71,11 @@ module AssemblyUtil {
 
         string workspace_name;
         string assembly_name;
+
+        string external_source;
+        string external_source_id;
+
+        int min_contig_length;
 
     } SaveAssemblyParams;
 

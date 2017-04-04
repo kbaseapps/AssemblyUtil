@@ -18,6 +18,10 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  *     file / shock_id / ftp_url - mutualy exclusive parameters pointing to file content
  *     workspace_name - target workspace
  *     assembly_name - target object name
+ *     type - should be one of isolate', 'metagenome', (maybe 'transcriptome')
+ *     min_contig_length - if set and value is greater than 1, this will only include sequences
+ *                         with length greater or equal to the min_contig_length specified, discarding
+ *                         all other sequences
  * Uploader options not yet supported
  *     taxon_reference: The ws reference the assembly points to.  (Optional)
  *     source: The source of the data (Ex: Refseq)
@@ -33,7 +37,10 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "shock_id",
     "ftp_url",
     "workspace_name",
-    "assembly_name"
+    "assembly_name",
+    "external_source",
+    "external_source_id",
+    "min_contig_length"
 })
 public class SaveAssemblyParams {
 
@@ -52,6 +59,12 @@ public class SaveAssemblyParams {
     private String workspaceName;
     @JsonProperty("assembly_name")
     private String assemblyName;
+    @JsonProperty("external_source")
+    private String externalSource;
+    @JsonProperty("external_source_id")
+    private String externalSourceId;
+    @JsonProperty("min_contig_length")
+    private Long minContigLength;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     /**
@@ -139,6 +152,51 @@ public class SaveAssemblyParams {
         return this;
     }
 
+    @JsonProperty("external_source")
+    public String getExternalSource() {
+        return externalSource;
+    }
+
+    @JsonProperty("external_source")
+    public void setExternalSource(String externalSource) {
+        this.externalSource = externalSource;
+    }
+
+    public SaveAssemblyParams withExternalSource(String externalSource) {
+        this.externalSource = externalSource;
+        return this;
+    }
+
+    @JsonProperty("external_source_id")
+    public String getExternalSourceId() {
+        return externalSourceId;
+    }
+
+    @JsonProperty("external_source_id")
+    public void setExternalSourceId(String externalSourceId) {
+        this.externalSourceId = externalSourceId;
+    }
+
+    public SaveAssemblyParams withExternalSourceId(String externalSourceId) {
+        this.externalSourceId = externalSourceId;
+        return this;
+    }
+
+    @JsonProperty("min_contig_length")
+    public Long getMinContigLength() {
+        return minContigLength;
+    }
+
+    @JsonProperty("min_contig_length")
+    public void setMinContigLength(Long minContigLength) {
+        this.minContigLength = minContigLength;
+    }
+
+    public SaveAssemblyParams withMinContigLength(Long minContigLength) {
+        this.minContigLength = minContigLength;
+        return this;
+    }
+
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -151,7 +209,7 @@ public class SaveAssemblyParams {
 
     @Override
     public String toString() {
-        return ((((((((((((("SaveAssemblyParams"+" [file=")+ file)+", shockId=")+ shockId)+", ftpUrl=")+ ftpUrl)+", workspaceName=")+ workspaceName)+", assemblyName=")+ assemblyName)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((((("SaveAssemblyParams"+" [file=")+ file)+", shockId=")+ shockId)+", ftpUrl=")+ ftpUrl)+", workspaceName=")+ workspaceName)+", assemblyName=")+ assemblyName)+", externalSource=")+ externalSource)+", externalSourceId=")+ externalSourceId)+", minContigLength=")+ minContigLength)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

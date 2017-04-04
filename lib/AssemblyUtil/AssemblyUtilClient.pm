@@ -315,6 +315,9 @@ SaveAssemblyParams is a reference to a hash where the following keys are defined
 	ftp_url has a value which is a string
 	workspace_name has a value which is a string
 	assembly_name has a value which is a string
+	external_source has a value which is a string
+	external_source_id has a value which is a string
+	min_contig_length has a value which is an int
 FastaAssemblyFile is a reference to a hash where the following keys are defined:
 	path has a value which is a string
 	assembly_name has a value which is a string
@@ -334,6 +337,9 @@ SaveAssemblyParams is a reference to a hash where the following keys are defined
 	ftp_url has a value which is a string
 	workspace_name has a value which is a string
 	assembly_name has a value which is a string
+	external_source has a value which is a string
+	external_source_id has a value which is a string
+	min_contig_length has a value which is an int
 FastaAssemblyFile is a reference to a hash where the following keys are defined:
 	path has a value which is a string
 	assembly_name has a value which is a string
@@ -657,6 +663,12 @@ Options supported:
     workspace_name - target workspace
     assembly_name - target object name
 
+    type - should be one of isolate', 'metagenome', (maybe 'transcriptome')
+
+    min_contig_length - if set and value is greater than 1, this will only include sequences
+                        with length greater or equal to the min_contig_length specified, discarding
+                        all other sequences
+
 Uploader options not yet supported
     taxon_reference: The ws reference the assembly points to.  (Optional)
     source: The source of the data (Ex: Refseq)
@@ -675,6 +687,9 @@ shock_id has a value which is an AssemblyUtil.ShockNodeId
 ftp_url has a value which is a string
 workspace_name has a value which is a string
 assembly_name has a value which is a string
+external_source has a value which is a string
+external_source_id has a value which is a string
+min_contig_length has a value which is an int
 
 </pre>
 
@@ -688,6 +703,9 @@ shock_id has a value which is an AssemblyUtil.ShockNodeId
 ftp_url has a value which is a string
 workspace_name has a value which is a string
 assembly_name has a value which is a string
+external_source has a value which is a string
+external_source_id has a value which is a string
+min_contig_length has a value which is an int
 
 
 =end text

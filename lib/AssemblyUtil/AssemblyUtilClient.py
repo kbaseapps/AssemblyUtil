@@ -72,16 +72,24 @@ class AssemblyUtil(object):
         :param params: instance of type "SaveAssemblyParams" (Options
            supported: file / shock_id / ftp_url - mutualy exclusive
            parameters pointing to file content workspace_name - target
-           workspace assembly_name - target object name Uploader options not
-           yet supported taxon_reference: The ws reference the assembly
-           points to.  (Optional) source: The source of the data (Ex: Refseq)
-           date_string: Date (or date range) associated with data. (Optional)
-           contig_information_dict: A mapping that has is_circular and
-           description information (Optional)) -> structure: parameter "file"
-           of type "FastaAssemblyFile" -> structure: parameter "path" of
-           String, parameter "assembly_name" of String, parameter "shock_id"
-           of type "ShockNodeId", parameter "ftp_url" of String, parameter
-           "workspace_name" of String, parameter "assembly_name" of String
+           workspace assembly_name - target object name type - should be one
+           of isolate', 'metagenome', (maybe 'transcriptome')
+           min_contig_length - if set and value is greater than 1, this will
+           only include sequences with length greater or equal to the
+           min_contig_length specified, discarding all other sequences
+           Uploader options not yet supported taxon_reference: The ws
+           reference the assembly points to.  (Optional) source: The source
+           of the data (Ex: Refseq) date_string: Date (or date range)
+           associated with data. (Optional) contig_information_dict: A
+           mapping that has is_circular and description information
+           (Optional)) -> structure: parameter "file" of type
+           "FastaAssemblyFile" -> structure: parameter "path" of String,
+           parameter "assembly_name" of String, parameter "shock_id" of type
+           "ShockNodeId", parameter "ftp_url" of String, parameter
+           "workspace_name" of String, parameter "assembly_name" of String,
+           parameter "external_source" of String, parameter
+           "external_source_id" of String, parameter "min_contig_length" of
+           Long
         :returns: instance of String
         """
         return self._client.call_method(
