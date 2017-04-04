@@ -34,16 +34,15 @@ class FastaToAssembly:
             print('filtering fasta file by contig length (min len=' + str(min_contig_length) + 'bp)')
             fasta_file_path = self.filter_contigs_by_length(fasta_file_path, min_contig_length)
 
-        assembly_data = self.parse_fasta(fasta_file_path, params)
         print('parsing FASTA file: ' + str(fasta_file_path))
-        pprint(assembly_data)
-
+        assembly_data = self.parse_fasta(fasta_file_path, params)
+        print(' - parsed ' + str(assembly_data['num_contigs']) + ' contigs, ' +
+              str(assembly_data['dna_size']) + 'bp')
 
         print('saving assembly to KBase')
 
         # save file to shock and build handle
         fasta_file_handle_info = self.save_fasta_file_to_shock(fasta_file_path)
-
         # construct the output object
         assembly_object_to_save = self.build_assembly_object(assembly_data,
                                                              fasta_file_handle_info,

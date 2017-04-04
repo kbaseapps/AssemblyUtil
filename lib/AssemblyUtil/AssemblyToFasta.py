@@ -1,6 +1,5 @@
 import os
 import shutil
-import uuid
 
 from Bio import SeqIO
 from Bio.Seq import Seq

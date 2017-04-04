@@ -135,3 +135,85 @@ class AssemblyUtilTest(unittest.TestCase):
         result4 = assemblyUtil.export_assembly_as_fasta(self.getContext(),
                                                         {'input_ref': self.getWsName() + '/' + ws_obj_name3})
         pprint(result4)
+
+    def test_legacy_contigset_download(self):
+        ws_obj_name4 = 'LegacyContigs'
+        contigset_data = {'id': 'contigset',
+                          'md5': '5217cb4e8684817ba925ebe125caf54a',
+                          'source': 'file',
+                          'source_id': 'file',
+                          'contigs': [{
+                                        'id': 's1',
+                                        'description': 'something',
+                                        'sequence': 'agtggggg'
+                                       }, {
+                                        'id': 's2',
+                                        'description': 'something2',
+                                        'sequence': 'gacgattt'
+                                       }, {
+                                        'id': 's3',
+                                        'sequence': 'ctgtgtttgtgtgtgtgt'
+                                       }]
+                          }
+
+        obj_info = self.getWsClient().save_objects({'workspace': self.getWsName(),
+                                                    'objects': [{'type': 'KBaseGenomes.ContigSet',
+                                                                 'name': ws_obj_name4,
+                                                                 'data': contigset_data
+                                                                 }]
+                                                    })[0]
+
+        assemblyUtil = self.getImpl()
+        fasta = assemblyUtil.get_assembly_as_fasta(self.getContext(),
+                                                   {'ref': self.getWsName() + '/' + obj_info[1],
+                                                    'filename': 'legacy.fa'})[0]
+        expected_data = None
+
+        file_name = "legacy_test.fna"
+        scratch_dir = self.__class__.cfg['scratch']
+        shutil.copy(os.path.join("data", file_name), scratch_dir)
+        expected_fasta_path = os.path.join(scratch_dir, file_name)
+        with open(expected_fasta_path, 'r') as f:
+            expected_data = f.read()
+        actual_data = None
+        with open(fasta['path'], 'r') as f:
+            actual_data = f.read()
+        self.assertEqual(actual_data, expected_data)
+
+
+    def test_load_with_filter_and_options(self):
+        assemblyUtil = self.getImpl()
+
+        tmp_dir = self.__class__.cfg['scratch']
+        file_name = "legacy_test.fna"
+        shutil.copy(os.path.join("data", file_name), tmp_dir)
+        fasta_path = os.path.join(tmp_dir, file_name)
+        print('attempting upload')
+        ws_obj_name = 'FilteredAssembly'
+        result = assemblyUtil.save_assembly_from_fasta(self.getContext(),
+                                                       {'file': {'path': fasta_path},
+                                                        'workspace_name': self.getWsName(),
+                                                        'assembly_name': ws_obj_name,
+                                                        'min_contig_length': 9,
+                                                        'external_source': 'someplace',
+                                                        'external_source_id': 'id',
+                                                        'external_source_origination_date': 'sunday',
+                                                        'type': 'metagenome'
+                                                        })
+
+        dfu = DataFileUtil(os.environ['SDK_CALLBACK_URL'])
+        assembly = dfu.get_objects({'object_refs': [result[0]]})['data'][0]['data']
+
+        self.assertEqual(len(assembly['contigs']), 1)
+        self.assertEqual(assembly['contigs']['s3']['md5'], '4f339bd56e5f43ecb52e8682a790a111')
+        self.assertEqual(assembly['contigs']['s3']['contig_id'], 's3')
+        self.assertEqual(assembly['contigs']['s3']['length'], 18)
+
+        self.assertEqual(assembly['dna_size'], 18)
+        self.assertEqual(assembly['gc_content'], 0.444)
+        self.assertEqual(assembly['md5'], 'eba4d1771060e19671a56832d159526e')
+        self.assertEqual(assembly['num_contigs'], 1)
+        self.assertEqual(assembly['type'], 'metagenome')
+        self.assertEqual(assembly['external_source'], 'someplace')
+        self.assertEqual(assembly['external_source_id'], 'id')
+        self.assertEqual(assembly['external_source_origination_date'], 'sunday')
