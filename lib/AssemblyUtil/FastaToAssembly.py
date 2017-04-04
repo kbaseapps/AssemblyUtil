@@ -153,11 +153,14 @@ class FastaToAssembly:
             all_contig_data[contig_info['contig_id']] = contig_info
 
         # Aggregate stats for the data
+        total_gc_content = None
+        if total_length > 0:
+            total_gc_content = round(float(base_counts['G'] + base_counts['C']) / float(total_length), 3)
         assembly_data = {
             'md5': md5(",".join(sorted(md5_list))).hexdigest(),
             'base_counts': base_counts,
             'dna_size': total_length,
-            'gc_content': round(float(GC_count) / float(contig_info['length']), 3),
+            'gc_content': total_gc_content,
             'contigs': all_contig_data,
             'num_contigs': len(all_contig_data)
         }
