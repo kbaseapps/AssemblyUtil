@@ -2,21 +2,10 @@
 #BEGIN_HEADER
 
 import os
-import sys
-import shutil
-import traceback
-import uuid
-from pprint import pprint, pformat
+from pprint import pprint
 
-from biokbase.workspace.client import Workspace
-
-from doekbase.data_api.sequence.assembly import api
-
-
-from DataFileUtil.DataFileUtilClient import DataFileUtil
 from AssemblyUtil.FastaToAssembly import FastaToAssembly
-
-
+from AssemblyUtil.AssemblyToFasta import AssemblyToFasta
 
 #END_HEADER
 
@@ -48,9 +37,6 @@ class AssemblyUtil:
     # be found
     def __init__(self, config):
         #BEGIN_CONSTRUCTOR
-        self.workspaceURL = config['workspace-url']
-        self.shockURL = config['shock-url']
-        self.handleURL = config['handle-service-url']
         self.sharedFolder = config['scratch']
         self.callback_url = os.environ['SDK_CALLBACK_URL']
         #END_CONSTRUCTOR
@@ -72,32 +58,8 @@ class AssemblyUtil:
         # return variables are: file
         #BEGIN get_assembly_as_fasta
 
-        if 'ref' not in params:
-            raise ValueError('Error calling get_assembly_as_fasta: "ref" parameter not defined.')
-
-        obj = api.AssemblyAPI(
-                token=ctx['token'],
-                services={ 
-                        'workspace_service_url': self.workspaceURL,
-                        'shock_service_url': self.shockURL,
-                        'handle_service_url': self.handleURL
-                    },
-                ref=params['ref'] )
-
-        filename = str(uuid.uuid4()) + '.fasta'
-        if 'filename' in params and params['filename'] is not None and len(params['filename'].strip())>0:
-            filename = params['filename']
-
-        filepath = os.path.join(self.sharedFolder, filename)
-        f = open(filepath, 'w')
-        obj.get_fasta().to_file(f)
-
-        # get ws metadata
-        ws = Workspace(url=self.workspaceURL)
-        info = ws.get_object_info_new({'objects': [{'ref': params['ref']}], 'includeMetadata': 1, 'ignoreErrors': 0})[0]
-
-        # construct the output
-        file = {'path': filepath, 'assembly_name': info[1]}
+        atf = AssemblyToFasta(self.callback_url, self.sharedFolder)
+        file = atf.assembly_as_fasta(ctx, params)
 
         #END get_assembly_as_fasta
 
@@ -122,32 +84,8 @@ class AssemblyUtil:
         # return variables are: output
         #BEGIN export_assembly_as_fasta
 
-        # validate parameters
-        if 'input_ref' not in params:
-            raise ValueError('Cannot export Assembly- not input_ref field defined.')
-
-        # get WS metadata to get ws_name and obj_name
-        ws = Workspace(url=self.workspaceURL)
-        info = ws.get_object_info_new({'objects':[{'ref': params['input_ref'] }],'includeMetadata':0, 'ignoreErrors':0})[0]
-
-        # export to a file
-        file = self.get_assembly_as_fasta(ctx, { 
-                            'ref': params['input_ref'], 
-                            'filename': info[1]+'.fasta' })[0]
-
-        # create the output directory and move the file there
-        export_package_dir = os.path.join(self.sharedFolder, info[1])
-        os.makedirs(export_package_dir)
-        shutil.move(file['path'], os.path.join(export_package_dir, os.path.basename(file['path'])))
-
-        # package it up and be done
-        dfUtil = DataFileUtil(self.callback_url)
-        package_details = dfUtil.package_for_download({
-                                    'file_path': export_package_dir,
-                                    'ws_refs': [ params['input_ref'] ]
-                                })
-
-        output = { 'shock_id': package_details['shock_id'] }
+        atf = AssemblyToFasta(self.callback_url, self.sharedFolder)
+        output = atf.export_as_fasta(ctx, params)
 
         #END export_assembly_as_fasta
 

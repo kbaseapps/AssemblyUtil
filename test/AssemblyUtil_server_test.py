@@ -1,6 +1,5 @@
 import unittest
 import os
-import json
 import time
 import shutil
 
@@ -30,8 +29,8 @@ class AssemblyUtilTest(unittest.TestCase):
         config.read(config_file)
         for nameval in config.items('AssemblyUtil'):
             cls.cfg[nameval[0]] = nameval[1]
-        authServiceUrl = cls.cfg.get('auth-service-url', 
-                "https://kbase.us/services/authorization/Sessions/Login")
+        authServiceUrl = cls.cfg.get('auth-service-url',
+                                     'https://kbase.us/services/authorization/Sessions/Login')
         auth_client = _KBaseAuth(authServiceUrl)
         user_id = auth_client.get_user(token)
         # WARNING: don't call any logging methods on the context object,
@@ -63,7 +62,7 @@ class AssemblyUtilTest(unittest.TestCase):
             return self.__class__.wsName
         suffix = int(time.time() * 1000)
         wsName = "test_AssemblyUtil_" + str(suffix)
-        ret = self.getWsClient().create_workspace({'workspace': wsName})
+        self.getWsClient().create_workspace({'workspace': wsName})
         self.__class__.wsName = wsName
         return wsName
 
@@ -78,8 +77,8 @@ class AssemblyUtilTest(unittest.TestCase):
         assemblyUtil = self.getImpl()
 
         print('attempting download')
-        fasta = assemblyUtil.get_assembly_as_fasta(self.getContext(), 
-            {'ref':self.getWsName() + "/MyNewAssembly"})[0]
+        fasta = assemblyUtil.get_assembly_as_fasta(self.getContext(),
+                                                   {'ref': self.getWsName() + "/MyNewAssembly"})[0]
         pprint(fasta)
         # let's compare files pointed from fasta['path'] and expected_file
         expected_data = None
@@ -90,7 +89,8 @@ class AssemblyUtilTest(unittest.TestCase):
             actual_data = f.read()
         self.assertEqual(actual_data, expected_data)
 
-    def test_stuff(self):
+
+    def test_basic_upload_and_download(self):
         assemblyUtil = self.getImpl()
 
         tmp_dir = self.__class__.cfg['scratch']
@@ -99,52 +99,39 @@ class AssemblyUtilTest(unittest.TestCase):
         fasta_path = os.path.join(tmp_dir, file_name)
         print('attempting upload')
         ws_obj_name = 'MyNewAssembly'
-        result = assemblyUtil.save_assembly_from_fasta(self.getContext(), 
-            {
-                'file':{'path':fasta_path},
-                'workspace_name':self.getWsName(),
-                'assembly_name':ws_obj_name
-            });
+        result = assemblyUtil.save_assembly_from_fasta(self.getContext(),
+                                                       {'file': {'path': fasta_path},
+                                                        'workspace_name': self.getWsName(),
+                                                        'assembly_name': ws_obj_name
+                                                        })
         pprint(result)
         self.check_fasta_file(ws_obj_name, fasta_path)
 
 
         print('attempting upload through shock')
-        data_file_cli = DataFileUtil(os.environ['SDK_CALLBACK_URL'], token=
-                               self.__class__.ctx['token'])
+        data_file_cli = DataFileUtil(os.environ['SDK_CALLBACK_URL'])
         shock_id = data_file_cli.file_to_shock({'file_path': fasta_path})['shock_id']
         ws_obj_name2 = 'MyNewAssembly.2'
-        result2 = assemblyUtil.save_assembly_from_fasta(self.getContext(), 
-            {
-                'shock_id':shock_id,
-                'workspace_name':self.getWsName(),
-                'assembly_name':ws_obj_name2
-            });
+        result2 = assemblyUtil.save_assembly_from_fasta(self.getContext(),
+                                                        {'shock_id': shock_id,
+                                                         'workspace_name': self.getWsName(),
+                                                         'assembly_name': ws_obj_name2
+                                                         })
         pprint(result2)
         self.check_fasta_file(ws_obj_name2, fasta_path)
 
         print('attempting upload via ftp url')
         ftp_url = 'ftp://ftp.ensemblgenomes.org/pub/release-29/bacteria//fasta/bacteria_8_collection/acaryochloris_marina_mbic11017/dna/Acaryochloris_marina_mbic11017.GCA_000018105.1.29.dna.genome.fa.gz'
         ws_obj_name3 = 'MyNewAssembly.3'
-        result3 = assemblyUtil.save_assembly_from_fasta(self.getContext(), 
-            {
-                'ftp_url':ftp_url,
-                'workspace_name':self.getWsName(),
-                'assembly_name':ws_obj_name3
-            });
+        result3 = assemblyUtil.save_assembly_from_fasta(self.getContext(),
+                                                        {'ftp_url': ftp_url,
+                                                         'workspace_name': self.getWsName(),
+                                                         'assembly_name': ws_obj_name3
+                                                         })
         pprint(result3)
-        #todo: add checks here on ws object
+        # todo: add checks here on ws object
 
-
-        print('attempting export to download package ')
-        ftp_url = 'ftp://ftp.ensemblgenomes.org/pub/release-29/bacteria//fasta/bacteria_8_collection/acaryochloris_marina_mbic11017/dna/Acaryochloris_marina_mbic11017.GCA_000018105.1.29.dna.genome.fa.gz'
         ws_obj_name3 = 'MyNewAssembly.3'
-        result4 = assemblyUtil.export_assembly_as_fasta(self.getContext(), 
-            {
-                'input_ref':self.getWsName() + '/' + ws_obj_name3
-            });
+        result4 = assemblyUtil.export_assembly_as_fasta(self.getContext(),
+                                                        {'input_ref': self.getWsName() + '/' + ws_obj_name3})
         pprint(result4)
-
-
-
-
