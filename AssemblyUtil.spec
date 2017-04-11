@@ -46,23 +46,39 @@ module AssemblyUtil {
 
     typedef string ShockNodeId;
 
+
+
+    /*
+        Structure for setting additional Contig information per contig
+            is_circ - flag if contig is circular, 0 is false, 1 is true, missing
+                      indicates unknown
+    */
+    typedef structure {
+        int is_circ;
+    } ExtraContigInfo;
+
+
     /*
         Options supported:
             file / shock_id / ftp_url - mutualy exclusive parameters pointing to file content
             workspace_name - target workspace
             assembly_name - target object name
 
-            type - should be one of isolate', 'metagenome', (maybe 'transcriptome')
+            type - should be one of 'isolate', 'metagenome', (maybe 'transcriptome')
 
             min_contig_length - if set and value is greater than 1, this will only include sequences
                                 with length greater or equal to the min_contig_length specified, discarding
                                 all other sequences
 
+            taxon_ref         - sets the taxon_ref if present
+
+            contig_info       - map from contig_id to a small structure that can be used to set the is_circular
+                                and description fields for Assemblies (optional)
+
         Uploader options not yet supported
             taxon_reference: The ws reference the assembly points to.  (Optional)
             source: The source of the data (Ex: Refseq)
             date_string: Date (or date range) associated with data. (Optional)
-            contig_information_dict: A mapping that has is_circular and description information (Optional)
     */
     typedef structure {
         FastaAssemblyFile file;
@@ -75,7 +91,11 @@ module AssemblyUtil {
         string external_source;
         string external_source_id;
 
+        string taxon_ref;
+
         int min_contig_length;
+
+        mapping<string,ExtraContigInfo> contig_info; 
 
     } SaveAssemblyParams;
 

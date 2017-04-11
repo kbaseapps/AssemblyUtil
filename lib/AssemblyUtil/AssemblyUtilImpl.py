@@ -27,7 +27,7 @@ class AssemblyUtil:
     ######################################### noqa
     VERSION = "1.0.0"
     GIT_URL = "git@github.com:kbaseapps/AssemblyUtil"
-    GIT_COMMIT_HASH = "bbbd7ce42d3d2acd35a9d5316fd1a3237205d236"
+    GIT_COMMIT_HASH = "b85b2ded513457f384868d0c324dcb7d42952d5b"
 
     #BEGIN_CLASS_HEADER
 
@@ -107,23 +107,29 @@ class AssemblyUtil:
            supported: file / shock_id / ftp_url - mutualy exclusive
            parameters pointing to file content workspace_name - target
            workspace assembly_name - target object name type - should be one
-           of isolate', 'metagenome', (maybe 'transcriptome')
+           of 'isolate', 'metagenome', (maybe 'transcriptome')
            min_contig_length - if set and value is greater than 1, this will
            only include sequences with length greater or equal to the
            min_contig_length specified, discarding all other sequences
+           taxon_ref         - sets the taxon_ref if present contig_info     
+           - map from contig_id to a small structure that can be used to set
+           the is_circular and description fields for Assemblies (optional)
            Uploader options not yet supported taxon_reference: The ws
            reference the assembly points to.  (Optional) source: The source
            of the data (Ex: Refseq) date_string: Date (or date range)
-           associated with data. (Optional) contig_information_dict: A
-           mapping that has is_circular and description information
-           (Optional)) -> structure: parameter "file" of type
-           "FastaAssemblyFile" -> structure: parameter "path" of String,
-           parameter "assembly_name" of String, parameter "shock_id" of type
-           "ShockNodeId", parameter "ftp_url" of String, parameter
+           associated with data. (Optional)) -> structure: parameter "file"
+           of type "FastaAssemblyFile" -> structure: parameter "path" of
+           String, parameter "assembly_name" of String, parameter "shock_id"
+           of type "ShockNodeId", parameter "ftp_url" of String, parameter
            "workspace_name" of String, parameter "assembly_name" of String,
            parameter "external_source" of String, parameter
-           "external_source_id" of String, parameter "min_contig_length" of
-           Long
+           "external_source_id" of String, parameter "taxon_ref" of String,
+           parameter "min_contig_length" of Long, parameter "contig_info" of
+           mapping from String to type "ExtraContigInfo" (Structure for
+           setting additional Contig information per contig is_circ - flag if
+           contig is circular, 0 is false, 1 is true, missing indicates
+           unknown) -> structure: parameter "is_circ" of Long, parameter
+           "description" of String
         :returns: instance of String
         """
         # ctx is the context object

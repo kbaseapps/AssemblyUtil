@@ -2,7 +2,6 @@ import os
 import sys
 import uuid
 
-from pprint import pprint
 from hashlib import md5
 from collections import Counter
 
@@ -70,6 +69,9 @@ class FastaToAssembly:
         if 'type' in params:
             assembly_data['type'] = params['type']
 
+        if 'taxon_ref' in params:
+            assembly_data['taxon_ref'] = params['taxon_ref']
+
         if 'external_source' in params:
             assembly_data['external_source'] = params['external_source']
 
@@ -92,6 +94,9 @@ class FastaToAssembly:
 
         # map from contig_id to contig_info
         all_contig_data = {}
+        extra_contig_info = {}
+        if'contig_info' in params:
+            extra_contig_info = params['contig_info']
 
         for record in SeqIO.parse(fasta_file_path, "fasta"):
             # SeqRecord(seq=Seq('TTAT...', SingleLetterAlphabet()),
@@ -106,8 +111,7 @@ class FastaToAssembly:
                 'contig_id': record.id,
                 'name': record.id,
                 'description': record.description[len(record.id):].strip(),
-                'length': len(record.seq),
-                'is_circular': 'Unknown'
+                'length': len(record.seq)
             }
 
             # 1) compute sequence character statistics running total
@@ -129,6 +133,11 @@ class FastaToAssembly:
             if 'N' in sequence_count_table:
                 Ncount = sequence_count_table['N']
                 contig_info['Ncount'] = Ncount
+
+            # 2b) record if the contig is circular
+            if record.id in extra_contig_info:
+                if 'is_circ' in extra_contig_info[record.id]:
+                    contig_info['is_circ'] = int(extra_contig_info[record.id]['is_circ'])
 
             # 3) record md5 checksum
             contig_md5 = md5(sequence).hexdigest()
@@ -163,14 +172,26 @@ class FastaToAssembly:
         return assembly_data
 
 
+    def fasta_filter_contigs_generator(self, fasta_record_iter, min_contig_length):
+        ''' generates SeqRecords iterator for writing from a legacy contigset object '''
+        rows = 0
+        rows_added = 0
+        for record in fasta_record_iter:
+            rows += 1
+            if len(record.seq) >= min_contig_length:
+                rows_added += 1
+                yield record
+        print(' - filtered out ' + str(rows - rows_added) + ' of ' + str(rows) + ' contigs that were shorter than ' +
+              str(min_contig_length) + 'bp.')
+
 
     def filter_contigs_by_length(self, fasta_file_path, min_contig_length):
         ''' removes all contigs less than the min_contig_length provided '''
         filtered_fasta_file_path = fasta_file_path + '.filtered.fa'
 
         fasta_record_iter = SeqIO.parse(fasta_file_path, 'fasta')
-        short_seq_iterator = (record for record in fasta_record_iter if len(record.seq) >= min_contig_length)
-        SeqIO.write(short_seq_iterator, filtered_fasta_file_path, 'fasta')
+        SeqIO.write(self.fasta_filter_contigs_generator(fasta_record_iter, min_contig_length),
+                    filtered_fasta_file_path, 'fasta')
 
         return filtered_fasta_file_path
 
@@ -208,7 +229,7 @@ class FastaToAssembly:
         file_path = None
         if 'file' in params:
             file_path = os.path.abspath(params['file']['path'])
-        if 'shock_id' in params:
+        elif 'shock_id' in params:
             print('Downloading file from SHOCK node: ' + str(params['shock_id']))
             sys.stdout.flush()
             input_directory = os.path.join(self.scratch, 'assembly-upload-staging-' + str(uuid.uuid4()))
@@ -217,7 +238,7 @@ class FastaToAssembly:
                                                 'shock_id': params['shock_id']
                                                 })['node_file_name']
             file_path = os.path.join(input_directory, file_name)
-        if 'ftp_url' in params:
+        elif 'ftp_url' in params:
             print('Downloading file from: ' + str(params['ftp_url']))
             sys.stdout.flush()
             file_path = self.dfu.download_web_file({'file_url': params['ftp_url'],
