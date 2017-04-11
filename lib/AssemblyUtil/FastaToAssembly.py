@@ -107,11 +107,7 @@ class FastaToAssembly:
                 'name': record.id,
                 'description': record.description[len(record.id):].strip(),
                 'length': len(record.seq),
-                'is_circular': 'Unknown',
-
-                'num_bytes': 0,
-                'start_position': 0,
-                'end_position': 0
+                'is_circular': 'Unknown'
             }
 
             # 1) compute sequence character statistics running total
@@ -128,11 +124,11 @@ class FastaToAssembly:
                                          'of the required nucleotides.')
                     raise ValueError("This FASTA file has non nucleic acid characters : {0}".format(character))
 
-            # 2) record number of 'N' characters
+            # 2) record number of 'N' characters (only set if there are some)
             Ncount = 0
             if 'N' in sequence_count_table:
                 Ncount = sequence_count_table['N']
-            contig_info['Ncount'] = Ncount
+                contig_info['Ncount'] = Ncount
 
             # 3) record md5 checksum
             contig_md5 = md5(sequence).hexdigest()
@@ -255,4 +251,3 @@ class FastaToAssembly:
         if input_count > 1:
             raise ValueError('required exactly one fasta file as input source, you set more than one of ' +
                              'these fields: "file", "shock_id", or "ftp_url"')
-
