@@ -138,6 +138,8 @@ class FastaToAssembly:
             if record.id in extra_contig_info:
                 if 'is_circ' in extra_contig_info[record.id]:
                     contig_info['is_circ'] = int(extra_contig_info[record.id]['is_circ'])
+                if 'description' in extra_contig_info[record.id]:
+                    contig_info['description'] = str(extra_contig_info[record.id]['description'])
 
             # 3) record md5 checksum
             contig_md5 = md5(sequence).hexdigest()

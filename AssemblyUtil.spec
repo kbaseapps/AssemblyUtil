@@ -52,9 +52,12 @@ module AssemblyUtil {
         Structure for setting additional Contig information per contig
             is_circ - flag if contig is circular, 0 is false, 1 is true, missing
                       indicates unknown
+            description - if set, sets the description of the field in the assembly object
+                          which may override what was in the fasta file
     */
     typedef structure {
         int is_circ;
+        string description;
     } ExtraContigInfo;
 
 
