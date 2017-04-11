@@ -198,7 +198,8 @@ class AssemblyUtilTest(unittest.TestCase):
                                                         'external_source': 'someplace',
                                                         'external_source_id': 'id',
                                                         'external_source_origination_date': 'sunday',
-                                                        'type': 'metagenome'
+                                                        'type': 'metagenome',
+                                                        'contig_info': {'s3': {'is_circ': 0}}
                                                         })
 
         dfu = DataFileUtil(os.environ['SDK_CALLBACK_URL'])
@@ -208,6 +209,7 @@ class AssemblyUtilTest(unittest.TestCase):
         self.assertEqual(assembly['contigs']['s3']['md5'], '4f339bd56e5f43ecb52e8682a790a111')
         self.assertEqual(assembly['contigs']['s3']['contig_id'], 's3')
         self.assertEqual(assembly['contigs']['s3']['length'], 18)
+        self.assertEqual(assembly['contigs']['s3']['is_circ'], 0)
 
         self.assertEqual(assembly['dna_size'], 18)
         self.assertEqual(assembly['gc_content'], 0.444)
