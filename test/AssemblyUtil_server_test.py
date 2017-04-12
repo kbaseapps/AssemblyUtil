@@ -213,7 +213,7 @@ class AssemblyUtilTest(unittest.TestCase):
         self.assertEqual(assembly['contigs']['s3']['description'], 'somethin')
 
         self.assertEqual(assembly['dna_size'], 18)
-        self.assertEqual(assembly['gc_content'], 0.444)
+        self.assertEqual(assembly['gc_content'], 0.44444)
         self.assertEqual(assembly['md5'], 'eba4d1771060e19671a56832d159526e')
         self.assertEqual(assembly['num_contigs'], 1)
         self.assertEqual(assembly['type'], 'metagenome')

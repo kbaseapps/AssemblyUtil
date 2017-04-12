@@ -151,7 +151,7 @@ class FastaToAssembly:
             for base in ['G', 'C']:
                 if base in sequence_count_table:
                     GC_count += sequence_count_table[base]
-            contig_info['gc_content'] = round(float(GC_count) / float(contig_info['length']), 3)
+            contig_info['gc_content'] = round(float(GC_count) / float(contig_info['length']), 5)
 
             # 5) add to contig list
             if contig_info['contig_id'] in all_contig_data:
@@ -162,7 +162,7 @@ class FastaToAssembly:
         # Aggregate stats for the data
         total_gc_content = None
         if total_length > 0:
-            total_gc_content = round(float(base_counts['G'] + base_counts['C']) / float(total_length), 3)
+            total_gc_content = round(float(base_counts['G'] + base_counts['C']) / float(total_length), 5)
         assembly_data = {
             'md5': md5(",".join(sorted(md5_list))).hexdigest(),
             'base_counts': base_counts,
