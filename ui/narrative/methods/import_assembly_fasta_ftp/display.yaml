@@ -37,6 +37,14 @@ parameters :
         long-hint  : |
             Provide a path to an FTP file with contigs in FASTA format (e.g., ftp://ftp.ncbi.nlm.nih.gov/genomes/Bacteria/Shewanella_MR_4_uid58345/NC_008321.fna)
 
+    min_contig_length :
+        ui-name : |
+            Minimum contig length
+        short-hint : |
+            Contigs shorter than this length will be filtered out
+        long-hint  : |
+            Contigs shorter than this value will be filtered out. Try larger value if upload fails.
+
     outputObject :
         ui-name : |
             Name of Assembly
