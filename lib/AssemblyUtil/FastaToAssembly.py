@@ -201,6 +201,8 @@ class FastaToAssembly:
     def save_assembly_object(self, workspace_id, assembly_name, obj_data):
         print('Saving Assembly to Workspace')
         sys.stdout.flush()
+        if len(obj_data["contigs"]) == 0:
+            raise ValueError('There are no contigs to save, thus there is no valid assembly.')
         obj_info = self.dfu.save_objects({'id': workspace_id,
                                           'objects': [{'type': 'KBaseGenomeAnnotations.Assembly',
                                                        'data': obj_data,
