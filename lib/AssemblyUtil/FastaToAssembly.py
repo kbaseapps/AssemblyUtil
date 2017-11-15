@@ -201,8 +201,6 @@ class FastaToAssembly:
     def save_assembly_object(self, workspace_id, assembly_name, obj_data):
         print('Saving Assembly to Workspace')
         sys.stdout.flush()
-        temp = len(obj_data["contigs"])
-        raise ValueError("temp:" + str(temp) + "   Contigs:" + obj_data["contigs"])
         if len(obj_data["contigs"]) == 0:
             raise ValueError('There are no contigs to save, thus there is no valid assembly.')
         obj_info = self.dfu.save_objects({'id': workspace_id,
