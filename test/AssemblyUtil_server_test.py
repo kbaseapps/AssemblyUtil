@@ -231,15 +231,11 @@ class AssemblyUtilTest(unittest.TestCase):
         fasta_path = os.path.join(tmp_dir, file_name)
         print('attempting upload')
         ws_obj_name = 'FilteredAssembly'
-        result = assemblyUtil.save_assembly_from_fasta(self.getContext(),
+        with self.assertRaises(ValueError) as context:
+            assemblyUtil.save_assembly_from_fasta(self.getContext(),
                                                        {'file': {'path': fasta_path},
                                                         'workspace_name': self.getWsName(),
                                                         'assembly_name': ws_obj_name,
                                                         'min_contig_length': 500
                                                         })
-
-        dfu = DataFileUtil(os.environ['SDK_CALLBACK_URL'])
-        assembly = dfu.get_objects({'object_refs': [result[0]]})['data'][0]['data']
-        self.assertEqual(assembly['dna_size'], 0)
-        self.assertEqual(assembly['gc_content'], None)
-        self.assertEqual(assembly['num_contigs'], 0)
+        self.assertEqual('There are no contigs to save, thus there is no valid assembly.', str(context.exception.message))
