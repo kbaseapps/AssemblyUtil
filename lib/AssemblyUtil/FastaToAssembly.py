@@ -8,6 +8,7 @@ from collections import Counter
 from Bio import SeqIO
 
 from DataFileUtil.DataFileUtilClient import DataFileUtil
+import os.path
 
 
 class FastaToAssembly:
@@ -232,6 +233,8 @@ class FastaToAssembly:
         ''' Setup the input_directory by fetching the files and returning the path to the file'''
         file_path = None
         if 'file' in params:
+            if not os.path.isfile(params['file']['path']):
+                raise ValueError('There is no Fasta Assembly File at ' + params['file']['path'])
             file_path = os.path.abspath(params['file']['path'])
         elif 'shock_id' in params:
             print('Downloading file from SHOCK node: ' + str(params['shock_id']))
