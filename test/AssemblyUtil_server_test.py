@@ -239,3 +239,20 @@ class AssemblyUtilTest(unittest.TestCase):
                                                         'min_contig_length': 500
                                                         })
         self.assertEqual('There are no contigs to save, thus there is no valid assembly.', str(context.exception.message))
+
+    def test_assembly_does_not_exist(self):
+        assemblyUtil = self.getImpl()
+
+        tmp_dir = self.__class__.cfg['scratch']
+        file_name = "not_a_real_file.fna"
+        fasta_path = tmp_dir + "/" + file_name
+        print('attempting upload')
+        ws_obj_name = 'FilteredAssembly'
+        with self.assertRaises(ValueError) as context:
+            assemblyUtil.save_assembly_from_fasta(self.getContext(),
+                                                       {'file': {'path': fasta_path},
+                                                        'workspace_name': self.getWsName(),
+                                                        'assembly_name': ws_obj_name,
+                                                        'min_contig_length': 500
+                                                        })
+        self.assertIn('There is no Fasta Assembly File at', str(context.exception.message))
