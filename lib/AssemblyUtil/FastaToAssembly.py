@@ -234,7 +234,7 @@ class FastaToAssembly:
         file_path = None
         if 'file' in params:
             if not os.path.isfile(params['file']['path']):
-                raise ValueError('The assembler didn\'t produce any output; the file '+params['file']['path']+' is missing. Please check the logs for details.')
+                raise ValueError('There is no Fasta Assembly File at ' + params['file']['path'])
             file_path = os.path.abspath(params['file']['path'])
         elif 'shock_id' in params:
             print('Downloading file from SHOCK node: ' + str(params['shock_id']))
