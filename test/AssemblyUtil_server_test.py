@@ -255,4 +255,4 @@ class AssemblyUtilTest(unittest.TestCase):
                                                         'assembly_name': ws_obj_name,
                                                         'min_contig_length': 500
                                                         })
-        self.assertIn('There is no Fasta Assembly File at', str(context.exception.message))
+        self.assertIn('KBase Assembly Utils tried to save an assembly', str(context.exception.message))
