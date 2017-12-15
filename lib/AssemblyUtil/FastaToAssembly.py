@@ -31,7 +31,7 @@ class FastaToAssembly:
 
         if 'min_contig_length' in params:
             min_contig_length = int(params['min_contig_length'])
-            print('filtering fasta file by contig length (min len=' + str(min_contig_length) + 'bp)')
+            print('filtering FASTA file by contig length (min len=' + str(min_contig_length) + 'bp)')
             fasta_file_path = self.filter_contigs_by_length(fasta_file_path, min_contig_length)
 
         print('parsing FASTA file: ' + str(fasta_file_path))
@@ -125,7 +125,7 @@ class FastaToAssembly:
                     base_counts[character] = sequence_count_table[character]
                 if character not in self.valid_chars:
                     if character in self.amino_acid_specific_characters:
-                        raise ValueError('This fasta file may have amino acids in it instead ' +
+                        raise ValueError('This FASTA file may have amino acids in it instead ' +
                                          'of the required nucleotides.')
                     raise ValueError("This FASTA file has non nucleic acid characters : {0}".format(character))
 
@@ -156,7 +156,7 @@ class FastaToAssembly:
 
             # 5) add to contig list
             if contig_info['contig_id'] in all_contig_data:
-                raise ValueError('The fasta header key ' + contig_info['contig_id'] +
+                raise ValueError('The FASTA header key ' + contig_info['contig_id'] +
                                  'appears more than once in the file')
             all_contig_data[contig_info['contig_id']] = contig_info
 
@@ -224,7 +224,7 @@ class FastaToAssembly:
                 } FileToShockOutput;
 
         '''
-        print('Uploading fasta file (' + str(fasta_file_path) + ') to SHOCK')
+        print('Uploading FASTA file (' + str(fasta_file_path) + ') to SHOCK')
         sys.stdout.flush()
         return self.dfu.file_to_shock({'file_path': fasta_file_path, 'make_handle': 1})
 
@@ -234,7 +234,7 @@ class FastaToAssembly:
         file_path = None
         if 'file' in params:
             if not os.path.isfile(params['file']['path']):
-                raise ValueError('The assembler didn\'t produce any output; the file '+params['file']['path']+' is missing. Please check the logs for details.')
+                raise ValueError('KBase Assembly Utils tried to save an assembly, but the calling application specified a file ('+params['file']['path']+') that is missing. Please check the application logs for details.')
             file_path = os.path.abspath(params['file']['path'])
         elif 'shock_id' in params:
             print('Downloading file from SHOCK node: ' + str(params['shock_id']))
@@ -257,7 +257,7 @@ class FastaToAssembly:
             unpacked_file = self.dfu.unpack_file({'file_path': file_path})
             return unpacked_file['file_path']
 
-        raise ValueError('No valid fasta could be extracted based on the input parameters')
+        raise ValueError('No valid FASTA could be extracted based on the input parameters')
 
 
     def validate_params(self, params):
@@ -272,10 +272,10 @@ class FastaToAssembly:
                 input_count = input_count + 1
                 if key == 'file':
                     if not isinstance(params[key], dict) or 'path' not in params[key]:
-                        raise ValueError('when specifying a fasta file input, "path" field was not defined in "file"')
+                        raise ValueError('when specifying a FASTA file input, "path" field was not defined in "file"')
 
         if input_count == 0:
-            raise ValueError('required fasta file as input, set as either "file", "shock_id", or "ftp_url"')
+            raise ValueError('required FASTA file as input, set as either "file", "shock_id", or "ftp_url"')
         if input_count > 1:
-            raise ValueError('required exactly one fasta file as input source, you set more than one of ' +
+            raise ValueError('required exactly one FASTA file as input source, you set more than one of ' +
                              'these fields: "file", "shock_id", or "ftp_url"')
