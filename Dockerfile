@@ -1,21 +1,9 @@
-FROM kbase/kbase:sdkbase.latest
-MAINTAINER Michael Sneddon (mwsneddon@lbl.gov)
+FROM kbase/sdkbase2:latest
+MAINTAINER KBase Developer
 # -----------------------------------------
 
-RUN pip install coverage
-
-# update security libraries in the base image
-RUN pip install setuptools --upgrade \
-    && pip install cffi --upgrade \
-    && pip install pyopenssl --upgrade \
-    && pip install ndg-httpsclient --upgrade \
-    && pip install pyasn1 --upgrade \
-    && pip install requests --upgrade \
-    && pip install 'requests[security]' --upgrade
-
-# update / install biopython
-RUN pip install --upgrade setuptools pip \
-    && pip install --upgrade biopython==1.66
+# pin biopython version
+RUN pip install --upgrade biopython==1.70
 
 # Copy module files to image
 COPY ./ /kb/module
