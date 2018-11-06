@@ -7,7 +7,7 @@ from collections import Counter
 
 from Bio import SeqIO
 
-from DataFileUtil.DataFileUtilClient import DataFileUtil
+from installed_clients.DataFileUtilClient import DataFileUtil
 import os.path
 
 

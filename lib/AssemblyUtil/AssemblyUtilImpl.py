@@ -25,9 +25,9 @@ class AssemblyUtil:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "1.0.0"
-    GIT_URL = "git@github.com:kbaseapps/AssemblyUtil"
-    GIT_COMMIT_HASH = "b85b2ded513457f384868d0c324dcb7d42952d5b"
+    VERSION = "1.0.7"
+    GIT_URL = "https://github.com/kbaseapps/AssemblyUtil.git"
+    GIT_COMMIT_HASH = "1334ebf6f4ea6e296c18be7c9ba3ba4434bc70d5"
 
     #BEGIN_CLASS_HEADER
 
@@ -128,8 +128,10 @@ class AssemblyUtil:
            mapping from String to type "ExtraContigInfo" (Structure for
            setting additional Contig information per contig is_circ - flag if
            contig is circular, 0 is false, 1 is true, missing indicates
-           unknown) -> structure: parameter "is_circ" of Long, parameter
-           "description" of String
+           unknown description - if set, sets the description of the field in
+           the assembly object which may override what was in the fasta file)
+           -> structure: parameter "is_circ" of Long, parameter "description"
+           of String
         :returns: instance of String
         """
         # ctx is the context object
@@ -146,9 +148,9 @@ class AssemblyUtil:
         #END save_assembly_from_fasta
 
         # At some point might do deeper type checking...
-        if not isinstance(ref, basestring):
+        if not isinstance(ref, str):
             raise ValueError('Method save_assembly_from_fasta return value ' +
-                             'ref is not type basestring as required.')
+                             'ref is not type str as required.')
         # return the results
         return [ref]
     def status(self, ctx):
