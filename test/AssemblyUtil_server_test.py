@@ -1,21 +1,21 @@
-import unittest
 import os
-import time
 import shutil
-
+import time
+import unittest
 from os import environ
-try:
-    from ConfigParser import ConfigParser  # py2
-except:
-    from configparser import ConfigParser  # py3
-
 from pprint import pprint
 
-from biokbase.workspace.client import Workspace as workspaceService
+try:
+    from ConfigParser import ConfigParser  # py2
+except ImportError:
+    from configparser import ConfigParser  # py3
+
+
+from AssemblyUtil.authclient import KBaseAuth as _KBaseAuth
 from AssemblyUtil.AssemblyUtilImpl import AssemblyUtil
 from AssemblyUtil.AssemblyUtilServer import MethodContext
-from DataFileUtil.DataFileUtilClient import DataFileUtil
-from AssemblyUtil.authclient import KBaseAuth as _KBaseAuth
+from installed_clients.DataFileUtilClient import DataFileUtil
+from installed_clients.WorkspaceClient import Workspace as workspaceService
 
 
 class AssemblyUtilTest(unittest.TestCase):
