@@ -15,9 +15,8 @@ class AssemblyToFasta:
         self.scratch = scratch
         self.dfu = DataFileUtil(callback_url)
 
-
     def export_as_fasta(self, ctx, params):
-        ''' Used almost exclusively for download only '''
+        """ Used almost exclusively for download only """
         # validate parameters
         if 'input_ref' not in params:
             raise ValueError('Cannot export Assembly- not input_ref field defined.')
@@ -40,11 +39,11 @@ class AssemblyToFasta:
 
 
     def assembly_as_fasta(self, ctx, params):
-        ''' main function that accepts a ref to an object and writes a file '''
+        """ main function that accepts a ref to an object and writes a file """
 
         self.validate_params(params)
 
-        print('downloading ws object data (' + params['ref'] + ')')
+        print(f'downloading ws object data ({ params["ref"]})')
         assembly_object = self.dfu.get_objects({'object_refs': [params['ref']]})['data'][0]
         ws_type = assembly_object['info'][2]
         obj_name = assembly_object['info'][1]
@@ -67,12 +66,10 @@ class AssemblyToFasta:
                              ').  Supported types are KBaseGenomes.ContigSet and ' +
                              'KBaseGenomeAnnotations.Assembly')
 
-
         return {'path': output_fasta_file_path, 'assembly_name': obj_name}
 
-
     def fasta_rows_generator_from_contigset(self, contig_list):
-        ''' generates SeqRecords iterator for writing from a legacy contigset object '''
+        """ generates SeqRecords iterator for writing from a legacy contigset object """
         for contig in contig_list:
                 description = ''
                 if 'description' in contig and contig['description']:
@@ -81,21 +78,16 @@ class AssemblyToFasta:
                                 id=contig['id'],
                                 description=description)
 
-
     def process_legacy_contigset(self, output_fasta_path, data):
-        ''' '''
         SeqIO.write(self.fasta_rows_generator_from_contigset(data['contigs']),
                     output_fasta_path,
                     "fasta")
 
-
     def process_assembly(self, output_fasta_path, data):
-        ''' '''
         self.dfu.shock_to_file({'handle_id': data['fasta_handle_ref'],
                                 'file_path': output_fasta_path,
                                 'unpack': 'uncompress'
                                 })
-
 
     def validate_params(self, params):
         for key in ['ref']:
