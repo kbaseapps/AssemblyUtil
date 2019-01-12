@@ -4,12 +4,7 @@ import time
 import unittest
 from os import environ
 from pprint import pprint
-
-try:
-    from ConfigParser import ConfigParser  # py2
-except ImportError:
-    from configparser import ConfigParser  # py3
-
+from configparser import ConfigParser
 
 from AssemblyUtil.authclient import KBaseAuth as _KBaseAuth
 from AssemblyUtil.AssemblyUtilImpl import AssemblyUtil
@@ -231,14 +226,14 @@ class AssemblyUtilTest(unittest.TestCase):
         fasta_path = os.path.join(tmp_dir, file_name)
         print('attempting upload')
         ws_obj_name = 'FilteredAssembly'
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaisesRegex(ValueError, 'There are no contigs to save, '
+                                                'thus there is no valid assembly.'):
             assemblyUtil.save_assembly_from_fasta(self.getContext(),
                                                        {'file': {'path': fasta_path},
                                                         'workspace_name': self.getWsName(),
                                                         'assembly_name': ws_obj_name,
                                                         'min_contig_length': 500
                                                         })
-        self.assertEqual('There are no contigs to save, thus there is no valid assembly.', str(context.exception.message))
 
     def test_assembly_does_not_exist(self):
         assemblyUtil = self.getImpl()
@@ -248,11 +243,10 @@ class AssemblyUtilTest(unittest.TestCase):
         fasta_path = tmp_dir + "/" + file_name
         print('attempting upload')
         ws_obj_name = 'FilteredAssembly'
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaisesRegex(ValueError, 'KBase Assembly Utils tried to save an assembly'):
             assemblyUtil.save_assembly_from_fasta(self.getContext(),
                                                        {'file': {'path': fasta_path},
                                                         'workspace_name': self.getWsName(),
                                                         'assembly_name': ws_obj_name,
                                                         'min_contig_length': 500
                                                         })
-        self.assertIn('KBase Assembly Utils tried to save an assembly', str(context.exception.message))
