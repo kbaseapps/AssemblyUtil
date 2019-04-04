@@ -8,13 +8,20 @@ from hashlib import md5
 from Bio import SeqIO
 
 from installed_clients.DataFileUtilClient import DataFileUtil
+from installed_clients.WorkspaceClient import Workspace
+
+
+def sort_dict(dictionary):
+    """Sort a dictionary by dictionary keys. (saves WS the trouble)"""
+    return {k: dictionary[k] for k in sorted(dictionary)}
 
 
 class FastaToAssembly:
 
-    def __init__(self, callback_url, scratch):
+    def __init__(self, callback_url, scratch, ws_url):
         self.scratch = scratch
         self.dfu = DataFileUtil(callback_url)
+        self.ws = Workspace(ws_url)
 
         # Note added X due to kb|g.1886.fasta
         self.valid_chars = "-ACGTUWSMKRYBDHVNX"
@@ -59,14 +66,16 @@ class FastaToAssembly:
         """ construct the WS object data to save based on the parsed info and params """
         assembly_data['assembly_id'] = params['assembly_name']
         assembly_data['fasta_handle_ref'] = fasta_file_handle_info['handle']['hid']
-        assembly_data['fasta_handle_info'] = fasta_file_handle_info
+        fasta_file_handle_info['handle'] = sort_dict(fasta_file_handle_info['handle'])
+        assembly_data['fasta_handle_info'] = sort_dict(fasta_file_handle_info)
 
         assembly_data['type'] = 'Unknown'
         if 'type' in params:
             assembly_data['type'] = params['type']
 
         if 'taxon_ref' in params:
-            assembly_data['taxon_ref'] = params['taxon_ref']
+            info = self.ws.get_object_info3({'objects':[{'ref': params['taxon_ref']}]})['infos'][0]
+            assembly_data['taxon_ref'] = f'{info[6]}/{info[0]}/{info[4]}'
 
         if 'external_source' in params:
             assembly_data['external_source'] = params['external_source']
@@ -77,7 +86,7 @@ class FastaToAssembly:
         if 'external_source_origination_date' in params:
             assembly_data['external_source_origination_date'] = params['external_source_origination_date']
 
-        return assembly_data
+        return sort_dict(assembly_data)
 
     def parse_fasta(self, fasta_file_path, params):
         """ Do the actual work of inspecting each contig """
@@ -153,6 +162,9 @@ class FastaToAssembly:
             if contig_info['contig_id'] in all_contig_data:
                 raise ValueError('The FASTA header key ' + contig_info['contig_id'] +
                                  'appears more than once in the file')
+
+            # 6) sort the contig info so WS does not have to
+            contig_info = {k: contig_info[k] for k in sorted(contig_info)}
             all_contig_data[contig_info['contig_id']] = contig_info
 
         # Aggregate stats for the data
