@@ -173,7 +173,7 @@ class FastaToAssembly:
             total_gc_content = round(float(base_counts['G'] + base_counts['C']) / float(total_length), 5)
         assembly_data = {
             'md5': md5(",".join(sorted(md5_list)).encode()).hexdigest(),
-            'base_counts': base_counts,
+            'base_counts': sort_dict(base_counts),
             'dna_size': total_length,
             'gc_content': total_gc_content,
             'contigs': all_contig_data,
