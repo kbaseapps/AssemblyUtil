@@ -1,3 +1,4 @@
+import json
 import os
 import os.path
 import sys
@@ -163,9 +164,7 @@ class FastaToAssembly:
                 raise ValueError('The FASTA header key ' + contig_info['contig_id'] +
                                  'appears more than once in the file')
 
-            # 6) sort the contig info so WS does not have to
-            contig_info = {k: contig_info[k] for k in sorted(contig_info)}
-            all_contig_data[contig_info['contig_id']] = contig_info
+            all_contig_data[contig_info['contig_id']] = sort_dict(contig_info)
 
         # Aggregate stats for the data
         total_gc_content = None
@@ -176,7 +175,7 @@ class FastaToAssembly:
             'base_counts': sort_dict(base_counts),
             'dna_size': total_length,
             'gc_content': total_gc_content,
-            'contigs': all_contig_data,
+            'contigs': sort_dict(all_contig_data),
             'num_contigs': len(all_contig_data)
         }
         return assembly_data
