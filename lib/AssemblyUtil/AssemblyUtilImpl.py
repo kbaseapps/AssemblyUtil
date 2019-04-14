@@ -39,6 +39,7 @@ class AssemblyUtil:
         #BEGIN_CONSTRUCTOR
         self.sharedFolder = config['scratch']
         self.callback_url = os.environ['SDK_CALLBACK_URL']
+        self.ws_url = config['workspace-url']
         #END_CONSTRUCTOR
         pass
 
@@ -141,9 +142,9 @@ class AssemblyUtil:
         print('save_assembly_from_fasta -- paramaters = ')
         pprint(params)
 
-        fta = FastaToAssembly(self.callback_url, self.sharedFolder)
+        fta = FastaToAssembly(self.callback_url, self.sharedFolder, self.ws_url)
         assembly_info = fta.import_fasta(ctx, params)
-        ref = str(assembly_info[6]) + '/' + str(assembly_info[0]) + '/' + str(assembly_info[4])
+        ref = f'{assembly_info[6]}/{assembly_info[0]}/{assembly_info[4]}'
 
         #END save_assembly_from_fasta
 
