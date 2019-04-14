@@ -12,9 +12,14 @@ from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.WorkspaceClient import Workspace
 
 
-def sort_dict(dictionary):
-    """Sort a dictionary by dictionary keys. (saves WS the trouble)"""
-    return {k: dictionary[k] for k in sorted(dictionary)}
+def sort_dict(in_struct):
+    """Recursively sort a dictionary by dictionary keys. (saves WS the trouble)"""
+    if isinstance(in_struct, dict):
+        return {k: sort_dict(in_struct[k]) for k in sorted(in_struct)}
+    elif isinstance(in_struct, list):
+        return [sort_dict(k) for k in sorted(in_struct)]
+    else:
+        return in_struct
 
 
 class FastaToAssembly:
@@ -51,6 +56,7 @@ class FastaToAssembly:
         assembly_object_to_save = self.build_assembly_object(assembly_data,
                                                              fasta_file_handle_info,
                                                              params)
+        json.dump(assembly_object_to_save, open(self.scratch+"/example.json", 'w'))
 
         # save to WS and return
         if 'workspace_id' in params:
@@ -67,8 +73,8 @@ class FastaToAssembly:
         """ construct the WS object data to save based on the parsed info and params """
         assembly_data['assembly_id'] = params['assembly_name']
         assembly_data['fasta_handle_ref'] = fasta_file_handle_info['handle']['hid']
-        fasta_file_handle_info['handle'] = sort_dict(fasta_file_handle_info['handle'])
-        assembly_data['fasta_handle_info'] = sort_dict(fasta_file_handle_info)
+        fasta_file_handle_info['handle'] = fasta_file_handle_info['handle']
+        assembly_data['fasta_handle_info'] = fasta_file_handle_info
 
         assembly_data['type'] = 'Unknown'
         if 'type' in params:
@@ -164,7 +170,7 @@ class FastaToAssembly:
                 raise ValueError('The FASTA header key ' + contig_info['contig_id'] +
                                  'appears more than once in the file')
 
-            all_contig_data[contig_info['contig_id']] = sort_dict(contig_info)
+            all_contig_data[contig_info['contig_id']] = contig_info
 
         # Aggregate stats for the data
         total_gc_content = None
@@ -172,15 +178,16 @@ class FastaToAssembly:
             total_gc_content = round(float(base_counts['G'] + base_counts['C']) / float(total_length), 5)
         assembly_data = {
             'md5': md5(",".join(sorted(md5_list)).encode()).hexdigest(),
-            'base_counts': sort_dict(base_counts),
+            'base_counts': base_counts,
             'dna_size': total_length,
             'gc_content': total_gc_content,
-            'contigs': sort_dict(all_contig_data),
+            'contigs': all_contig_data,
             'num_contigs': len(all_contig_data)
         }
         return assembly_data
 
-    def fasta_filter_contigs_generator(self, fasta_record_iter, min_contig_length):
+    @staticmethod
+    def fasta_filter_contigs_generator(fasta_record_iter, min_contig_length):
         """ generates SeqRecords iterator for writing from a legacy contigset object """
         rows = 0
         rows_added = 0
@@ -192,7 +199,6 @@ class FastaToAssembly:
         print(f' - filtered out {rows - rows_added} of {rows} contigs that were shorter '
               f'than {(min_contig_length)} bp.')
 
-
     def filter_contigs_by_length(self, fasta_file_path, min_contig_length):
         """ removes all contigs less than the min_contig_length provided """
         filtered_fasta_file_path = fasta_file_path + '.filtered.fa'
@@ -202,7 +208,6 @@ class FastaToAssembly:
                     filtered_fasta_file_path, 'fasta')
 
         return filtered_fasta_file_path
-
 
     def save_assembly_object(self, workspace_id, assembly_name, obj_data):
         print('Saving Assembly to Workspace')
@@ -216,7 +221,6 @@ class FastaToAssembly:
                                                        }]
                                           })[0]
         return obj_info
-
 
     def save_fasta_file_to_shock(self, fasta_file_path):
         """ Given the path to the file, upload to shock and return Handle information
@@ -232,7 +236,6 @@ class FastaToAssembly:
         print(f'Uploading FASTA file ({fasta_file_path}) to SHOCK')
         sys.stdout.flush()
         return self.dfu.file_to_shock({'file_path': fasta_file_path, 'make_handle': 1})
-
 
     def stage_input(self, params):
         """ Setup the input_directory by fetching the files and returning the path to the file"""
