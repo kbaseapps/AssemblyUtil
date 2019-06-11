@@ -27,6 +27,20 @@ module AssemblyUtil {
 
 
     typedef structure {
+        list<string> ref_lst;
+    } GetFASTAParams;
+
+     typedef structure {
+        list<string> FASTA;
+    } GetFASTAOutput;
+
+    /*
+        Given a reference list of KBase objects constructs a local Fasta file with the sequence data for each ref.
+    */
+    funcdef get_fastas(GetFASTAParams params)
+                returns (GetFASTAOutput output) authentication required;
+
+    typedef structure {
         string input_ref;
     } ExportParams;
 
@@ -41,7 +55,6 @@ module AssemblyUtil {
     */
     funcdef export_assembly_as_fasta(ExportParams params)
                 returns (ExportOutput output) authentication required;
-
 
 
     typedef string ShockNodeId;
