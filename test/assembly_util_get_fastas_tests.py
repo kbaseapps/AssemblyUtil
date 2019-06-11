@@ -70,6 +70,9 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         return self.__class__.serviceImpl
 
     def test_metagenome_binned_input(self):
+        """test_metagenome_binned_input tests get_fasta for KBaseMetagenomes.BinnedContigs.
+            From the CCESR16 Contig object and assembly, a KBaseMetagenomes.BinnedContigs is made
+            and it's reference is input into get_fasta."""
 
         # Setup
         path = "data/binnedContigs.json"
@@ -103,11 +106,19 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         ret = self.getImpl().get_fastas(self.callback_url, [binned_obj_ref])
 
     def test_genome_set_input(self):
+        """ test_genome_set_input tests get_fasta for KBaseSets.GenomeSet and KBaseSearch.GenomeSet objects.
+            A genome is saved to the workspace with save_objects and then used to create a GenomeSet.
+            The GenomeSet object consist of a single genome: [genome]
+            First a KBaseSet.GenomeSet object is made and the reference saved. Then the original genome dictionary
+            is modified to fit the type spec of KBaseSearch.GenomeSet; "items" -> "elements"
+            With the genome object correct dictionary, an KBaseSearch.Genome object is made an its reference is saved.
+            Both object references are placed in an array and fed in get_fasta for testing. """
 
         # Setup: copy data file to workspace and get workspace id
         path = "data/TestGenome.json"
         ws_path = '/kb/module/work/tmp'
         shutil.copy2(path, ws_path)
+
         dfu = DataFileUtil(self.callback_url)
         wsName = self.getWsName()
         ws_id = dfu.ws_name_to_id(wsName)
@@ -127,27 +138,28 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         genome_info = genome_obj[0]
         genome_ref = str(genome_info[6]) + '/' + str(genome_info[0]) + '/' + str(genome_info[4])
 
-        # Create genome object info dictionary
+        # GenomeSet info dictionary
         genome_dict.update({"label": "GenomeSetTest", "ref": genome_ref})
 
-        # Create genome set object dictionary
+        # GenomeSet object dictionary
         genome_set_dict.update({"description": " ", "items": [genome_dict]})
 
-        # Create DataFileUtil dictionaries for genome set data
+        # DataFileUtil dictionaries to create GenomeSet object
         dfu_genomeset_dict.update({"type": "KBaseSets.GenomeSet", "data": genome_set_dict,
                                 "name": "Genome_Set_Test"})
         dfu_genomeset_dict_2.update({'id': ws_id, 'objects': [dfu_genomeset_dict]})
 
-        # Lastly, create .GenomeSet object with save_objects and get GenomeSet object reference
+        # Create .GenomeSet object with save_objects and get GenomeSet object reference
         genome_set_obj = dfu.save_objects(dfu_genomeset_dict_2)
         genome_set_info = genome_set_obj[0]
         genome_set_ref = str(genome_set_info[6]) + '/' + str(genome_set_info[0]) + '/' + str(genome_set_info[4])
 
        # Test KBaseSearch.GenomeSet
+       # Change GenomeSet dictionary to KBaseSearch.GenomeSet specifications
         genome_set_dict.pop('items', None)
         genome_set_dict['elements'] = {"Set1" : genome_dict}
 
-        # Create DataFileUtil dictionaries for KBaseSearch.GenomeSet data
+        # DataFileUtil dictionaries to create KBaseSearch.GenomeSet objects
         dfu_genome_search_dict.update({"type": "KBaseSearch.GenomeSet", "data": genome_set_dict,
                                 "name": "Genome_Set_Test_2"})
         dfu_genome_search_dict_2.update({'id': ws_id, 'objects': [dfu_genome_search_dict]})
@@ -157,18 +169,18 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         search_genome_info = search_genome_obj[0]
         search_set_ref = str(search_genome_info[6]) + '/' + str(search_genome_info[0]) + '/' + str(search_genome_info[4])
 
-        # Get FASTAS
+        # Get FASTAS for KBaseSets.GenomeSet and KBaseSearch.GenomeSet references
         ret = self.getImpl().get_fastas(self.callback_url, [genome_set_ref, search_set_ref])
 
     def test_AssemblySet_input(self):
+        """test_AssemblySet_input tests get_fasta for KBaseSets.AssemblySet.
+            From theNC_021490.fasta file, a assembly object is saved to the workspace
+            and KBaseSets.AssemblySet is made.
+            It's reference is then input into get_fasta."""
 
-        # Initiate empty data dictionaries and get data_util
+        # Initiate empty data dictionaries and get workspace ID
         dfu = DataFileUtil(self.callback_url)
-        assembly_dict = dict()
-        assembly_set_dict = dict()
-        dfu_dict = dict()
-        dfu_dict_2 = dict()
-        # Get workspace id and name
+        assembly_dict, assembly_set_dict, dfu_dict, dfu_dict_2 = {}, {}, {}, {}
         wsName = self.getWsName()
         ws_id = dfu.ws_name_to_id(wsName)
 
@@ -177,19 +189,21 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         params = {"file": Fasta_assembly_dict, "workspace_name": wsName, "assembly_name":"test_assembly"}
         ref = self.getImpl().save_assembly_from_fasta(self.ctx, params)
 
-        # Create assembly data dictionaries
+        # Create assembly info dictionarary
         assembly_dict.update({"label":"assemblySetTest", "ref" : ref[0]})
+        # Create assembly object dictionarary
         assembly_set_dict.update({"description": " ", "items" :[assembly_dict]})
-        # Create DataFileUtil dictionaries
+
+        # Create DataFileUtil dictionaries to build AssemblySet object
         dfu_dict.update({"type" : "KBaseSets.AssemblySet", "data": assembly_set_dict,
                          "name": "Assembly_Test"})
         dfu_dict_2.update({'id': ws_id, 'objects': [dfu_dict]})
 
-        # Create assembly set object
+        # Create AssemblySet object and get reference
         assembly_set_obj = dfu.save_objects(dfu_dict_2)
         assembly_set_ref = [str(assembly_set_obj[0][6]) + '/' + str(assembly_set_obj[0][0]) + '/' + str(assembly_set_obj[0][4])]
 
-        # Get FASTA
+        # Get FASTA for AssemblySet object
         ret = self.getImpl().get_fastas(self.callback_url, assembly_set_ref)
 
     def test_genome_input(self):
@@ -200,7 +214,3 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         ref_list = ["27079/3/1", "23594/10/1"]
         ret = self.getImpl().get_fastas(self.callback_url, ref_list)
 
-    @unittest.skip
-    def test_assorted_refs(self):
-        ref_list = ["27079/3/1", "44333/4/1", "27079/2/1"]
-        ret = self.getImpl().get_fastas(self.callback_url, ref_list)

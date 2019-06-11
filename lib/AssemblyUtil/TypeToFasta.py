@@ -19,21 +19,19 @@ class TypeToFasta:
 
     def type_to_fasta(self, ctx, ref_lst):
 
-
-        fasta_dict = dict()
-        fasta_array = []
+        # Initiate objects
+        fasta_dict, fasta_array = dict(), []
         atf = AssemblyToFasta(self.callback_url, self.scratch)
 
         # Get type info for each ref in ref_lst
         for idx, ref in enumerate(ref_lst):
-
+            # Initiate objects and get KBase object type with get_object_info3
             upas = []
             obj = {"ref": ref}
             obj_info = self.ws_url.get_object_info3({"objects": [obj]})
             obj_type = obj_info["infos"][0][2]
 
-
-            # From type info get object
+            # Find type of object and get back KBase object with dfu.get_objects
             if 'KBaseSets.GenomeSet' in obj_type:
                 obj_data = self.dfu.get_objects({"object_refs": [ref]})['data'][0]
                 upas = [gsi['ref'] for gsi in obj_data['data']['items']]
@@ -42,7 +40,7 @@ class TypeToFasta:
                 upas = [gse['ref'] for gse in obj_data['data']['elements'].values()]
             elif "KBaseGenomes.Genome" in obj_type:
                 upas = [ref]
-
+            # If type Assembly, ContigSet or AssemblySet use assembly_as_fasta
             elif "KBaseGenomes.ContigSet" in obj_type or "KBaseGenomeAnnotations.Assembly" in obj_type:
                 faf = [atf.assembly_as_fasta(ctx, obj)]
                 fasta_array.extend([faf[0]['path'], ref])
@@ -68,7 +66,7 @@ class TypeToFasta:
                         fasta_paths.extend([fasta_path, ref])
                     break
                 fasta_array = fasta_paths
-
+            # if statement for genome upa
             if upas:
                 for genome_upa in upas:
                     genome_data = self.ws_url.get_objects2({'objects': [{"ref": genome_upa}]})['data'][0]['data']

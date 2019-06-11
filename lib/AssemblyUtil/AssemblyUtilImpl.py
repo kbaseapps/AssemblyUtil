@@ -74,7 +74,7 @@ class AssemblyUtil:
 
     def get_fastas(self, ctx, params):
         """
-        Given a reference list of KBase objects constructs a local Fasta file with the sequence data for each ref.
+        Given a reference list of KBase object references constructs a local Fasta file with the sequence data for each ref.
         :param params: instance of type "GetFASTAParams" -> structure:
            parameter "ref_lst" of list of String
         :returns: instance of type "GetFASTAOutput" -> structure: parameter
@@ -91,10 +91,8 @@ class AssemblyUtil:
         ws = Workspace(url=self.ws_url)
 
         ttf = TypeToFasta(self.callback_url, self.sharedFolder, ws)
-        fasta = ttf.type_to_fasta(ctx, params)
+        output = ttf.type_to_fasta(ctx, params)
 
-        output = fasta
-        print(output)
 
         #END get_fastas
 
