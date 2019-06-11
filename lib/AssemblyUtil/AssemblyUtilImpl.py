@@ -2,10 +2,11 @@
 #BEGIN_HEADER
 
 import os
-from pprint import pprint
 
 from AssemblyUtil.FastaToAssembly import FastaToAssembly
 from AssemblyUtil.AssemblyToFasta import AssemblyToFasta
+from AssemblyUtil.TypeToFasta import TypeToFasta
+from installed_clients.WorkspaceClient import Workspace
 
 #END_HEADER
 
@@ -25,9 +26,9 @@ class AssemblyUtil:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "1.0.7"
-    GIT_URL = "https://github.com/kbaseapps/AssemblyUtil.git"
-    GIT_COMMIT_HASH = "1334ebf6f4ea6e296c18be7c9ba3ba4434bc70d5"
+    VERSION = "1.1.0"
+    GIT_URL = "https://github.com/CheyenneNS/AssemblyUtil"
+    GIT_COMMIT_HASH = "afd3f360f4fb30143bca41cf58c1977d8ab45e8b"
 
     #BEGIN_CLASS_HEADER
 
@@ -70,6 +71,39 @@ class AssemblyUtil:
                              'file is not type dict as required.')
         # return the results
         return [file]
+
+    def get_fastas(self, ctx, params):
+        """
+        Given a reference list of KBase objects constructs a local Fasta file with the sequence data for each ref.
+        :param params: instance of type "GetFASTAParams" -> structure:
+           parameter "ref_lst" of list of String
+        :returns: instance of type "GetFASTAOutput" -> structure: parameter
+           "FASTA" of list of String
+        """
+        # ctx is the context object
+        # return variables are: output
+        #BEGIN get_fastas
+
+        # Param check
+        if not params:
+            raise ValueError("Must provide reference list.")
+
+        ws = Workspace(url=self.ws_url)
+
+        ttf = TypeToFasta(self.callback_url, self.sharedFolder, ws)
+        fasta = ttf.type_to_fasta(ctx, params)
+
+        output = fasta
+        print(output)
+
+        #END get_fastas
+
+        # At some point might do deeper type checking...
+        if not isinstance(output, dict):
+            raise ValueError('Method get_fastas return value ' +
+                             'output is not type dict as required.')
+        # return the results
+        return [output]
 
     def export_assembly_as_fasta(self, ctx, params):
         """
@@ -140,12 +174,12 @@ class AssemblyUtil:
         #BEGIN save_assembly_from_fasta
 
         print('save_assembly_from_fasta -- paramaters = ')
-        pprint(params)
+        #pprint(params)
 
         fta = FastaToAssembly(self.callback_url, self.sharedFolder, self.ws_url)
         assembly_info = fta.import_fasta(ctx, params)
         ref = f'{assembly_info[6]}/{assembly_info[0]}/{assembly_info[4]}'
-
+        print(ref)
         #END save_assembly_from_fasta
 
         # At some point might do deeper type checking...
