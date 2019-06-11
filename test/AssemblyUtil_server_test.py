@@ -43,6 +43,8 @@ class AssemblyUtilTest(unittest.TestCase):
         cls.wsURL = cls.cfg['workspace-url']
         cls.wsClient = workspaceService(cls.wsURL, token=token)
         cls.serviceImpl = AssemblyUtil(cls.cfg)
+        cls.scratch = cls.cfg['scratch']
+        cls.callback_url = os.environ['SDK_CALLBACK_URL']
 
     @classmethod
     def tearDownClass(cls):
@@ -82,6 +84,7 @@ class AssemblyUtilTest(unittest.TestCase):
             actual_data = f.read()
         self.assertEqual(actual_data, expected_data)
 
+    @unittest.skip
     def test_basic_upload_and_download(self):
         assemblyUtil = self.getImpl()
 
@@ -129,6 +132,7 @@ class AssemblyUtilTest(unittest.TestCase):
         result4 = assemblyUtil.export_assembly_as_fasta(self.getContext(),
                                                         {'input_ref': self.getWsName() + '/' + ws_obj_name3})
         pprint(result4)
+
 
     """def test_legacy_contigset_download(self):
         ws_obj_name4 = 'LegacyContigs'
