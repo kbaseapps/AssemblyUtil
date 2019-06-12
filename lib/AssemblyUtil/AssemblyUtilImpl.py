@@ -93,7 +93,6 @@ class AssemblyUtil:
         ttf = TypeToFasta(self.callback_url, self.sharedFolder, ws)
         output = ttf.type_to_fasta(ctx, params)
 
-
         #END get_fastas
 
         # At some point might do deeper type checking...

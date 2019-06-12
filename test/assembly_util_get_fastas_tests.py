@@ -75,9 +75,9 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
             and it's reference is input into get_fasta."""
 
         # Setup
-        path = "data/binnedContigs.json"
+        path = "data/Metagenome_TestData/binnedContigs.json"
         ws_path = '/kb/module/work/tmp'
-        assembly_path = "data/CCESR16_SPAdes.assembly.fa"
+        assembly_path = "data/Metagenome_TestData/CCESR16_SPAdes.assembly.fa"
         shutil.copy2(path, ws_path)
         shutil.copy2(assembly_path, ws_path)
         dfu = DataFileUtil(self.callback_url)
@@ -115,7 +115,7 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
             Both object references are placed in an array and fed in get_fasta for testing. """
 
         # Setup: copy data file to workspace and get workspace id
-        path = "data/TestGenome.json"
+        path = "data/GenomeSet_TestData/ListeriaMnocytogenes.json"
         ws_path = '/kb/module/work/tmp'
         shutil.copy2(path, ws_path)
 
@@ -183,6 +183,10 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         assembly_dict, assembly_set_dict, dfu_dict, dfu_dict_2 = {}, {}, {}, {}
         wsName = self.getWsName()
         ws_id = dfu.ws_name_to_id(wsName)
+        # Copy data file to workspace
+        path = "data/AssemblySet_TestData/NC_021490.json"
+        ws_path = '/kb/module/work/tmp'
+        shutil.copy2(path, ws_path)
 
         # FASTA to assembly object
         Fasta_assembly_dict = {"path": "/kb/module/work/tmp/NC_021490.fasta", "assembly_name": "test_assembly" }
