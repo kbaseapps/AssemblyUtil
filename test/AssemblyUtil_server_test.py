@@ -86,7 +86,7 @@ class AssemblyUtilTest(unittest.TestCase):
         assemblyUtil = self.getImpl()
 
         tmp_dir = self.__class__.cfg['scratch']
-        file_name = "trimmed.fasta"
+        file_name = "test.fna"
         shutil.copy(os.path.join("data", file_name), tmp_dir)
         fasta_path = os.path.join(tmp_dir, file_name)
         print('attempting upload')
@@ -99,8 +99,6 @@ class AssemblyUtilTest(unittest.TestCase):
                                                         })
         pprint(result)
         self.check_fasta_file(ws_obj_name, fasta_path)
-        return
-
 
         print('attempting upload through shock')
         data_file_cli = DataFileUtil(os.environ['SDK_CALLBACK_URL'])
@@ -130,7 +128,7 @@ class AssemblyUtilTest(unittest.TestCase):
                                                         {'input_ref': self.getWsName() + '/' + ws_obj_name3})
         pprint(result4)
 
-    """def test_legacy_contigset_download(self):
+    def test_legacy_contigset_download(self):
         ws_obj_name4 = 'LegacyContigs'
         contigset_data = {'id': 'contigset',
                           'md5': '5217cb4e8684817ba925ebe125caf54a',
@@ -242,4 +240,4 @@ class AssemblyUtilTest(unittest.TestCase):
                                                         'workspace_name': self.getWsName(),
                                                         'assembly_name': ws_obj_name,
                                                         'min_contig_length': 500
-                                                        })"""
+                                                        })
