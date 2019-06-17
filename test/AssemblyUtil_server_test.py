@@ -84,12 +84,11 @@ class AssemblyUtilTest(unittest.TestCase):
             actual_data = f.read()
         self.assertEqual(actual_data, expected_data)
 
-    @unittest.skip
     def test_basic_upload_and_download(self):
         assemblyUtil = self.getImpl()
 
         tmp_dir = self.__class__.cfg['scratch']
-        file_name = "trimmed.fasta"
+        file_name = "test.fna"
         shutil.copy(os.path.join("data", file_name), tmp_dir)
         fasta_path = os.path.join(tmp_dir, file_name)
         print('attempting upload')

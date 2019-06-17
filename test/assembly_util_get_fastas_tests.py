@@ -46,7 +46,6 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         cls.serviceImpl = AssemblyUtil(cls.cfg)
         cls.scratch = cls.cfg['scratch']
         cls.callback_url = os.environ['SDK_CALLBACK_URL']
-        shutil.copy2('data/NC_021490.fasta', cls.scratch)
 
     @classmethod
     def tearDownClass(cls):
@@ -77,7 +76,7 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         # Setup
         path = "data/Metagenome_TestData/binnedContigs.json"
         ws_path = '/kb/module/work/tmp'
-        assembly_path = "data/Metagenome_TestData/CCESR16_SPAdes.assembly.fa"
+        assembly_path = "data/Metagenome_TestData/SPAdes_Test.assembly.fa"
         shutil.copy2(path, ws_path)
         shutil.copy2(assembly_path, ws_path)
         dfu = DataFileUtil(self.callback_url)
@@ -85,7 +84,7 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         ws_id = dfu.ws_name_to_id(wsName)
 
         # FASTA to assembly object
-        Fasta_assembly_dict = {"path": '/kb/module/work/tmp/CCESR16_SPAdes.assembly.fa', "assembly_name": "meta_assembly"}
+        Fasta_assembly_dict = {"path": '/kb/module/work/tmp/SPAdes_Test.assembly.fa', "assembly_name": "meta_assembly"}
         assembly_params = {"file": Fasta_assembly_dict, "workspace_name": wsName, "assembly_name": "test_assembly"}
         meta_assembly_ref = self.getImpl().save_assembly_from_fasta(self.ctx, assembly_params)[0]
 
@@ -115,7 +114,7 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
             Both object references are placed in an array and fed in get_fasta for testing. """
 
         # Setup: copy data file to workspace and get workspace id
-        path = "data/GenomeSet_TestData/ListeriaMnocytogenes.json"
+        path = "data/GenomeSet_TestData/ListeriaMonocytogenes.json"
         ws_path = '/kb/module/work/tmp'
         shutil.copy2(path, ws_path)
 
@@ -184,7 +183,7 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         wsName = self.getWsName()
         ws_id = dfu.ws_name_to_id(wsName)
         # Copy data file to workspace
-        path = "data/AssemblySet_TestData/NC_021490.json"
+        path = "data/AssemblySet_TestData/NC_021490.fasta"
         ws_path = '/kb/module/work/tmp'
         shutil.copy2(path, ws_path)
 
