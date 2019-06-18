@@ -344,7 +344,7 @@ class Application(object):
         self.method_authentication['AssemblyUtil.get_assembly_as_fasta'] = 'required'  # noqa
         self.rpc_service.add(impl_AssemblyUtil.get_fastas,
                              name='AssemblyUtil.get_fastas',
-                             types=[dict])
+                             types=[list])
         self.method_authentication['AssemblyUtil.get_fastas'] = 'required'  # noqa
         self.rpc_service.add(impl_AssemblyUtil.export_assembly_as_fasta,
                              name='AssemblyUtil.export_assembly_as_fasta',
