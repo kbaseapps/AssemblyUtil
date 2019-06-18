@@ -28,7 +28,7 @@ class AssemblyUtil:
     ######################################### noqa
     VERSION = "1.1.0"
     GIT_URL = "https://github.com/CheyenneNS/AssemblyUtil"
-    GIT_COMMIT_HASH = "afd3f360f4fb30143bca41cf58c1977d8ab45e8b"
+    GIT_COMMIT_HASH = "bf015e631dd59bc5e0d046a46351bd7a1e492639"
 
     #BEGIN_CLASS_HEADER
 
@@ -61,7 +61,7 @@ class AssemblyUtil:
         #BEGIN get_assembly_as_fasta
 
         atf = AssemblyToFasta(self.callback_url, self.sharedFolder)
-        file = atf.assembly_as_fasta(ctx, params)
+        file = atf.assembly_as_fasta(params)
 
         #END get_assembly_as_fasta
 
@@ -72,11 +72,14 @@ class AssemblyUtil:
         # return the results
         return [file]
 
-    def get_fastas(self, ctx, params):
+    def get_fastas(self, ctx, ref_lst):
         """
-        Given a reference list of KBase object references constructs a local Fasta file with the sequence data for each ref.
-        :param params: instance of type "GetFASTAParams" -> structure:
-           parameter "ref_lst" of list of String
+        Given a reference list of KBase objects constructs a local Fasta file with the sequence data for each ref.
+        :param ref_lst: instance of type "KBaseOjbReferences" (Structure for
+           get_fasta function input and output: rKBaseOjbReferences - is an
+           array of KBase object references, such as KBaseGenomes.Genome,
+           KBaseSets.AssemblySet, etc. FASTA - is an array of fasta file
+           paths) -> list of String
         :returns: instance of type "GetFASTAOutput" -> structure: parameter
            "FASTA" of list of String
         """
@@ -85,13 +88,13 @@ class AssemblyUtil:
         #BEGIN get_fastas
 
         # Param check
-        if not params:
+        if not ref_lst:
             raise ValueError("Must provide reference list.")
 
-        ws = Workspace(url=self.ws_url)
+        ws = Workspace(url=self.ws_url, token=ctx["token"])
 
         ttf = TypeToFasta(self.callback_url, self.sharedFolder, ws)
-        output = ttf.type_to_fasta(ctx, params)
+        output = ttf.type_to_fasta(ref_lst)
 
         #END get_fastas
 
@@ -176,7 +179,7 @@ class AssemblyUtil:
         fta = FastaToAssembly(self.callback_url, self.sharedFolder, self.ws_url)
         assembly_info = fta.import_fasta(ctx, params)
         ref = f'{assembly_info[6]}/{assembly_info[0]}/{assembly_info[4]}'
-        print(ref)
+
         #END save_assembly_from_fasta
 
         # At some point might do deeper type checking...

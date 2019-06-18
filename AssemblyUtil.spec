@@ -25,10 +25,13 @@ module AssemblyUtil {
     funcdef get_assembly_as_fasta(GetAssemblyParams params) 
                 returns (FastaAssemblyFile file) authentication required;
 
+    /*
+           Structure for get_fasta function input and output:
+            rKBaseOjbReferences - is an array of KBase object references, such as KBaseGenomes.Genome, KBaseSets.AssemblySet, etc.
+            FASTA - is an array of fasta file paths
+    */
 
-    typedef structure {
-        list<string> ref_lst;
-    } GetFASTAParams;
+    typedef list<string> KBaseOjbReferences;
 
      typedef structure {
         list<string> FASTA;
@@ -36,8 +39,9 @@ module AssemblyUtil {
 
     /*
         Given a reference list of KBase objects constructs a local Fasta file with the sequence data for each ref.
+
     */
-    funcdef get_fastas(GetFASTAParams params)
+    funcdef get_fastas(KBaseOjbReferences ref_lst)
                 returns (GetFASTAOutput output) authentication required;
 
     typedef structure {
