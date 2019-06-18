@@ -39,7 +39,7 @@ class AssemblyToFasta:
 
 
 
-    def assembly_as_fasta(self, ctx, params):
+    def assembly_as_fasta(self, params):
         """ main function that accepts a ref to an object and writes a file """
 
         self.validate_params(params)
