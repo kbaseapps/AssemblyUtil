@@ -45,20 +45,21 @@ class TypeToFasta:
                 upas = [ref]
             # If type Assembly, ContigSet or AssemblySet use assembly_as_fasta
             elif "KBaseGenomes.ContigSet" in obj_type or "KBaseGenomeAnnotations.Assembly" in obj_type:
-                faf = [atf.assembly_as_fasta(obj)]
-                fasta_array.extend([faf[0]['path'], ref])
+                faf = atf.assembly_as_fasta(obj)
+                fasta_array.extend([faf['path'], ref])
 
             elif "KBaseSets.AssemblySet" in obj_type:
 
                 obj_data = self.dfu.get_objects({"object_refs": [ref]})['data'][0]
 
                 for item_upa in obj_data['data']['items']:
-                    faf = [atf.assembly_as_fasta({"ref": item_upa['ref']})]
-                    fasta_array.extend([faf[0]['path'], item_upa['ref']])
+                    faf = atf.assembly_as_fasta({"ref": item_upa['ref']})
+                    fasta_array.extend([faf['path'], item_upa['ref']])
 
             elif 'KBaseMetagenomes.BinnedContigs' in obj_type:
 
-                bin_file_dir = self.mgu.binned_contigs_to_file({'input_ref': ref, 'save_to_shock': 0})['bin_file_directory']
+                bin_file_dir = self.mgu.binned_contigs_to_file({'input_ref': ref, 'save_to_shock': 0}) \
+                    ['bin_file_directory']
                 for (dirpath, dirnames, filenames) in os.walk(bin_file_dir):
                     for fasta_file in filenames:
                         fasta_path = os.path.join(self.scratch, fasta_file)
@@ -71,8 +72,8 @@ class TypeToFasta:
                     assembly_upa = genome_upa + ';' + str(genome_data.get('contigset_ref') \
                                                           or genome_data.get('assembly_ref'))
 
-                    faf = [atf.assembly_as_fasta({'ref': assembly_upa})]
-                    fasta_array.extend([faf[0]['path'], assembly_upa])
+                    faf = atf.assembly_as_fasta({'ref': assembly_upa})
+                    fasta_array.extend([faf['path'], assembly_upa])
 
         # return dictionary of FASTA
         fasta_dict["FASTA"] = fasta_array
