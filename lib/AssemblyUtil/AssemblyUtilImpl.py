@@ -76,8 +76,8 @@ class AssemblyUtil:
         """
         Given a reference list of KBase objects constructs a local Fasta file with the sequence data for each ref.
         :param ref_lst: instance of type "KBaseOjbReferences" (Structure for
-           get_fasta function input and output: rKBaseOjbReferences - is an
-           array of KBase object references, such as KBaseGenomes.Genome,
+           get_fasta function input and output: ref_lst - is an array of
+           KBase object references, such as KBaseGenomes.Genome,
            KBaseSets.AssemblySet, etc. FASTA - is an array of fasta file
            paths) -> list of String
         :returns: instance of type "GetFASTAOutput" -> structure: parameter

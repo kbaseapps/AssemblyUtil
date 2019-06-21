@@ -201,7 +201,7 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         # FASTA to assembly object
         Fasta_assembly_dict = {"path": "/kb/module/work/tmp/NC_021490.fasta", "assembly_name": "test_assembly" }
         params = {"file": Fasta_assembly_dict, "workspace_name": wsName, "assembly_name":"test_assembly"}
-        ref = self.getImpl().save_assembly_from_fasta(self.ctx, params)
+        ref = self.getImpl().save_assembly_from_fasta(ctx, params)
 
         # Create assembly info dictionarary
         assembly_dict.update({"label":"assemblySetTest", "ref" : ref[0]})
