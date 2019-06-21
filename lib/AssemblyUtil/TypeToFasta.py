@@ -21,10 +21,10 @@ class TypeToFasta:
     def log(self, message, prefix_newline=False):
         print(('\n' if prefix_newline else '') + str(_time.time()) + ': ' + message)
 
-    def genome_obj_to_fasta(self, ref, obj_type, fasta_array):
+    def genome_obj_to_fasta(self, ref, obj_type, fasta_dict):
 
-        upas = []
         atf = AssemblyToFasta(self.callback_url, self.scratch)
+        upas = []
 
         if 'KBaseSets.GenomeSet' in obj_type:
             obj_data = self.ws.get_objects2({'objects': [{"ref": ref}]})['data'][0]
@@ -42,18 +42,18 @@ class TypeToFasta:
                                                       or genome_data.get('assembly_ref'))
 
                 faf = atf.assembly_as_fasta({'ref': assembly_upa})
-                fasta_array.extend([faf['path'], assembly_upa])
+                fasta_dict[assembly_upa] = faf['path']
 
-        return fasta_array
+        return fasta_dict
 
-    def assembly_obj_to_fasta(self, ref, obj_type, fasta_array):
+    def assembly_obj_to_fasta(self, ref, obj_type, fasta_dict):
 
         atf = AssemblyToFasta(self.callback_url, self.scratch)
         obj = {"ref": ref}
 
         if "KBaseGenomes.ContigSet" in obj_type or "KBaseGenomeAnnotations.Assembly" in obj_type:
             faf = atf.assembly_as_fasta(obj)
-            fasta_array.extend([faf['path'], ref])
+            fasta_dict[ref] = faf['path']
 
         elif "KBaseSets.AssemblySet" in obj_type:
 
@@ -61,11 +61,11 @@ class TypeToFasta:
 
             for item_upa in obj_data['data']['items']:
                 faf = atf.assembly_as_fasta({"ref": item_upa['ref']})
-                fasta_array.extend([faf['path'], item_upa['ref']])
+                fasta_dict[item_upa['ref']] = faf['path']
 
-        return fasta_array
+        return fasta_dict
 
-    def metagenome_obj_to_fasta(self, ref, obj_type, fasta_array):
+    def metagenome_obj_to_fasta(self, ref, obj_type, fasta_dict):
 
         if 'KBaseMetagenomes.BinnedContigs' in obj_type:
             try:
@@ -75,20 +75,20 @@ class TypeToFasta:
                     for fasta_file in filenames:
                         fasta_path = os.path.join(self.scratch, fasta_file)
                         copyfile(os.path.join(bin_file_dir, fasta_file), fasta_path)
-                        fasta_array.extend([fasta_path, ref])
+                        fasta_dict[ref] = fasta_path
             except _MGUError as mgue:
                 # not really any way to test this block
                 self.log('Logging exception loading binned contigs to file.')
                 self.log(str(mgue))
                 raise
 
-        return fasta_array
+        return fasta_dict
 
     def type_to_fasta(self, ref_lst):
 
 
         # Initiate objects
-        fasta_dict, fasta_array = dict(), []
+        fasta_dict = {}
 
         # Get type info for each ref in ref_lst
         for idx, ref in enumerate(ref_lst):
@@ -97,11 +97,10 @@ class TypeToFasta:
             obj_info = self.ws.get_object_info3({"objects": [{"ref": ref}]})
             obj_type = obj_info["infos"][0][2]
 
-            fasta_array = self.genome_obj_to_fasta(ref, obj_type, fasta_array)
-            fasta_array = self.assembly_obj_to_fasta(ref, obj_type, fasta_array)
-            fasta_array = self.metagenome_obj_to_fasta(ref, obj_type, fasta_array)
+            fasta_dict_genome_obj = self.genome_obj_to_fasta(ref, obj_type, fasta_dict)
+            fasta_dict_assembly_obj = self.assembly_obj_to_fasta(ref, obj_type, fasta_dict_genome_obj)
+            fasta_dict_metagenome_obj = self.metagenome_obj_to_fasta(ref, obj_type, fasta_dict_assembly_obj)
 
-        # return dictionary of FASTA
-        fasta_dict["FASTA"] = fasta_array
-
+            fasta_dict = {**fasta_dict_genome_obj, **fasta_dict_assembly_obj, **fasta_dict_metagenome_obj}
+        print(fasta_dict)
         return fasta_dict
