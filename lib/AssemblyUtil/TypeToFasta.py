@@ -27,7 +27,7 @@ class TypeToFasta:
         upas = []
 
         if 'KBaseSets.GenomeSet' in obj_type:
-            obj_data = self.ws.get_objects2({'objects': [{"ref": ref}]})['data'][0]
+            obj_data = self.ws.get_objects2({'objects': [{"ref": ref, 'included': 'data'}]})[0]
             upas = [gsi['ref'] for gsi in obj_data['data']['items']]
         elif 'KBaseSearch.GenomeSet' in obj_type:
             obj_data = self.ws.get_objects2({'objects': [{"ref": ref}]})['data'][0]
@@ -77,7 +77,6 @@ class TypeToFasta:
                         copyfile(os.path.join(bin_file_dir, fasta_file), fasta_path)
                         fasta_dict[ref] = fasta_path
             except _MGUError as mgue:
-                # not really any way to test this block
                 self.log('Logging exception loading binned contigs to file.')
                 self.log(str(mgue))
                 raise
@@ -102,5 +101,5 @@ class TypeToFasta:
             fasta_dict_metagenome_obj = self.metagenome_obj_to_fasta(ref, obj_type, fasta_dict_assembly_obj)
 
             fasta_dict = {**fasta_dict_genome_obj, **fasta_dict_assembly_obj, **fasta_dict_metagenome_obj}
-        print(fasta_dict)
+        
         return fasta_dict
