@@ -37,15 +37,19 @@ class TypeToFasta:
 
         if upas:
             for genome_upa in upas:
-                genome_data = self.ws.get_objects2({'objects': [{"ref": genome_upa, 'included' : ['/assembly_ref/']}]}) \
-                                ['data'][0]['data']
+                genome_data = self.ws.get_objects2({'objects': \
+                            [{"ref": genome_upa, 'included' : ['/assembly_ref/','/contigset_ref/']}]}) \
+                            ['data'][0]['data']
+
                 if genome_data:
-                    assembly_upa = genome_upa + ';' + str(genome_data.get('assembly_ref'))
+                    assembly_upa = genome_upa + ';' + \
+                                   str(genome_data.get('assembly_ref') or genome_data.get('contigset_ref'))
+
                     faf = atf.assembly_as_fasta({'ref': assembly_upa})
                     fasta_dict[assembly_upa] = {'paths' : faf['path'], 'type': obj_type}
 
                 else:
-                    raise TypeError("KBase object type %s does not contain an assembly reference." % obj_type)
+                    raise TypeError("KBase object type %s does not contain an assembly reference or contig reference." % obj_type)
 
         return fasta_dict
 
@@ -64,6 +68,8 @@ class TypeToFasta:
 
             for item_upa in obj_data['data']['items']:
                 faf = atf.assembly_as_fasta({"ref": item_upa['ref']})
+                print("assmbly print")
+                print(faf['path'])
                 fasta_dict[item_upa['ref']] = {'paths' : faf['path'], 'type' : obj_type}
 
         return fasta_dict
