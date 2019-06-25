@@ -42,7 +42,7 @@ class TypeToFasta:
                 if genome_data:
                     assembly_upa = genome_upa + ';' + str(genome_data.get('assembly_ref'))
                     faf = atf.assembly_as_fasta({'ref': assembly_upa})
-                    fasta_dict[assembly_upa] = faf['path']
+                    fasta_dict[assembly_upa] = {'paths' : faf['path'], 'type': obj_type}
 
                 else:
                     raise TypeError("KBase object type %s does not contain an assembly reference." % obj_type)
@@ -64,7 +64,7 @@ class TypeToFasta:
 
             for item_upa in obj_data['data']['items']:
                 faf = atf.assembly_as_fasta({"ref": item_upa['ref']})
-                fasta_dict[item_upa['ref']] = faf['path']
+                fasta_dict[item_upa['ref']] = {'paths' : faf['path'], 'type' : obj_type}
 
         return fasta_dict
 
@@ -83,7 +83,7 @@ class TypeToFasta:
                         fasta_path = os.path.splitext(fasta_path)[0] + ".fa"
                         copyfile(os.path.join(bin_file_dir, fasta_file), fasta_path)
                         fasta_paths.append(fasta_path)
-                fasta_dict[ref] = fasta_paths
+                fasta_dict[ref] = {'paths' : fasta_paths, 'type': obj_type}
 
             except _MGUError as mgue:
                 self.log('Logging exception loading binned contigs to file.')
@@ -109,5 +109,5 @@ class TypeToFasta:
             fasta_dict_metagenome_obj = self.metagenome_obj_to_fasta(ref, obj_type, fasta_dict_assembly_obj)
 
             fasta_dict = {**fasta_dict_genome_obj, **fasta_dict_assembly_obj, **fasta_dict_metagenome_obj}
-        
+        print(fasta_dict)
         return fasta_dict
