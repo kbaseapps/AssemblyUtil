@@ -82,11 +82,8 @@ class TypeToFasta:
                 bin_file_dir = self.mgu.binned_contigs_to_file({'input_ref': ref, 'save_to_shock': 0}) \
                     ['bin_file_directory']
                 for (dirpath, dirnames, filenames) in os.walk(bin_file_dir):
-
                     for fasta_file in filenames:
-                        # Copy file to scratch
                         fasta_path = os.path.join(self.scratch, fasta_file)
-                        fasta_path = os.path.splitext(fasta_path)[0] + ".fa"
                         copyfile(os.path.join(bin_file_dir, fasta_file), fasta_path)
                         fasta_paths.append(fasta_path)
                 fasta_dict[ref] = {'paths' : fasta_paths, 'type': obj_type}
@@ -115,5 +112,5 @@ class TypeToFasta:
             fasta_dict_metagenome_obj = self.metagenome_obj_to_fasta(ref, obj_type, fasta_dict_assembly_obj)
 
             fasta_dict = {**fasta_dict_genome_obj, **fasta_dict_assembly_obj, **fasta_dict_metagenome_obj}
-        print(fasta_dict)
+        
         return fasta_dict
