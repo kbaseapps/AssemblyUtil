@@ -81,7 +81,7 @@ class AssemblyUtil:
            KBaseSets.AssemblySet, etc. FASTA - is an array of fasta file
            paths) -> list of String
         :returns: instance of type "GetFASTAOutput" -> structure: parameter
-           "FASTA" of list of String
+           "FASTA" instance of Dictionary.
         """
         # ctx is the context object
         # return variables are: output
