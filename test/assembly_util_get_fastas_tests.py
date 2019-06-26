@@ -71,73 +71,13 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
     def getContext(self):
         return self.__class__.ctx
 
-    def test_metagenome_binned_input(self):
-        """test_metagenome_binned_input tests get_fasta for KBaseMetagenomes.BinnedContigs.
-            From the CCESR16 Contig object and assembly, a KBaseMetagenomes.BinnedContigs is made
-            and it's reference is input into get_fasta."""
-
-        # Setup
-        path = "data/Metagenome_TestData/binnedContigs.json"
-        ws_path = '/kb/module/work/tmp'
-        assembly_path = "data/Metagenome_TestData/SPAdes_Test.assembly.fa"
-        shutil.copy2(path, ws_path)
-        shutil.copy2(assembly_path, ws_path)
-        dfu = DataFileUtil(self.callback_url)
-        wsName = self.getWsName()
-        ctx = self.getContext()
-        ws_id = dfu.ws_name_to_id(wsName)
-
-        # FASTA to assembly object
-        Fasta_assembly_dict = {"path": '/kb/module/work/tmp/SPAdes_Test.assembly.fa', "assembly_name": "meta_assembly"}
-        assembly_params = {"file": Fasta_assembly_dict, "workspace_name": wsName, "assembly_name": "test_assembly"}
-        meta_assembly_ref = self.getImpl().save_assembly_from_fasta(ctx, assembly_params)[0]
-
-        # Upload genome, copy genome to workspace folder, & genome data dictionary input
-        meta_data = json.load(open(path))
-        meta_data['assembly_ref'] = meta_assembly_ref
-        meta_dict = [{'name': 'Meta_test',
-                  'type': 'KBaseMetagenomes.BinnedContigs',
-                  'data': meta_data}]
-
-        # Create .Genome object in workspace with save_objects
-        binned_obj = dfu.save_objects({'id': ws_id, 'objects': meta_dict})
-
-        binned_obj_info = binned_obj[0]
-        binned_obj_ref = str(binned_obj_info[6]) + '/' + str(binned_obj_info[0]) + '/' + str(binned_obj_info[4])
-
-        # Get FASTA
-        ret = self.getImpl().get_fastas(ctx, [binned_obj_ref])
-
-    def test_genome_set_input(self):
-        """ test_genome_set_input tests get_fasta for KBaseSets.GenomeSet and KBaseSearch.GenomeSet objects.
-            A genome is saved to the workspace with save_objects and then used to create a GenomeSet.
-            The GenomeSet object consist of a single genome: [genome]
-            First a KBaseSet.GenomeSet object is made and the reference saved. Then the original genome dictionary
-            is modified to fit the type spec of KBaseSearch.GenomeSet; "items" -> "elements"
-            With the genome object correct dictionary, an KBaseSearch.Genome object is made an its reference is saved.
-            Both object references are placed in an array and fed in get_fasta for testing. """
-
-        # Setup: copy data file to workspace and get workspace id
-        path = "data/GenomeSet_TestData/ListeriaMonocytogenes.json"
-        ws_path = '/kb/module/work/tmp'
-        shutil.copy2(path, ws_path)
+    def create_Genome_Obj(self, ws_id, genome_obj):
 
         dfu = DataFileUtil(self.callback_url)
-        wsName = self.getWsName()
-        ws_id = dfu.ws_name_to_id(wsName)
-        ctx = self.getContext()
+        genome_dict = {}
 
-        # Initiate Dictionaries
-        genome_dict, genome_set_dict, dfu_genomeset_dict, dfu_genomeset_dict_2, \
-        dfu_genome_search_dict, dfu_genome_search_dict_2 = {}, {}, {}, {}, {}, {}
-
-        # Upload genome & genome data dictionary input
-        data = json.load(open(path))
-        objs1 = [{'name': 'genome_test',
-                  'type': 'KBaseGenomes.Genome',
-                  'data': data }]
         # Create .Genome object in workspace with save_objects
-        genome_obj = dfu.save_objects({'id': ws_id, 'objects': objs1})
+        genome_obj = dfu.save_objects({'id': ws_id, 'objects': genome_obj})
 
         # Get .Genome object reference
         genome_info = genome_obj[0]
@@ -146,12 +86,19 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         # GenomeSet info dictionary
         genome_dict.update({"label": "GenomeSetTest", "ref": genome_ref})
 
+        return genome_dict
+
+    def create_KBaseSet_GenomeSetObj(self, ws_id, genome_dict):
+
+        dfu = DataFileUtil(self.callback_url)
+        genome_set_dict, dfu_genomeset_dict, dfu_genomeset_dict_2 = {}, {}, {}
+
         # GenomeSet object dictionary
         genome_set_dict.update({"description": " ", "items": [genome_dict]})
 
         # DataFileUtil dictionaries to create GenomeSet object
         dfu_genomeset_dict.update({"type": "KBaseSets.GenomeSet", "data": genome_set_dict,
-                                "name": "Genome_Set_Test"})
+                                   "name": "Genome_Set_Test"})
         dfu_genomeset_dict_2.update({'id': ws_id, 'objects': [dfu_genomeset_dict]})
 
         # Create .GenomeSet object with save_objects and get GenomeSet object reference
@@ -161,25 +108,68 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
                          + str(genome_set_info[0]) + '/' \
                          + str(genome_set_info[4])
 
-       # Test KBaseSearch.GenomeSet
-       # Change GenomeSet dictionary to KBaseSearch.GenomeSet specifications
+        return (genome_set_ref, genome_set_dict)
+
+    def create_KBaseSearch_GenomeSetObj(self, ws_id, genome_dict, genome_set_dict):
+
+        dfu = DataFileUtil(self.callback_url)
+        dfu_genome_search_dict, dfu_genome_search_dict_2 = {}, {}
+
+        # Change GenomeSet dictionary to KBaseSearch.GenomeSet specifications
         genome_set_dict.pop('items', None)
-        genome_set_dict['elements'] = {"Set1" : genome_dict}
+        genome_set_dict['elements'] = {"Set1": genome_dict}
 
         # DataFileUtil dictionaries to create KBaseSearch.GenomeSet objects
         dfu_genome_search_dict.update({"type": "KBaseSearch.GenomeSet", "data": genome_set_dict,
-                                "name": "Genome_Set_Test_2"})
+                                       "name": "Genome_Set_Test_2"})
         dfu_genome_search_dict_2.update({'id': ws_id, 'objects': [dfu_genome_search_dict]})
 
-        # Lastly, create .GenomeSet object with save_objects and get GenomeSet object reference
+        # Create .GenomeSet object with save_objects and get GenomeSet object reference
         search_genome_obj = dfu.save_objects(dfu_genome_search_dict_2)
         search_genome_info = search_genome_obj[0]
         search_set_ref = str(search_genome_info[6]) + '/' \
                          + str(search_genome_info[0]) + '/' \
                          + str(search_genome_info[4])
 
+        return search_set_ref
+
+    def test_genome_set_input(self):
+        """ test_genome_set_input tests get_fasta for KBaseSets.GenomeSet and KBaseSearch.GenomeSet objects.
+            A genome is saved to the workspace with save_objects and then used to create a GenomeSet.
+            The GenomeSet object consists of a single genome: [genome]
+            First a KBaseSet.GenomeSet object is made and the reference saved. Then the original genome dictionary
+            is modified to fit the type spec of KBaseSearch.GenomeSet; "items" -> "elements"
+            With the genome object correct dictionary, an KBaseSearch.Genome object is made an its reference is saved.
+            Both object references are placed in an array and fed in get_fasta for testing. """
+
+        # Setup: copy data file to workspace and get workspace id
+        dfu = DataFileUtil(self.callback_url)
+        wsName = self.getWsName()
+        ws_id = dfu.ws_name_to_id(wsName)
+        ctx = self.getContext()
+
+        path = "data/GenomeSet_TestData/ListeriaMonocytogenes.json"
+        ws_path = '/kb/module/work/tmp'
+        shutil.copy2(path, ws_path)
+
+        # Upload genome & genome data dictionary input
+        data = json.load(open(path))
+        genome_obj = [{'name': 'genome_test',
+                  'type': 'KBaseGenomes.Genome',
+                  'data': data}]
+
+        # Create Genome object from json file
+        genome_data_dict = self.create_Genome_Obj(ws_id, genome_obj)
+        # Create KBaseSets.GenomeSet object and ref
+        GenomeSet_tuple = self.create_KBaseSet_GenomeSetObj(ws_id, genome_data_dict)
+        # Seperate ref and dictionary from genomeset data tuple
+        GenomeSet_ref = GenomeSet_tuple[0]
+        GenomeSet_dict = GenomeSet_tuple[1]
+        # Create KBaseSearch.GenomeSet object
+        KB_Search_GenomeSet_ref = self.create_KBaseSearch_GenomeSetObj(ws_id, genome_data_dict, GenomeSet_dict)
+
         # Get FASTAS for KBaseSets.GenomeSet and KBaseSearch.GenomeSet references
-        ret = self.getImpl().get_fastas(ctx, [genome_set_ref, search_set_ref])
+        ret = self.getImpl().get_fastas(ctx, [GenomeSet_ref, KB_Search_GenomeSet_ref])
 
     def test_AssemblySet_input(self):
         """test_AssemblySet_input tests get_fasta for KBaseSets.AssemblySet.
@@ -221,6 +211,43 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
 
         # Get FASTA for AssemblySet object
         ret = self.getImpl().get_fastas(ctx, assembly_set_ref)
+
+    def test_metagenome_binned_input(self):
+        """test_metagenome_binned_input tests get_fasta for KBaseMetagenomes.BinnedContigs.
+            From the CCESR16 Contig object and assembly, a KBaseMetagenomes.BinnedContigs is made
+            and it's reference is input into get_fasta."""
+
+        # Setup & copy data file to workspace
+        path = "data/Metagenome_TestData/binnedContigs.json"
+        ws_path = '/kb/module/work/tmp'
+        assembly_path = "data/Metagenome_TestData/SPAdes_Test.assembly.fa"
+        shutil.copy2(path, ws_path)
+        shutil.copy2(assembly_path, ws_path)
+        dfu = DataFileUtil(self.callback_url)
+        wsName = self.getWsName()
+        ctx = self.getContext()
+        ws_id = dfu.ws_name_to_id(wsName)
+
+        # FASTA to assembly object
+        Fasta_assembly_dict = {"path": '/kb/module/work/tmp/SPAdes_Test.assembly.fa', "assembly_name": "meta_assembly"}
+        assembly_params = {"file": Fasta_assembly_dict, "workspace_name": wsName, "assembly_name": "test_assembly"}
+        meta_assembly_ref = self.getImpl().save_assembly_from_fasta(ctx, assembly_params)[0]
+
+        # Upload genome, copy genome to workspace folder, & genome data dictionary input
+        meta_data = json.load(open(path))
+        meta_data['assembly_ref'] = meta_assembly_ref
+        meta_dict = [{'name': 'Meta_test',
+                      'type': 'KBaseMetagenomes.BinnedContigs',
+                      'data': meta_data}]
+
+        # Create .Genome object in workspace with save_objects
+        binned_obj = dfu.save_objects({'id': ws_id, 'objects': meta_dict})
+
+        binned_obj_info = binned_obj[0]
+        binned_obj_ref = str(binned_obj_info[6]) + '/' + str(binned_obj_info[0]) + '/' + str(binned_obj_info[4])
+
+        # Get FASTA
+        ret = self.getImpl().get_fastas(ctx, [binned_obj_ref])
 
     def test_genome_input(self):
         ref_list = ["27079/16/1"]
