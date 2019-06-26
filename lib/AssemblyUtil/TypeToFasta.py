@@ -52,7 +52,7 @@ class TypeToFasta:
 
                     faf = atf.assembly_as_fasta({'ref': assembly_upa})
                     # Input data into object dict
-                    fasta_dict[assembly_upa] = {'paths' : faf['path'], 'type': obj_type}
+                    fasta_dict[assembly_upa] = {'paths' : faf['path'], 'type': obj_type, 'parent_ref': ref}
 
                 else:
                     raise TypeError("KBase object type %s does not contain an assembly reference or contig reference." % obj_type)
@@ -77,7 +77,7 @@ class TypeToFasta:
                 # Get fasta
                 faf = atf.assembly_as_fasta({"ref": item_upa['ref']})
                 # Input data into object dict
-                fasta_dict[item_upa['ref']] = {'paths' : faf['path'], 'type' : obj_type}
+                fasta_dict[item_upa['ref']] = {'paths' : faf['path'], 'type' : obj_type, 'parent_ref': ref}
 
         return fasta_dict
 
