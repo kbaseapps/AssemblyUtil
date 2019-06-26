@@ -23,6 +23,7 @@ class TypeToFasta:
 
     def genome_obj_to_fasta(self, ref, obj_type, fasta_dict):
 
+        # Initiate needed objects
         atf = AssemblyToFasta(self.callback_url, self.scratch)
         upas = []
 
@@ -37,15 +38,20 @@ class TypeToFasta:
 
         if upas:
             for genome_upa in upas:
+                # Get genome object assembly_ref or contigset_ref through subsetting object
                 genome_data = self.ws.get_objects2({'objects': \
                             [{"ref": genome_upa, 'included' : ['/assembly_ref/','/contigset_ref/']}]}) \
                             ['data'][0]['data']
 
+                # If genome object contains an assembly_ref or contigset_ref it will return a dictionary, genome_data.
+                # If not an empty dictionary will be returned
                 if genome_data:
+                    # Get assembly_upa and fasta
                     assembly_upa = genome_upa + ';' + \
                                    str(genome_data.get('assembly_ref') or genome_data.get('contigset_ref'))
 
                     faf = atf.assembly_as_fasta({'ref': assembly_upa})
+                    # Input data into object dict
                     fasta_dict[assembly_upa] = {'paths' : faf['path'], 'type': obj_type}
 
                 else:
@@ -55,21 +61,22 @@ class TypeToFasta:
 
     def assembly_obj_to_fasta(self, ref, obj_type, fasta_dict):
 
+        # Initiate needed objects
         atf = AssemblyToFasta(self.callback_url, self.scratch)
         obj = {"ref": ref}
 
         if "KBaseGenomes.ContigSet" in obj_type or "KBaseGenomeAnnotations.Assembly" in obj_type:
+            # Get fasta
             faf = atf.assembly_as_fasta(obj)
             fasta_dict[ref] = faf['path']
 
         elif "KBaseSets.AssemblySet" in obj_type:
-
+            # Get assembly set object
             obj_data = self.ws.get_objects2({'objects': [{"ref": ref}]})['data'][0]
-
             for item_upa in obj_data['data']['items']:
+                # Get fasta
                 faf = atf.assembly_as_fasta({"ref": item_upa['ref']})
-                print("assmbly print")
-                print(faf['path'])
+                # Input data into object dict
                 fasta_dict[item_upa['ref']] = {'paths' : faf['path'], 'type' : obj_type}
 
         return fasta_dict
@@ -79,15 +86,21 @@ class TypeToFasta:
         if 'KBaseMetagenomes.BinnedContigs' in obj_type:
             fasta_paths = []
             try:
+                # Binned_contigs_to_file saves fasta file to a directory in scratch.
+                # Path: scratch/binned_contig_files_EXTENSION/Bin#.fasta
                 bin_file_dir = self.mgu.binned_contigs_to_file({'input_ref': ref, 'save_to_shock': 0}) \
                     ['bin_file_directory']
                 for (dirpath, dirnames, filenames) in os.walk(bin_file_dir):
                     for fasta_file in filenames:
+                        # For fasta file in the binned contigs directory, copy fasta directly to scratch
+                        # New path: scratch/Bin#.fasta
                         fasta_path = os.path.join(self.scratch, fasta_file)
                         copyfile(os.path.join(bin_file_dir, fasta_file), fasta_path)
                         fasta_paths.append(fasta_path)
+                # Input data into object dict
                 fasta_dict[ref] = {'paths' : fasta_paths, 'type': obj_type}
 
+            # Catch MetagenomeUtil Error
             except _MGUError as mgue:
                 self.log('Logging exception loading binned contigs to file.')
                 self.log(str(mgue))
@@ -96,21 +109,26 @@ class TypeToFasta:
         return fasta_dict
 
     def type_to_fasta(self, ref_lst):
+        """type_to_fasta takes in a list of KBase objects references. The object type of each reference
+        is checked in functions: assembly_obj_to_fasta, metagenome_obj_to_fasta, and genome_obj_to_fasta. Depending
+        on the type of KBase object input a fasta file is made through one of the functions mentioned above
+        and a fasta object dictionary is created with structure
+        : {ref: {'path' : fasta_paths, 'type': object type} } """
 
         # Initiate objects
         fasta_dict = {}
 
         # Get type info for each ref in ref_lst
         for idx, ref in enumerate(ref_lst):
-            # Initiate objects and get KBase object type with get_object_info3
 
+            # Get KBase object type with get_object_info3
             obj_info = self.ws.get_object_info3({"objects": [{"ref": ref}]})
             obj_type = obj_info["infos"][0][2]
-
+            # Put object in object specific fasta dictionary by type
             fasta_dict_genome_obj = self.genome_obj_to_fasta(ref, obj_type, fasta_dict)
             fasta_dict_assembly_obj = self.assembly_obj_to_fasta(ref, obj_type, fasta_dict_genome_obj)
             fasta_dict_metagenome_obj = self.metagenome_obj_to_fasta(ref, obj_type, fasta_dict_assembly_obj)
-
+            # Append all individual object dictionaries to complete fasta dictionary for reference list
             fasta_dict = {**fasta_dict_genome_obj, **fasta_dict_assembly_obj, **fasta_dict_metagenome_obj}
         
         return fasta_dict
