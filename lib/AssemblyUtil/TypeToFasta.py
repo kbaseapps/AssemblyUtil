@@ -112,8 +112,11 @@ class TypeToFasta:
         """type_to_fasta takes in a list of KBase objects references. The object type of each reference
         is checked in functions: assembly_obj_to_fasta, metagenome_obj_to_fasta, and genome_obj_to_fasta. Depending
         on the type of KBase object input a fasta file is made through one of the functions mentioned above
-        and a fasta object dictionary is created with structure
-        : {ref: {'path' : fasta_paths, 'type': object type} } """
+        and a fasta object dictionary is created with structure: {ref: {'path' : fasta_paths, 'type': object type} }
+        for objects of type AssemblySet and GenomeSet a parent ref key-value pair is added such that the structure is:
+        {ref: {'path' : fasta_paths, 'type': object type, 'parent_ref': ref} } """
+
+
 
         # Initiate objects
         fasta_dict = {}
