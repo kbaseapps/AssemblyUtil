@@ -55,13 +55,12 @@ module AssemblyUtil {
         list<string> paths;
         ref parent_ref;
         string type;
-    } get_fastas_output_value;
-
+    } ref_fastas;
     /*
         Given a reference list of KBase objects constructs a local Fasta file with the sequence data for each ref.
     */
     funcdef get_fastas(KBaseOjbReferences params)
-                returns (mapping<ref, get_fastas_output_value> output) authentication required;
+                returns (mapping<ref, ref_fastas> output) authentication required;
 
     typedef structure {
         string input_ref;
