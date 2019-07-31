@@ -133,6 +133,23 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
 
         return search_set_ref
 
+    def _assert_inputs(self, ret, ref_lst):
+        """assert that all the input references appear in the output"""
+        refs = []
+        for ref, value in ret.items():
+            if value.get('parent_refs'):
+                refs += value['parent_refs']
+            else:
+                refs.append(ref)
+        self.assertCountEqual(refs, ref_lst)
+
+    def _assert_outputs(self, ret):
+        """assert """
+        for ref, value in ret.items()
+            for path in value['paths']:
+                self.assertTrue(os.path.isfile(path))
+            self.assertTrue('type' in value)
+
     def test_genome_set_input(self):
         """ test_genome_set_input tests get_fasta for KBaseSets.GenomeSet and KBaseSearch.GenomeSet objects.
             A genome is saved to the workspace with save_objects and then used to create a GenomeSet.
@@ -171,13 +188,8 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         # Get FASTAS for KBaseSets.GenomeSet and KBaseSearch.GenomeSet references
 
         ret = self.getImpl().get_fastas(ctx, {"ref_lst": [GenomeSet_ref, KB_Search_GenomeSet_ref]})[0]
-        refs = []
-        for ref, value in ret.items():
-            if value.get('parent_refs'):
-                refs += value['parent_refs']
-            else:
-                refs.append(ref)
-        self.assertCountEqual(refs, [GenomeSet_ref, KB_Search_GenomeSet_ref])
+        self._assert_inputs(ret, [GenomeSet_ref, KB_Search_GenomeSet_ref])
+        self._assert_outputs(ret)
 
     def test_AssemblySet_input(self):
         """test_AssemblySet_input tests get_fasta for KBaseSets.AssemblySet.
@@ -219,13 +231,8 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
 
         # Get FASTA for AssemblySet object
         ret = self.getImpl().get_fastas(ctx, {"ref_lst": assembly_set_ref})[0]
-        refs = []
-        for ref, value in ret.items():
-            if value.get('parent_refs'):
-                refs += value['parent_refs']
-            else:
-                refs.append(ref)
-        self.assertCountEqual(refs, assembly_set_ref)
+        self._assert_inputs(ret, assembly_set_ref)
+        self._assert_outputs(ret)
 
     def test_metagenome_binned_input(self):
         """test_metagenome_binned_input tests get_fasta for KBaseMetagenomes.BinnedContigs.
@@ -263,33 +270,17 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
 
         # Get FASTA
         ret = self.getImpl().get_fastas(ctx, {"ref_lst": [binned_obj_ref]})[0]
-        refs = []
-        for ref, value in ret.items():
-            if value.get('parent_refs'):
-                refs += value['parent_refs']
-            else:
-                refs.append(ref)
-        self.assertCountEqual(refs, [binned_obj_ref])
+        self._assert_inputs(ret, [binned_obj_ref])
+        self._assert_outputs(ret)
 
     def test_genome_input(self):
         ref_list = {"ref_lst": ["27079/16/1"]}
         ret = self.getImpl().get_fastas(self.getContext(), ref_list)[0]
-        refs = []
-        for ref, value in ret.items():
-            if value.get('parent_ref'):
-                refs.append(value['parent_ref'])
-            else:
-                refs.append(ref)
-        self.assertCountEqual(refs, ref_list)
-
+        self._assert_inputs(ret, ref_list)
+        self._assert_outputs(ret)
 
     def test_annotations_assembly_input(self):
         ref_list = {"ref_lst": ["27079/3/1", "23594/10/1"]}
         ret = self.getImpl().get_fastas(self.getContext(), ref_list)[0]
-        refs = []
-        for ref, value in ret.items():
-            if value.get('parent_ref'):
-                refs += value['parent_refs']
-            else:
-                refs.append(ref)
-        self.assertCountEqual(refs, ref_list)
+        self._assert_inputs(ret, ref_list)
+        self._assert_outputs(ret)

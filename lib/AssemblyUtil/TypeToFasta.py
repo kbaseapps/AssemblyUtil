@@ -20,7 +20,7 @@ class TypeToFasta:
         self.fasta_dict = {}
 
     def log(self, message, prefix_newline=False):
-        print(('\n' if prefix_newline else '') + str(_time.time()) + ': ' + message)   
+        print(('\n' if prefix_newline else '') + str(_time.time()) + ': ' + message)
 
     def add_to_dict(self, key, val):
         if key in self.fasta_dict:
@@ -62,7 +62,6 @@ class TypeToFasta:
                     faf = atf.assembly_as_fasta({'ref': assembly_upa})
                     # Input data into object dict
                     self.add_to_dict(assembly_upa, {'paths' : faf['path'], 'type': obj_type, 'parent_refs': [ref]})
-                    # self.fasta_dict[assembly_upa] = {'paths' : faf['path'], 'type': obj_type, 'parent_refs': [ref]}
 
                 else:
                     raise TypeError("KBase object type %s does not contain an assembly reference or contig reference." % obj_type)
@@ -77,7 +76,6 @@ class TypeToFasta:
             # Get fasta
             faf = atf.assembly_as_fasta(obj)
             self.add_to_dict(ref, {'paths': faf['path'], 'type': obj_type, 'parent_refs': [ref]})
-            # self.fasta_dict[ref] = {'paths': faf['path'], 'type': obj_type, 'parent_refs': [ref]}
 
         elif "KBaseSets.AssemblySet" in obj_type:
             # Get assembly set object
@@ -87,7 +85,6 @@ class TypeToFasta:
                 faf = atf.assembly_as_fasta({"ref": item_upa['ref']})
                 # Input data into object dict
                 self.add_to_dict(item_upa['ref'], {'paths' : faf['path'], 'type' : obj_type, 'parent_refs': [ref]})
-                # self.fasta_dict[item_upa['ref']] = {'paths' : faf['path'], 'type' : obj_type, 'parent_refs': [ref]}
 
     def metagenome_obj_to_fasta(self, ref, obj_type):
 
@@ -107,7 +104,6 @@ class TypeToFasta:
                         fasta_paths.append(fasta_path)
                 # Input data into object dict
                 self.add_to_dict(ref, {'paths' : fasta_paths, 'type': obj_type})
-                # self.fasta_dict[ref] = {'paths' : fasta_paths, 'type': obj_type}
 
             # Catch MetagenomeUtil Error
             except _MGUError as mgue:
