@@ -68,11 +68,11 @@ class TypeToFasta:
         if "KBaseGenomes.ContigSet" in obj_type or "KBaseGenomeAnnotations.Assembly" in obj_type:
             # Get fasta
             faf = atf.assembly_as_fasta(obj)
-            fasta_dict[ref] = faf['path']
+            fasta_dict[ref] = {'paths': faf['path'], 'type': obj_type, 'parent_ref': ref}
 
         elif "KBaseSets.AssemblySet" in obj_type:
             # Get assembly set object
-            obj_data = self.ws.get_objects2({'objects': [{"ref": ref}]})['data'][0]
+            obj_data = self.ws.get_objects2({'objects': [obj]})['data'][0]
             for item_upa in obj_data['data']['items']:
                 # Get fasta
                 faf = atf.assembly_as_fasta({"ref": item_upa['ref']})
@@ -113,8 +113,14 @@ class TypeToFasta:
         is checked in functions: assembly_obj_to_fasta, metagenome_obj_to_fasta, and genome_obj_to_fasta. Depending
         on the type of KBase object input a fasta file is made through one of the functions mentioned above
         and a fasta object dictionary is created with structure: {ref: {'path' : fasta_paths, 'type': object type} }
+
         for objects of type AssemblySet and GenomeSet a parent ref key-value pair is added such that the structure is:
-        {ref: {'path' : fasta_paths, 'type': object type, 'parent_ref': ref} } """
+        {ref: {'path' : fasta_paths, 'type': object type, 'parent_ref': ref} }
+
+        for objects of type KBaseMetagenomes.BinnedContigs a unique fasta path is made for each bin in binnedContigs
+        Thus the output structure is: {ref: {'paths' : [fasta_contigbin1, fasta_contigbin2], 'type': object type} }
+
+        where the key 'paths' points to an array of fasta paths for each contig bin in ascending order. """
 
 
 
@@ -133,5 +139,5 @@ class TypeToFasta:
             fasta_dict_metagenome_obj = self.metagenome_obj_to_fasta(ref, obj_type, fasta_dict_assembly_obj)
             # Append all individual object dictionaries to complete fasta dictionary for reference list
             fasta_dict = {**fasta_dict_genome_obj, **fasta_dict_assembly_obj, **fasta_dict_metagenome_obj}
-        
+
         return fasta_dict
