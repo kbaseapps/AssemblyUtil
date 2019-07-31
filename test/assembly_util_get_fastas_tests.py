@@ -171,24 +171,12 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         # Get FASTAS for KBaseSets.GenomeSet and KBaseSearch.GenomeSet references
 
         ret = self.getImpl().get_fastas(ctx, {"ref_lst": [GenomeSet_ref, KB_Search_GenomeSet_ref]})[0]
-        print('='*80)
-        print('='*80)
-        print('='*80)
-        print("inputs")
-        print(GenomeSet_ref, KB_Search_GenomeSet_ref)
-        print('-'*80)
-        print("genomeset")
-        print(ret)
-        print('='*80)
-        print('='*80)
-        print('='*80)
-        self.assertEqual(len(ret), len([GenomeSet_ref, KB_Search_GenomeSet_ref]))
         refs = []
         for ref, value in ret.items():
-            if value.get('parent_ref'):
-                refs.add(value['parent_ref'])
+            if value.get('parent_refs'):
+                refs += value['parent_refs']
             else:
-                refs.add(ref)
+                refs.append(ref)
         self.assertCountEqual(refs, [GenomeSet_ref, KB_Search_GenomeSet_ref])
 
     def test_AssemblySet_input(self):
@@ -231,21 +219,12 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
 
         # Get FASTA for AssemblySet object
         ret = self.getImpl().get_fastas(ctx, {"ref_lst": assembly_set_ref})[0]
-        print('='*80)
-        print('='*80)
-        print('='*80)
-        print("assemblyset")
-        print(ret)
-        print('='*80)
-        print('='*80)
-        print('='*80)
-        self.assertEqual(len(ret), len(assembly_set_ref))
         refs = []
         for ref, value in ret.items():
-            if value.get('parent_ref'):
-                refs.add(value['parent_ref'])
+            if value.get('parent_refs'):
+                refs += value['parent_refs']
             else:
-                refs.add(ref)
+                refs.append(ref)
         self.assertCountEqual(refs, assembly_set_ref)
 
     def test_metagenome_binned_input(self):
@@ -284,52 +263,33 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
 
         # Get FASTA
         ret = self.getImpl().get_fastas(ctx, {"ref_lst": [binned_obj_ref]})[0]
-        print('='*80)
-        print('='*80)
-        print('='*80)
-        print("binned_obj")
-        print(ret)
-        print('='*80)
-        print('='*80)
-        print('='*80)
-        self.assertEqual(len(ret), len([binned_obj_ref]))
         refs = []
         for ref, value in ret.items():
-            if value.get('parent_ref'):
-                refs.add(value['parent_ref'])
+            if value.get('parent_refs'):
+                refs += value['parent_refs']
             else:
-                refs.add(ref)
+                refs.append(ref)
         self.assertCountEqual(refs, [binned_obj_ref])
 
     def test_genome_input(self):
         ref_list = {"ref_lst": ["27079/16/1"]}
         ret = self.getImpl().get_fastas(self.getContext(), ref_list)[0]
-        self.assertEqual(len(ret), len(ref_list))
         refs = []
         for ref, value in ret.items():
             if value.get('parent_ref'):
-                refs.add(value['parent_ref'])
+                refs.append(value['parent_ref'])
             else:
-                refs.add(ref)
+                refs.append(ref)
         self.assertCountEqual(refs, ref_list)
 
 
     def test_annotations_assembly_input(self):
         ref_list = {"ref_lst": ["27079/3/1", "23594/10/1"]}
         ret = self.getImpl().get_fastas(self.getContext(), ref_list)[0]
-        print('='*80)
-        print('='*80)
-        print('='*80)
-        print("--THIS IS THE IMPORTANT ONE--")
-        print(ret)
-        print('='*80)
-        print('='*80)
-        print('='*80)
-        self.assertEqual(len(ret), len(ref_list))
         refs = []
         for ref, value in ret.items():
             if value.get('parent_ref'):
-                refs.add(value['parent_ref'])
+                refs += value['parent_refs']
             else:
-                refs.add(ref)
+                refs.append(ref)
         self.assertCountEqual(refs, ref_list)

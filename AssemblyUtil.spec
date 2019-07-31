@@ -42,7 +42,7 @@ module AssemblyUtil {
         get_fastas_output_value
             paths - list of paths to fasta files associated with workspace object.
             type - workspace object type
-            parent_ref - (optional) associated workspace object reference if different than the output key
+            parent_refs - (optional) associated workspace object references if different from the output key
     */
 
     typedef string ref;
@@ -53,7 +53,7 @@ module AssemblyUtil {
 
     typedef structure {
         list<string> paths;
-        ref parent_ref;
+        list<ref> parent_refs;
         string type;
     } ref_fastas;
     /*
