@@ -26,23 +26,42 @@ module AssemblyUtil {
                 returns (FastaAssemblyFile file) authentication required;
 
     /*
-           Structure for get_fasta function input and output:
-            rKBaseOjbReferences - is an array of KBase object references, such as KBaseGenomes.Genome, KBaseSets.AssemblySet, etc.
-            FASTA - is an array of fasta file paths
+        Structure for get_fasta function input and output:
+            rKBaseOjbReferences - is an object wrapperd array of KBase object references, which can be of 
+            the following types:
+                - KBaseGenomes.Genome
+                - KBaseSets.AssemblySet
+                - KBaseMetagenome.BinnedContigs
+                - KBaseGenomes.ContigSet
+                - KBaseGenomeAnnotations.Assembly
+                - KBaseSearch.GenomeSet
+                - KBaseSets.GenomeSet
+
+        ref - workspace reference.
+
+        get_fastas_output_value
+            paths - list of paths to fasta files associated with workspace object.
+            type - workspace object type
+            parent_ref - (optional) associated workspace object reference if different than the output key
     */
 
-    typedef list<string> KBaseOjbReferences;
+    typedef string ref;
 
-     typedef structure {
-        list<string> FASTA;
-    } GetFASTAOutput;
+    typedef structure {
+        list<ref> ref_lst;
+    } KBaseOjbReferences;
+
+    typedef structure {
+        list<string> paths;
+        ref parent_ref;
+        string type;
+    } get_fastas_output_value;
 
     /*
         Given a reference list of KBase objects constructs a local Fasta file with the sequence data for each ref.
-
     */
-    funcdef get_fastas(KBaseOjbReferences ref_lst)
-                returns (GetFASTAOutput output) authentication required;
+    funcdef get_fastas(KBaseOjbReferences params)
+                returns (mapping<ref, get_fastas_output_value> output) authentication required;
 
     typedef structure {
         string input_ref;

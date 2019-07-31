@@ -26,9 +26,9 @@ class AssemblyUtil:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "1.1.0"
-    GIT_URL = "https://github.com/CheyenneNS/AssemblyUtil"
-    GIT_COMMIT_HASH = "bf015e631dd59bc5e0d046a46351bd7a1e492639"
+    VERSION = "1.2.1"
+    GIT_URL = "https://github.com/CheyenneNS/AssemblyUtil.git"
+    GIT_COMMIT_HASH = "b75b34db6c923f76dcff72c5f40e0f119028c936"
 
     #BEGIN_CLASS_HEADER
 
@@ -72,24 +72,56 @@ class AssemblyUtil:
         # return the results
         return [file]
 
-    def get_fastas(self, ctx, ref_lst):
+    def get_fastas(self, ctx, params):
         """
         Given a reference list of KBase objects constructs a local Fasta file with the sequence data for each ref.
-        :param ref_lst: instance of type "KBaseOjbReferences" (Structure for
-           get_fasta function input and output: ref_lst - is an array of
-           KBase object references, such as KBaseGenomes.Genome,
-           KBaseSets.AssemblySet, etc. FASTA - is an array of fasta file
-           paths) -> list of String
-        :returns: instance of type "GetFASTAOutput" -> structure: parameter
-           "FASTA" instance of Dictionary.
+        :param params: instance of type "KBaseOjbReferences" -> structure:
+           parameter "ref_lst" of list of type "ref" (Structure for get_fasta
+           function input and output: rKBaseOjbReferences - is an object
+           wrapperd array of KBase object references, which can be of the
+           following types: - KBaseGenomes.Genome - KBaseSets.AssemblySet -
+           KBaseMetagenome.BinnedContigs - KBaseGenomes.ContigSet -
+           KBaseGenomeAnnotations.Assembly - KBaseSearch.GenomeSet -
+           KBaseSets.GenomeSet ref - workspace reference.
+           get_fastas_output_value paths - list of paths to fasta files
+           associated with workspace object. type - workspace object type
+           parent_ref - (optional) associated workspace object reference if
+           different than the output key)
+        :returns: instance of mapping from type "ref" (Structure for
+           get_fasta function input and output: rKBaseOjbReferences - is an
+           object wrapperd array of KBase object references, which can be of
+           the following types: - KBaseGenomes.Genome - KBaseSets.AssemblySet
+           - KBaseMetagenome.BinnedContigs - KBaseGenomes.ContigSet -
+           KBaseGenomeAnnotations.Assembly - KBaseSearch.GenomeSet -
+           KBaseSets.GenomeSet ref - workspace reference.
+           get_fastas_output_value paths - list of paths to fasta files
+           associated with workspace object. type - workspace object type
+           parent_ref - (optional) associated workspace object reference if
+           different than the output key) to type "get_fastas_output_value"
+           -> structure: parameter "paths" of list of String, parameter
+           "parent_ref" of type "ref" (Structure for get_fasta function input
+           and output: rKBaseOjbReferences - is an object wrapperd array of
+           KBase object references, which can be of the following types: -
+           KBaseGenomes.Genome - KBaseSets.AssemblySet -
+           KBaseMetagenome.BinnedContigs - KBaseGenomes.ContigSet -
+           KBaseGenomeAnnotations.Assembly - KBaseSearch.GenomeSet -
+           KBaseSets.GenomeSet ref - workspace reference.
+           get_fastas_output_value paths - list of paths to fasta files
+           associated with workspace object. type - workspace object type
+           parent_ref - (optional) associated workspace object reference if
+           different than the output key), parameter "type" of String
         """
         # ctx is the context object
         # return variables are: output
         #BEGIN get_fastas
 
         # Param check
-        if not ref_lst:
-            raise ValueError("Must provide reference list.")
+        if not params:
+            raise ValueError("Must provide params.")
+        if not params.get("ref_lst"):
+            raise ValueError("Must provice list of references")
+
+        ref_lst = params.get("ref_lst")
 
         ws = Workspace(url=self.ws_url, token=ctx["token"])
 
