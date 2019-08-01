@@ -25,26 +25,41 @@ module AssemblyUtil {
     funcdef get_assembly_as_fasta(GetAssemblyParams params) 
                 returns (FastaAssemblyFile file) authentication required;
 
-    typedef list<string> KBaseOjbReferences;
+    /*
+        Structure for get_fasta function input and output:
+            rKBaseOjbReferences - is an object wrapperd array of KBase object references, which can be of 
+            the following types:
+                - KBaseGenomes.Genome
+                - KBaseSets.AssemblySet
+                - KBaseMetagenome.BinnedContigs
+                - KBaseGenomes.ContigSet
+                - KBaseGenomeAnnotations.Assembly
+                - KBaseSearch.GenomeSet
+                - KBaseSets.GenomeSet
+
+        ref - workspace reference.
+
+        get_fastas_output_value
+            paths - list of paths to fasta files associated with workspace object.
+            type - workspace object type
+            parent_refs - (optional) associated workspace object references if different from the output key
+    */
 
     typedef string ref;
 
     typedef structure {
+        list<ref> ref_lst;
+    } KBaseOjbReferences;
+
+    typedef structure {
         list<string> paths;
-        ref parent_ref;
+        list<ref> parent_refs;
         string type;
     } ref_fastas;
     /*
-        Given a reference list of KBase objects returns a dictionary
-        with the object reference 'ref' as the key for the following dictionary objects:
-
-        path - FASTA file path
-        type - workspace object type
-        parent_ref - (optional) associated workspace object reference if different than the output key
-        paths - list of paths to fasta files associated with workspace object.
-
+        Given a reference list of KBase objects constructs a local Fasta file with the sequence data for each ref.
     */
-    funcdef get_fastas(KBaseOjbReferences ref_lst)
+    funcdef get_fastas(KBaseOjbReferences params)
                 returns (mapping<ref, ref_fastas> output) authentication required;
 
     typedef structure {
