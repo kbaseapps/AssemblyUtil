@@ -12,11 +12,11 @@ from shutil import copyfile
 
 class TypeToFasta:
 
-    def __init__(self, callback_url, scratch, wrkspc):
+    def __init__(self, callback_url, scratch, wrkspc, token):
         self.ws = wrkspc
         self.scratch = scratch
         self.callback_url = callback_url
-        self.mgu = MetagenomeUtils(callback_url)
+        self.mgu = MetagenomeUtils(callback_url, token=token)
         self.fasta_dict = {}
 
     def log(self, message, prefix_newline=False):
@@ -61,7 +61,7 @@ class TypeToFasta:
 
                     faf = atf.assembly_as_fasta({'ref': assembly_upa})
                     # Input data into object dict
-                    self.add_to_dict(assembly_upa, {'paths' : faf['path'], 'type': obj_type, 'parent_refs': [ref]})
+                    self.add_to_dict(assembly_upa, {'paths' : [faf['path']], 'type': obj_type, 'parent_refs': [ref]})
 
                 else:
                     raise TypeError("KBase object type %s does not contain an assembly reference or contig reference." % obj_type)
@@ -75,7 +75,7 @@ class TypeToFasta:
         if "KBaseGenomes.ContigSet" in obj_type or "KBaseGenomeAnnotations.Assembly" in obj_type:
             # Get fasta
             faf = atf.assembly_as_fasta(obj)
-            self.add_to_dict(ref, {'paths': faf['path'], 'type': obj_type, 'parent_refs': [ref]})
+            self.add_to_dict(ref, {'paths': [faf['path']], 'type': obj_type, 'parent_refs': [ref]})
 
         elif "KBaseSets.AssemblySet" in obj_type:
             # Get assembly set object
@@ -84,7 +84,7 @@ class TypeToFasta:
                 # Get fasta
                 faf = atf.assembly_as_fasta({"ref": item_upa['ref']})
                 # Input data into object dict
-                self.add_to_dict(item_upa['ref'], {'paths' : faf['path'], 'type' : obj_type, 'parent_refs': [ref]})
+                self.add_to_dict(item_upa['ref'], {'paths' : [faf['path']], 'type' : obj_type, 'parent_refs': [ref]})
 
     def metagenome_obj_to_fasta(self, ref, obj_type):
 
@@ -118,7 +118,7 @@ class TypeToFasta:
         and a fasta object dictionary is created with structure: {ref: {'path' : fasta_paths, 'type': object type} }
 
         for objects of type AssemblySet and GenomeSet a parent ref key-value pair is added such that the structure is:
-        {ref: {'path' : fasta_paths, 'type': object type, 'parent_refs': ref} }
+        {ref: {'path' : fasta_paths, 'type': object type, 'parent_refs': [ref]} }
 
         for objects of type KBaseMetagenomes.BinnedContigs a unique fasta path is made for each bin in binnedContigs
         Thus the output structure is: {ref: {'paths' : [fasta_contigbin1, fasta_contigbin2], 'type': object type} }
