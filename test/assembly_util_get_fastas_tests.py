@@ -7,9 +7,7 @@ import shutil
 from configparser import ConfigParser
 
 from AssemblyUtil.AssemblyUtilImpl import AssemblyUtil
-from AssemblyUtil.FastaToAssembly import FastaToAssembly
 from installed_clients.DataFileUtilClient import DataFileUtil
-from installed_clients.GenomeFileUtilClient import GenomeFileUtil
 from AssemblyUtil.AssemblyUtilServer import MethodContext
 from AssemblyUtil.authclient import KBaseAuth as _KBaseAuth
 
@@ -46,6 +44,7 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         cls.serviceImpl = AssemblyUtil(cls.cfg)
         cls.scratch = cls.cfg['scratch']
         cls.callback_url = os.environ['SDK_CALLBACK_URL']
+        cls.dfu = DataFileUtil(os.environ['SDK_CALLBACK_URL'])
 
     @classmethod
     def tearDownClass(cls):
@@ -73,11 +72,10 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
 
     def create_Genome_Obj(self, ws_id, genome_obj):
 
-        dfu = DataFileUtil(self.callback_url)
         genome_dict = {}
 
         # Create .Genome object in workspace with save_objects
-        genome_obj = dfu.save_objects({'id': ws_id, 'objects': genome_obj})
+        genome_obj = self.dfu.save_objects({'id': ws_id, 'objects': genome_obj})
 
         # Get .Genome object reference
         genome_info = genome_obj[0]
@@ -90,7 +88,6 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
 
     def create_KBaseSet_GenomeSetObj(self, ws_id, genome_dict):
 
-        dfu = DataFileUtil(self.callback_url)
         genome_set_dict, dfu_genomeset_dict, dfu_genomeset_dict_2 = {}, {}, {}
 
         # GenomeSet object dictionary
@@ -102,7 +99,7 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         dfu_genomeset_dict_2.update({'id': ws_id, 'objects': [dfu_genomeset_dict]})
 
         # Create .GenomeSet object with save_objects and get GenomeSet object reference
-        genome_set_obj = dfu.save_objects(dfu_genomeset_dict_2)
+        genome_set_obj = self.dfu.save_objects(dfu_genomeset_dict_2)
         genome_set_info = genome_set_obj[0]
         genome_set_ref = str(genome_set_info[6]) + '/' \
                          + str(genome_set_info[0]) + '/' \
@@ -112,7 +109,6 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
 
     def create_KBaseSearch_GenomeSetObj(self, ws_id, genome_dict, genome_set_dict):
 
-        dfu = DataFileUtil(self.callback_url)
         dfu_genome_search_dict, dfu_genome_search_dict_2 = {}, {}
 
         # Change GenomeSet dictionary to KBaseSearch.GenomeSet specifications
@@ -125,7 +121,7 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         dfu_genome_search_dict_2.update({'id': ws_id, 'objects': [dfu_genome_search_dict]})
 
         # Create .GenomeSet object with save_objects and get GenomeSet object reference
-        search_genome_obj = dfu.save_objects(dfu_genome_search_dict_2)
+        search_genome_obj = self.dfu.save_objects(dfu_genome_search_dict_2)
         search_genome_info = search_genome_obj[0]
         search_set_ref = str(search_genome_info[6]) + '/' \
                          + str(search_genome_info[0]) + '/' \
@@ -145,7 +141,7 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
 
     def _assert_outputs(self, ret):
         """assert """
-        for ref, value in ret.items()
+        for ref, value in ret.items():
             for path in value['paths']:
                 self.assertTrue(os.path.isfile(path))
             self.assertTrue('type' in value)
@@ -160,9 +156,8 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
             Both object references are placed in an array and fed in get_fasta for testing. """
 
         # Setup: copy data file to workspace and get workspace id
-        dfu = DataFileUtil(self.callback_url)
         wsName = self.getWsName()
-        ws_id = dfu.ws_name_to_id(wsName)
+        ws_id = self.dfu.ws_name_to_id(wsName)
         ctx = self.getContext()
 
         path = "data/GenomeSet_TestData/ListeriaMonocytogenes.json"
@@ -198,11 +193,10 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
             It's reference is then input into get_fasta."""
 
         # Initiate empty data dictionaries and get workspace ID
-        dfu = DataFileUtil(self.callback_url)
         assembly_dict, assembly_set_dict, dfu_dict, dfu_dict_2 = {}, {}, {}, {}
         wsName = self.getWsName()
         ctx = self.getContext()
-        ws_id = dfu.ws_name_to_id(wsName)
+        ws_id = self.dfu.ws_name_to_id(wsName)
         # Copy data file to workspace
         path = "data/AssemblySet_TestData/NC_021490.fasta"
         ws_path = '/kb/module/work/tmp'
@@ -224,7 +218,7 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         dfu_dict_2.update({'id': ws_id, 'objects': [dfu_dict]})
 
         # Create AssemblySet object and get reference
-        assembly_set_obj = dfu.save_objects(dfu_dict_2)
+        assembly_set_obj = self.dfu.save_objects(dfu_dict_2)
         assembly_set_ref = [str(assembly_set_obj[0][6]) + '/' \
                             + str(assembly_set_obj[0][0]) + '/' \
                             + str(assembly_set_obj[0][4])]
@@ -245,10 +239,9 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         assembly_path = "data/Metagenome_TestData/SPAdes_Test.assembly.fa"
         shutil.copy2(path, ws_path)
         shutil.copy2(assembly_path, ws_path)
-        dfu = DataFileUtil(self.callback_url)
         wsName = self.getWsName()
         ctx = self.getContext()
-        ws_id = dfu.ws_name_to_id(wsName)
+        ws_id = self.dfu.ws_name_to_id(wsName)
 
         # FASTA to assembly object
         Fasta_assembly_dict = {"path": '/kb/module/work/tmp/SPAdes_Test.assembly.fa', "assembly_name": "meta_assembly"}
@@ -263,7 +256,7 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
                       'data': meta_data}]
 
         # Create .Genome object in workspace with save_objects
-        binned_obj = dfu.save_objects({'id': ws_id, 'objects': meta_dict})
+        binned_obj = self.dfu.save_objects({'id': ws_id, 'objects': meta_dict})
 
         binned_obj_info = binned_obj[0]
         binned_obj_ref = str(binned_obj_info[6]) + '/' + str(binned_obj_info[0]) + '/' + str(binned_obj_info[4])

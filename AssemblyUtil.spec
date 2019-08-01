@@ -26,9 +26,11 @@ module AssemblyUtil {
                 returns (FastaAssemblyFile file) authentication required;
 
     /*
-        Structure for get_fasta function input and output:
-            rKBaseOjbReferences - is an object wrapperd array of KBase object references, which can be of 
-            the following types:
+
+        ref: workspace reference.
+
+        KBaseOjbReferences:
+            ref_lst: is an object wrapped array of KBase object references, which can be of the following types:
                 - KBaseGenomes.Genome
                 - KBaseSets.AssemblySet
                 - KBaseMetagenome.BinnedContigs
@@ -37,12 +39,10 @@ module AssemblyUtil {
                 - KBaseSearch.GenomeSet
                 - KBaseSets.GenomeSet
 
-        ref - workspace reference.
-
-        get_fastas_output_value
+        ref_fastas
             paths - list of paths to fasta files associated with workspace object.
             type - workspace object type
-            parent_refs - (optional) associated workspace object references if different from the output key
+            parent_refs - (optional) list of associated workspace object references if different from the output key
     */
 
     typedef string ref;

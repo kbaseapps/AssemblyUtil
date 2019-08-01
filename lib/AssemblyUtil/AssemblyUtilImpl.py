@@ -119,13 +119,13 @@ class AssemblyUtil:
         if not params:
             raise ValueError("Must provide params.")
         if not params.get("ref_lst"):
-            raise ValueError("Must provice list of references")
+            raise ValueError("Must provice list of references 'ref_lst'")
 
         ref_lst = params.get("ref_lst")
 
         ws = Workspace(url=self.ws_url, token=ctx["token"])
 
-        ttf = TypeToFasta(self.callback_url, self.sharedFolder, ws)
+        ttf = TypeToFasta(self.callback_url, self.sharedFolder, ws, ctx["token"])
         output = ttf.type_to_fasta(ref_lst)
 
         #END get_fastas
