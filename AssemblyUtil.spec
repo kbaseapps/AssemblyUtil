@@ -25,6 +25,42 @@ module AssemblyUtil {
     funcdef get_assembly_as_fasta(GetAssemblyParams params) 
                 returns (FastaAssemblyFile file) authentication required;
 
+    /*
+
+        ref: workspace reference.
+
+        KBaseOjbReferences:
+            ref_lst: is an object wrapped array of KBase object references, which can be of the following types:
+                - KBaseGenomes.Genome
+                - KBaseSets.AssemblySet
+                - KBaseMetagenome.BinnedContigs
+                - KBaseGenomes.ContigSet
+                - KBaseGenomeAnnotations.Assembly
+                - KBaseSearch.GenomeSet
+                - KBaseSets.GenomeSet
+
+        ref_fastas
+            paths - list of paths to fasta files associated with workspace object.
+            type - workspace object type
+            parent_refs - (optional) list of associated workspace object references if different from the output key
+    */
+
+    typedef string ref;
+
+    typedef structure {
+        list<ref> ref_lst;
+    } KBaseOjbReferences;
+
+    typedef structure {
+        list<string> paths;
+        list<ref> parent_refs;
+        string type;
+    } ref_fastas;
+    /*
+        Given a reference list of KBase objects constructs a local Fasta file with the sequence data for each ref.
+    */
+    funcdef get_fastas(KBaseOjbReferences params)
+                returns (mapping<ref, ref_fastas> output) authentication required;
 
     typedef structure {
         string input_ref;
@@ -41,7 +77,6 @@ module AssemblyUtil {
     */
     funcdef export_assembly_as_fasta(ExportParams params)
                 returns (ExportOutput output) authentication required;
-
 
 
     typedef string ShockNodeId;

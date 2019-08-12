@@ -15,6 +15,7 @@ class AssemblyToFasta:
         self.scratch = scratch
         self.dfu = DataFileUtil(callback_url)
 
+
     def export_as_fasta(self, ctx, params):
         """ Used almost exclusively for download only """
         # validate parameters
@@ -38,7 +39,7 @@ class AssemblyToFasta:
 
 
 
-    def assembly_as_fasta(self, ctx, params):
+    def assembly_as_fasta(self, params):
         """ main function that accepts a ref to an object and writes a file """
 
         self.validate_params(params)
