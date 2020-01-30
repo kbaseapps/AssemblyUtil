@@ -111,6 +111,12 @@ class TypeToFasta:
                 self.log(str(mgue))
                 raise
 
+        if 'KBaseMetagenomes.AnnotatedMetagenomeAssembly' in obj_type:
+            ret = self.ws.get_objects2({'objects': [{'ref': ref, 'included': ['assembly_ref', 'info']}]})['data'][0]
+            assembly_obj_type = ret['info'][2]
+            assembly_ref = ret['data']['assembly_ref']
+            self.assembly_obj_to_fasta(assembly_ref, assembly_obj_type)
+
     def type_to_fasta(self, ref_lst):
         """type_to_fasta takes in a list of KBase objects references. The object type of each reference
         is checked in functions: assembly_obj_to_fasta, metagenome_obj_to_fasta, and genome_obj_to_fasta. Depending
