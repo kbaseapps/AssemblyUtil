@@ -67,7 +67,7 @@ class TypeToFasta:
                     raise TypeError("KBase object type %s does not contain an assembly reference or contig reference." % obj_type)
 
 
-    def assembly_obj_to_fasta(self, ref, obj_type):
+    def assembly_obj_to_fasta(self, ref, obj_type, input_ref=None, input_type=None):
         # Initiate needed objects
         atf = AssemblyToFasta(self.callback_url, self.scratch)
         obj = {"ref": ref}
@@ -75,7 +75,10 @@ class TypeToFasta:
         if "KBaseGenomes.ContigSet" in obj_type or "KBaseGenomeAnnotations.Assembly" in obj_type:
             # Get fasta
             faf = atf.assembly_as_fasta(obj)
-            self.add_to_dict(ref, {'paths': [faf['path']], 'type': obj_type, 'parent_refs': [ref]})
+            if input_ref and input_type:
+                self.add_to_dict(input_ref, {'paths': [faf['path']], 'type': input_type, 'parent_refs': [input_ref, ref]})
+            else:
+                self.add_to_dict(ref, {'paths': [faf['path']], 'type': obj_type, 'parent_refs': [ref]})
 
         elif "KBaseSets.AssemblySet" in obj_type:
             # Get assembly set object
@@ -115,7 +118,7 @@ class TypeToFasta:
             ret = self.ws.get_objects2({'objects': [{'ref': ref, 'included': ['assembly_ref', 'info']}]})['data'][0]
             assembly_obj_type = ret['info'][2]
             assembly_ref = ret['data']['assembly_ref']
-            self.assembly_obj_to_fasta(assembly_ref, assembly_obj_type)
+            self.assembly_obj_to_fasta(assembly_ref, assembly_obj_type, input_ref=ref, input_type=obj_type)
 
     def type_to_fasta(self, ref_lst):
         """type_to_fasta takes in a list of KBase objects references. The object type of each reference
