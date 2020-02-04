@@ -84,6 +84,7 @@ class AssemblyUtilTest(unittest.TestCase):
             actual_data = f.read()
         self.assertEqual(actual_data, expected_data)
 
+    # @unittest.skip('x')
     def test_basic_upload_and_download(self):
         assemblyUtil = self.getImpl()
 
