@@ -115,9 +115,9 @@ class TypeToFasta:
                 raise
 
         if 'KBaseMetagenomes.AnnotatedMetagenomeAssembly' in obj_type:
-            ret = self.ws.get_objects2({'objects': [{'ref': ref, 'included': ['assembly_ref', 'info']}]})['data'][0]
-            assembly_obj_type = ret['info'][2]
+            ret = self.ws.get_objects2({'objects': [{'ref': ref, 'included': ['assembly_ref']}]})['data'][0]
             assembly_ref = ret['data']['assembly_ref']
+            assembly_obj_type = self.ws.get_object_info3({'objects': [{'ref': assembly_ref}]})['infos'][0][2]
             self.assembly_obj_to_fasta(assembly_ref, assembly_obj_type, input_ref=ref, input_type=obj_type)
 
     def type_to_fasta(self, ref_lst):
