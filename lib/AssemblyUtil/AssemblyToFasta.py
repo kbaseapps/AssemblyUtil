@@ -16,14 +16,14 @@ class AssemblyToFasta:
         self.dfu = DataFileUtil(callback_url)
 
 
-    def export_as_fasta(self, ctx, params):
+    def export_as_fasta(self, params):
         """ Used almost exclusively for download only """
         # validate parameters
         if 'input_ref' not in params:
             raise ValueError('Cannot export Assembly- not input_ref field defined.')
 
         # export to a file
-        file = self.assembly_as_fasta(ctx, {'ref': params['input_ref']})
+        file = self.assembly_as_fasta({'ref': params['input_ref']})
 
         # create the output directory and move the file there
         export_package_dir = os.path.join(self.scratch, file['assembly_name'])

@@ -102,8 +102,6 @@ class AssemblyUtilTest(unittest.TestCase):
                                                         })
         pprint(result)
         self.check_fasta_file(ws_obj_name, fasta_path)
-        return
-
 
         print('attempting upload through shock')
         data_file_cli = DataFileUtil(os.environ['SDK_CALLBACK_URL'])

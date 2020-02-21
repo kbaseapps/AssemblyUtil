@@ -152,7 +152,7 @@ class AssemblyUtil:
         #BEGIN export_assembly_as_fasta
 
         atf = AssemblyToFasta(self.callback_url, self.sharedFolder)
-        output = atf.export_as_fasta(ctx, params)
+        output = atf.export_as_fasta(params)
 
         #END export_assembly_as_fasta
 
