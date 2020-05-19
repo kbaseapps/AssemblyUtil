@@ -11,5 +11,3 @@ Provides tooling for interacting with sequence assembly data in KBase.
 | develop  | [![Build Status](https://travis-ci.org/kbaseapps/AssemblyUtil.svg?branch=develop)](https://travis-ci.org/kbaseapps/AssemblyUtil)  | [![Coverage Status](https://coveralls.io/repos/github/kbaseapps/AssemblyUtil/badge.svg?branch=develop)](https://coveralls.io/github/kbaseapps/AssemblyUtil?branch=develop)  |  |
 
 
-
-
