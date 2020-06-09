@@ -26,9 +26,9 @@ class AssemblyUtil:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "1.2.1"
-    GIT_URL = "https://github.com/CheyenneNS/AssemblyUtil.git"
-    GIT_COMMIT_HASH = "b75b34db6c923f76dcff72c5f40e0f119028c936"
+    VERSION = "1.2.3"
+    GIT_URL = "git@github.com:kbaseapps/AssemblyUtil.git"
+    GIT_COMMIT_HASH = "56ea7818e13cc38dadd74e52d4377070a488d74c"
 
     #BEGIN_CLASS_HEADER
 
@@ -76,40 +76,38 @@ class AssemblyUtil:
         """
         Given a reference list of KBase objects constructs a local Fasta file with the sequence data for each ref.
         :param params: instance of type "KBaseOjbReferences" -> structure:
-           parameter "ref_lst" of list of type "ref" (Structure for get_fasta
-           function input and output: rKBaseOjbReferences - is an object
-           wrapperd array of KBase object references, which can be of the
-           following types: - KBaseGenomes.Genome - KBaseSets.AssemblySet -
-           KBaseMetagenome.BinnedContigs - KBaseGenomes.ContigSet -
-           KBaseGenomeAnnotations.Assembly - KBaseSearch.GenomeSet -
-           KBaseSets.GenomeSet ref - workspace reference.
-           get_fastas_output_value paths - list of paths to fasta files
-           associated with workspace object. type - workspace object type
-           parent_ref - (optional) associated workspace object reference if
-           different than the output key)
-        :returns: instance of mapping from type "ref" (Structure for
-           get_fasta function input and output: rKBaseOjbReferences - is an
-           object wrapperd array of KBase object references, which can be of
-           the following types: - KBaseGenomes.Genome - KBaseSets.AssemblySet
-           - KBaseMetagenome.BinnedContigs - KBaseGenomes.ContigSet -
-           KBaseGenomeAnnotations.Assembly - KBaseSearch.GenomeSet -
-           KBaseSets.GenomeSet ref - workspace reference.
-           get_fastas_output_value paths - list of paths to fasta files
-           associated with workspace object. type - workspace object type
-           parent_ref - (optional) associated workspace object reference if
-           different than the output key) to type "get_fastas_output_value"
-           -> structure: parameter "paths" of list of String, parameter
-           "parent_ref" of type "ref" (Structure for get_fasta function input
-           and output: rKBaseOjbReferences - is an object wrapperd array of
-           KBase object references, which can be of the following types: -
+           parameter "ref_lst" of list of type "ref" (ref: workspace
+           reference. KBaseOjbReferences: ref_lst: is an object wrapped array
+           of KBase object references, which can be of the following types: -
            KBaseGenomes.Genome - KBaseSets.AssemblySet -
            KBaseMetagenome.BinnedContigs - KBaseGenomes.ContigSet -
            KBaseGenomeAnnotations.Assembly - KBaseSearch.GenomeSet -
-           KBaseSets.GenomeSet ref - workspace reference.
-           get_fastas_output_value paths - list of paths to fasta files
-           associated with workspace object. type - workspace object type
-           parent_ref - (optional) associated workspace object reference if
-           different than the output key), parameter "type" of String
+           KBaseSets.GenomeSet ref_fastas paths - list of paths to fasta
+           files associated with workspace object. type - workspace object
+           type parent_refs - (optional) list of associated workspace object
+           references if different from the output key)
+        :returns: instance of mapping from type "ref" (ref: workspace
+           reference. KBaseOjbReferences: ref_lst: is an object wrapped array
+           of KBase object references, which can be of the following types: -
+           KBaseGenomes.Genome - KBaseSets.AssemblySet -
+           KBaseMetagenome.BinnedContigs - KBaseGenomes.ContigSet -
+           KBaseGenomeAnnotations.Assembly - KBaseSearch.GenomeSet -
+           KBaseSets.GenomeSet ref_fastas paths - list of paths to fasta
+           files associated with workspace object. type - workspace object
+           type parent_refs - (optional) list of associated workspace object
+           references if different from the output key) to type "ref_fastas"
+           -> structure: parameter "paths" of list of String, parameter
+           "parent_refs" of list of type "ref" (ref: workspace reference.
+           KBaseOjbReferences: ref_lst: is an object wrapped array of KBase
+           object references, which can be of the following types: -
+           KBaseGenomes.Genome - KBaseSets.AssemblySet -
+           KBaseMetagenome.BinnedContigs - KBaseGenomes.ContigSet -
+           KBaseGenomeAnnotations.Assembly - KBaseSearch.GenomeSet -
+           KBaseSets.GenomeSet ref_fastas paths - list of paths to fasta
+           files associated with workspace object. type - workspace object
+           type parent_refs - (optional) list of associated workspace object
+           references if different from the output key), parameter "type" of
+           String
         """
         # ctx is the context object
         # return variables are: output
