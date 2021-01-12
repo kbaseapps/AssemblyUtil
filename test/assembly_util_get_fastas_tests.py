@@ -287,7 +287,13 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
     # @unittest.skip('skip')
     def test_annotations_assembly_input(self):
         # NOTE: One or more of these workspaces is not public. Cannot test.
-        ref_list = {"ref_lst": ["23594/10/1"]}
+        if 'appdev' in self.wsURL:
+            print("Using appdev")
+            assembly_ref = "23594/10/1"
+        if 'ci' in self.wsURL:
+            print("Using ci")
+            assembly_ref = "58624/2/1"
+        ref_list = {"ref_lst": [assembly_ref]}
         ret = self.getImpl().get_fastas(self.getContext(), ref_list)[0]
         self._assert_inputs(ret, ref_list)
         self._assert_outputs(ret)
