@@ -276,7 +276,7 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         self._assert_inputs(ret, [binned_obj_ref])
         self._assert_outputs(ret)
 
-    # @unittest.skip('skip')
+    @unittest.skip('skip')
     def test_genome_input(self):
         # NOTE: This workspace is not public. Cannot test.
         ref_list = {"ref_lst": ["27079/16/1"]}
@@ -287,7 +287,7 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
     # @unittest.skip('skip')
     def test_annotations_assembly_input(self):
         # NOTE: One or more of these workspaces is not public. Cannot test.
-        ref_list = {"ref_lst": ["27079/3/1", "23594/10/1"]}
+        ref_list = {"ref_lst": ["23594/10/1"]}
         ret = self.getImpl().get_fastas(self.getContext(), ref_list)[0]
         self._assert_inputs(ret, ref_list)
         self._assert_outputs(ret)
