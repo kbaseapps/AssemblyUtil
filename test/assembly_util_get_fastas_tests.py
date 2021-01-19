@@ -13,6 +13,7 @@ from AssemblyUtil.authclient import KBaseAuth as _KBaseAuth
 
 from installed_clients.WorkspaceClient import Workspace
 
+
 class AssemblyUtil_FastaTest(unittest.TestCase):
 
     @classmethod
@@ -233,7 +234,7 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
     # @unittest.skip('skip')
     def test_annotated_metagenome_input(self):
         """"""
-        ref = "31857/5/1"
+        ref = "58624/8/1"
         ret = self.getImpl().get_fastas(self.getContext(), {'ref_lst':  [ref]})[0]
         self._assert_outputs(ret)
 
@@ -276,24 +277,24 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
         self._assert_inputs(ret, [binned_obj_ref])
         self._assert_outputs(ret)
 
-    @unittest.skip('skip')
+    # @unittest.skip('skip')
     def test_genome_input(self):
         # NOTE: This workspace is not public. Cannot test.
-        ref_list = {"ref_lst": ["27079/16/1"]}
+        if 'appdev' in self.wsURL:
+            ref_list = {"ref_lst": ["27079/16/1"]}
+        if 'ci' in self.wsURL:
+            ref_list = {"ref_lst": ['58624/5/1']}
         ret = self.getImpl().get_fastas(self.getContext(), ref_list)[0]
-        self._assert_inputs(ret, ref_list)
+        self._assert_inputs(ret, ref_list['ref_lst'])
         self._assert_outputs(ret)
 
     # @unittest.skip('skip')
     def test_annotations_assembly_input(self):
         # NOTE: One or more of these workspaces is not public. Cannot test.
         if 'appdev' in self.wsURL:
-            print("Using appdev")
-            assembly_ref = "23594/10/1"
+            ref_list = {"ref_lst": ["27079/3/1", "23594/10/1"]}
         if 'ci' in self.wsURL:
-            print("Using ci")
-            assembly_ref = "58624/2/1"
-        ref_list = {"ref_lst": [assembly_ref]}
+            ref_list = {"ref_lst": ["58624/10/1", "58624/2/1"]}
         ret = self.getImpl().get_fastas(self.getContext(), ref_list)[0]
-        self._assert_inputs(ret, ref_list)
+        self._assert_inputs(ret, ref_list['ref_lst'])
         self._assert_outputs(ret)
