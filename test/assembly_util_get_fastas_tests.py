@@ -42,6 +42,7 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
                         'authenticated': 1})
         cls.wsURL = cls.cfg['workspace-url']
         cls.wsClient = Workspace(cls.wsURL)
+        cls.testWS = 'KBaseTestData'
         cls.serviceImpl = AssemblyUtil(cls.cfg)
         cls.scratch = cls.cfg['scratch']
         cls.callback_url = os.environ['SDK_CALLBACK_URL']
@@ -234,8 +235,11 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
     # @unittest.skip('skip')
     def test_annotated_metagenome_input(self):
         """"""
-        ref = "58624/8/1"
-        ret = self.getImpl().get_fastas(self.getContext(), {'ref_lst':  [ref]})[0]
+        wsName = self.getWsName()
+        ret = self.wsClient.copy_object({'from': {'workspace': self.testWS, 'name': 'metagenome.gff_metagenome.assembly.fa_assembly'},
+                                         'to': {'workspace': wsName, 'name': 'metagenome.gff_metagenome.assembly.fa_assembly'}})
+        upa = '{}/{}/{}'.format(ret[6], ret[0], ret[4])
+        ret = self.getImpl().get_fastas(self.getContext(), {'ref_lst':  [upa]})[0]
         self._assert_outputs(ret)
 
     # @unittest.skip('skip')
@@ -279,22 +283,30 @@ class AssemblyUtil_FastaTest(unittest.TestCase):
 
     # @unittest.skip('skip')
     def test_genome_input(self):
-        # NOTE: This workspace is not public. Cannot test.
-        if 'appdev' in self.wsURL:
-            ref_list = {"ref_lst": ["27079/16/1"]}
-        if 'ci' in self.wsURL:
-            ref_list = {"ref_lst": ['58624/5/1']}
+        wsName = self.getWsName()
+        ret = self.wsClient.copy_object(
+            {'from': {'workspace': self.testWS, 'name': 'KBase_derived_16_paired_trim_MEGAHIT.contigs.fa_genome.gff_genome'},
+             'to': {'workspace': wsName, 'name': 'KBase_derived_16_paired_trim_MEGAHIT.contigs.fa_genome.gff_genome'}})
+        upa = '{}/{}/{}'.format(ret[6], ret[0], ret[4])
+        ref_list = {"ref_lst": [upa]}
         ret = self.getImpl().get_fastas(self.getContext(), ref_list)[0]
         self._assert_inputs(ret, ref_list['ref_lst'])
         self._assert_outputs(ret)
 
     # @unittest.skip('skip')
     def test_annotations_assembly_input(self):
-        # NOTE: One or more of these workspaces is not public. Cannot test.
-        if 'appdev' in self.wsURL:
-            ref_list = {"ref_lst": ["27079/3/1", "23594/10/1"]}
-        if 'ci' in self.wsURL:
-            ref_list = {"ref_lst": ["58624/10/1", "58624/2/1"]}
+        wsName = self.getWsName()
+        ret1 = self.wsClient.copy_object(
+            {'from': {'workspace': self.testWS,
+                      'name': 'archaea_test.fa_assembly.fa_assembly'},
+             'to': {'workspace': wsName, 'name': 'archaea_test.fa_assembly.fa_assembly'}})
+        upa1 = '{}/{}/{}'.format(ret1[6], ret1[0], ret1[4])
+        ret2 = self.wsClient.copy_object(
+            {'from': {'workspace': self.testWS,
+                      'name': '3300011599_1.fa_assembly.fa_assembly'},
+             'to': {'workspace': wsName, 'name': '3300011599_1.fa_assembly.fa_assembly'}})
+        upa2 = '{}/{}/{}'.format(ret2[6], ret2[0], ret2[4])
+        ref_list = {"ref_lst": [upa1, upa2]}
         ret = self.getImpl().get_fastas(self.getContext(), ref_list)[0]
         self._assert_inputs(ret, ref_list['ref_lst'])
         self._assert_outputs(ret)
