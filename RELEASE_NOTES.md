@@ -1,3 +1,6 @@
+## 1.2.4
+### Fixed
+	- Bug fix for test objects
 
 ## 1.2.3
 ### Fixed
