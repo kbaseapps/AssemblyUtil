@@ -43,6 +43,8 @@ class AssemblyUtilTest(unittest.TestCase):
         cls.wsURL = cls.cfg['workspace-url']
         cls.wsClient = workspaceService(cls.wsURL, token=token)
         cls.serviceImpl = AssemblyUtil(cls.cfg)
+        cls.scratch = cls.cfg['scratch']
+        cls.callback_url = os.environ['SDK_CALLBACK_URL']
 
     @classmethod
     def tearDownClass(cls):
@@ -82,11 +84,12 @@ class AssemblyUtilTest(unittest.TestCase):
             actual_data = f.read()
         self.assertEqual(actual_data, expected_data)
 
+    # @unittest.skip('x')
     def test_basic_upload_and_download(self):
         assemblyUtil = self.getImpl()
 
         tmp_dir = self.__class__.cfg['scratch']
-        file_name = "trimmed.fasta"
+        file_name = "test.fna"
         shutil.copy(os.path.join("data", file_name), tmp_dir)
         fasta_path = os.path.join(tmp_dir, file_name)
         print('attempting upload')
@@ -99,8 +102,6 @@ class AssemblyUtilTest(unittest.TestCase):
                                                         })
         pprint(result)
         self.check_fasta_file(ws_obj_name, fasta_path)
-        return
-
 
         print('attempting upload through shock')
         data_file_cli = DataFileUtil(os.environ['SDK_CALLBACK_URL'])
@@ -129,6 +130,7 @@ class AssemblyUtilTest(unittest.TestCase):
         result4 = assemblyUtil.export_assembly_as_fasta(self.getContext(),
                                                         {'input_ref': self.getWsName() + '/' + ws_obj_name3})
         pprint(result4)
+
 
     """def test_legacy_contigset_download(self):
         ws_obj_name4 = 'LegacyContigs'
