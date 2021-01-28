@@ -1,0 +1,56 @@
+{
+    "assembly_ref": "44438/3/3",
+    "bins": [
+        {
+            "bid": "Bin.001.fasta",
+            "contigs": {
+                "NODE_3_length_828651_cov_104.786": {
+                    "gc": 0.67253,
+                    "len": 828651
+                },
+                "NODE_4_length_793227_cov_108.465": {
+                    "gc": 0.66477,
+                    "len": 793227
+                },
+                "NODE_5_length_657582_cov_102.594": {
+                    "gc": 0.67344,
+                    "len": 657582
+                },
+                "NODE_6_length_643421_cov_107.111": {
+                    "gc": 0.66638,
+                    "len": 643421
+                },
+                "NODE_7_length_609521_cov_104.256": {
+                    "gc": 0.67007,
+                    "len": 609521
+                },
+                "NODE_8_length_556703_cov_100.063": {
+                    "gc": 0.67726,
+                    "len": 556703
+                }
+            },
+            "cov": 1.0,
+            "gc": 0.671,
+            "n_contigs": 36,
+            "sum_contig_len": 6881392
+        },
+        {
+            "bid": "Bin.002.fasta",
+            "contigs": {
+                "NODE_1_length_1231788_cov_8.03727": {
+                    "gc": 0.34675,
+                    "len": 1231788
+                },
+                "NODE_2_length_960755_cov_7.13808": {
+                    "gc": 0.34554,
+                    "len": 960755
+                }
+            },
+            "cov": 0.981,
+            "gc": 0.35,
+            "n_contigs": 18,
+            "sum_contig_len": 4931415
+        }
+    ],
+    "total_contig_len": 11812807
+}
