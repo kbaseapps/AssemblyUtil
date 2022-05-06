@@ -1,4 +1,4 @@
-## 1.2.5.1
+## 1.2.6
 ### Update
 	- Added unit test for error message
 
