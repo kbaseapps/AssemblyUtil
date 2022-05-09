@@ -1,3 +1,11 @@
+## 1.2.6
+### Update
+	- Added unit test for error message
+
+## 1.2.5
+### Update
+	- Change error message for uploading empty message
+
 ## 1.2.4
 ### Fixed
 	- Bug fix for test objects
