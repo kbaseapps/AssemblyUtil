@@ -20,14 +20,15 @@ class AssemblyToFasta:
         """ Used almost exclusively for download only """
         # validate parameters
         if 'input_ref' not in params:
-            raise ValueError('Cannot export Assembly- not input_ref field defined.')
+            raise ValueError('Cannot export Assembly- no input_ref field defined.')
 
         # export to a file
         file = self.assembly_as_fasta({'ref': params['input_ref']})
 
         # create the output directory and move the file there
+        # TODO might be better practice to make a temp dir rather than using the root scratch
         export_package_dir = os.path.join(self.scratch, file['assembly_name'])
-        os.makedirs(export_package_dir)
+        os.makedirs(export_package_dir, exist_ok=True)
         shutil.move(file['path'], os.path.join(export_package_dir, os.path.basename(file['path'])))
 
         # package it up and be done
