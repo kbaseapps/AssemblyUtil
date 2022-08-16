@@ -1,3 +1,8 @@
+## 2.0.0
+### Update
+    - removed the unused UI import apps.
+    - removed the `ftp_url` parameter from `save_assembly_from_fasta`
+
 ## 1.2.6
 ### Update
 	- Added unit test for error message

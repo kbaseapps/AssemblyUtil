@@ -253,12 +253,6 @@ class FastaToAssembly:
                                                 'shock_id': params['shock_id']
                                                 })['node_file_name']
             file_path = os.path.join(input_directory, file_name)
-        elif 'ftp_url' in params:
-            print(f'Downloading file from: {params["ftp_url"]}')
-            sys.stdout.flush()
-            file_path = self.dfu.download_web_file({'file_url': params['ftp_url'],
-                                                    'download_type': 'FTP'
-                                                    })['copy_file_path']
 
         # extract the file if it is compressed
         if file_path is not None:
@@ -274,9 +268,9 @@ class FastaToAssembly:
             if key not in params:
                 raise ValueError('required "' + key + '" field was not defined')
 
-        # one and only one of either 'file', 'shock_id', or ftp_url is required
+        # one and only one of either 'file' or 'shock_id' is required
         input_count = 0
-        for key in ('file', 'shock_id', 'ftp_url'):
+        for key in ('file', 'shock_id'):
             if key in params and params[key] is not None:
                 input_count = input_count + 1
                 if key == 'file':
@@ -284,7 +278,7 @@ class FastaToAssembly:
                         raise ValueError('when specifying a FASTA file input, "path" field was not defined in "file"')
 
         if input_count == 0:
-            raise ValueError('required FASTA file as input, set as either "file", "shock_id", or "ftp_url"')
+            raise ValueError('required FASTA file as input, set as either "file" or "shock_id"')
         if input_count > 1:
-            raise ValueError('required exactly one FASTA file as input source, you set more than one of ' +
-                             'these fields: "file", "shock_id", or "ftp_url"')
+            raise ValueError('required exactly one FASTA file as input source, you set more ' +
+                             'than one of these fields: "file", "shock_id"')
