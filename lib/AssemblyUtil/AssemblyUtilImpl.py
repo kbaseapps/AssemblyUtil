@@ -2,6 +2,7 @@
 #BEGIN_HEADER
 
 import os
+from pathlib import Path
 
 from AssemblyUtil.FastaToAssembly import FastaToAssembly
 from AssemblyUtil.AssemblyToFasta import AssemblyToFasta
@@ -206,7 +207,7 @@ class AssemblyUtil:
         print('save_assembly_from_fasta -- paramaters = ')
         #pprint(params)
 
-        fta = FastaToAssembly(self.callback_url, self.sharedFolder, self.ws_url)
+        fta = FastaToAssembly(self.callback_url, Path(self.sharedFolder), self.ws_url)
         try:
             assembly_info = fta.import_fasta(ctx, params)
         except ServerError as err:

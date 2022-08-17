@@ -3,7 +3,9 @@ import os
 import shutil
 import time
 import unittest
+import uuid
 from os import environ
+from pathlib import Path
 from pprint import pprint
 from configparser import ConfigParser
 
@@ -74,8 +76,10 @@ class AssemblyUtilTest(unittest.TestCase):
         assemblyUtil = self.getImpl()
 
         print('attempting download')
-        fasta = assemblyUtil.get_assembly_as_fasta(self.getContext(),
-                                                   {'ref': self.getWsName() + "/MyNewAssembly"})[0]
+        fasta = assemblyUtil.get_assembly_as_fasta(
+            self.getContext(),
+            {'ref': self.getWsName() + "/" + ws_obj_name}
+        )[0]
         pprint(fasta)
         # let's compare files pointed from fasta['path'] and expected_file
         with open(expected_file, 'r') as f:
@@ -88,7 +92,13 @@ class AssemblyUtilTest(unittest.TestCase):
     def test_basic_upload_and_download(self):
         assemblyUtil = self.getImpl()
 
-        tmp_dir = self.__class__.cfg['scratch']
+        # use a temp dir for input files since when the files are downloaded to test them
+        # in _check_fasta_file they always go in the root directory, creating the potential
+        # for clobberation.
+        # Get assemblies should be updated to allow specifying a target dir
+        tmp_dir = Path(self.cfg['scratch']) / (
+            "test_basic_upload_and_download_input" + str(uuid.uuid4()))
+        os.makedirs(tmp_dir)
         file_name = "test.fna"
         shutil.copy(os.path.join("data", file_name), tmp_dir)
         fasta_path = os.path.join(tmp_dir, file_name)
@@ -102,6 +112,20 @@ class AssemblyUtilTest(unittest.TestCase):
                                                         })
         pprint(result)
         self.check_fasta_file(ws_obj_name, fasta_path)
+
+        print('attempting upload of gzipped file')
+        # DFU can't see the file unless it's in scratch
+        shutil.copy(Path("data") / "test2.fna.gz", tmp_dir)
+        result = assemblyUtil.save_assembly_from_fasta(
+            self.getContext(),
+            {
+                'file': {'path': str(Path(tmp_dir) / "test2.fna.gz")},
+                'workspace_name': self.getWsName(),
+                'assembly_name': 'MyNewAssembly_gzip',
+                'taxon_ref': 'ReferenceTaxons/unknown_taxon',
+            })
+        pprint(result)
+        self.check_fasta_file('MyNewAssembly_gzip', "data/test2.fna")
 
         print('attempting upload through shock')
         data_file_cli = DataFileUtil(os.environ['SDK_CALLBACK_URL'])
