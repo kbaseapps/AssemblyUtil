@@ -51,6 +51,9 @@ class FastaToAssembly:
         print(f'parsing FASTA file: {fasta_file_path}')
         assembly_data = self._parse_fasta(fasta_file_path, params)
         print(f' - parsed {assembly_data["num_contigs"]} contigs,{assembly_data["dna_size"]} bp')
+        if not assembly_data["num_contigs"]:
+            raise ValueError("Either the original FASTA file contained no sequences or they "
+                             + "were all filtered out based on the min_contig_length parameter")
         print('saving assembly to KBase')
 
         # save file to shock and build handle
