@@ -1,6 +1,7 @@
 import json
 import os
 import os.path
+from pathlib import Path
 import sys
 import uuid
 from collections import Counter
@@ -27,8 +28,7 @@ class FastaToAssembly:
     # Note added X due to kb|g.1886.fasta
     _VALID_CHARS = "-ACGTUWSMKRYBDHVNX"
     _AMINO_ACID_SPECIFIC_CHARACTERS = "PLIFQE"
-
-    def __init__(self, callback_url, scratch, ws_url):
+    def __init__(self, callback_url, scratch: Path, ws_url):
         self._scratch = scratch
         self._dfu = DataFileUtil(callback_url)
         self._ws = Workspace(ws_url)
@@ -36,14 +36,17 @@ class FastaToAssembly:
     def import_fasta(self, ctx, params):
         print('validating parameters')
         self._validate_params(params)
+        tmpdir = self._scratch / ("import_fasta_" + str(uuid.uuid4()))
+        os.makedirs(tmpdir)
 
-        print('staging input files')
-        fasta_file_path = self._stage_input(params)
+        print(f'staging input files in directory {tmpdir}')
+        fasta_file_path = self._stage_input(tmpdir, params)
 
         if 'min_contig_length' in params:
             min_contig_length = int(params['min_contig_length'])
             print(f'filtering FASTA file by contig length (min len={min_contig_length} bp)')
-            fasta_file_path = self._filter_contigs_by_length(fasta_file_path, min_contig_length)
+            fasta_file_path = self._filter_contigs_by_length(
+                tmpdir, fasta_file_path, min_contig_length)
 
         print(f'parsing FASTA file: {fasta_file_path}')
         assembly_data = self._parse_fasta(fasta_file_path, params)
@@ -56,7 +59,9 @@ class FastaToAssembly:
         assembly_object_to_save = self._build_assembly_object(assembly_data,
                                                              fasta_file_handle_info,
                                                              params)
-        json.dump(assembly_object_to_save, open(self._scratch+"/example.json", 'w'))
+        # this appears to be completely unused
+        with open(tmpdir / "example.json", 'w') as f:
+            json.dump(assembly_object_to_save, f)
 
         # save to WS and return
         if 'workspace_id' in params:
@@ -96,7 +101,7 @@ class FastaToAssembly:
 
         return sort_dict(assembly_data)
 
-    def _parse_fasta(self, fasta_file_path, params):
+    def _parse_fasta(self, fasta_file_path: Path, params):
         """ Do the actual work of inspecting each contig """
 
         # variables to store running counts of things
@@ -110,7 +115,7 @@ class FastaToAssembly:
         if'contig_info' in params:
             extra_contig_info = params['contig_info']
 
-        for record in SeqIO.parse(fasta_file_path, "fasta"):
+        for record in SeqIO.parse(str(fasta_file_path), "fasta"):
             # SeqRecord(seq=Seq('TTAT...', SingleLetterAlphabet()),
             #           id='gi|113968346|ref|NC_008321.1|',
             #           name='gi|113968346|ref|NC_008321.1|',
@@ -200,13 +205,14 @@ class FastaToAssembly:
         print(f' - filtered out {rows - rows_added} of {rows} contigs that were shorter '
               f'than {(min_contig_length)} bp.')
 
-    def _filter_contigs_by_length(self, fasta_file_path, min_contig_length):
+    def _filter_contigs_by_length(
+            self, tmpdir: Path, fasta_file_path: Path, min_contig_length) -> Path:
         """ removes all contigs less than the min_contig_length provided """
-        filtered_fasta_file_path = fasta_file_path + '.filtered.fa'
+        filtered_fasta_file_path = tmpdir / (fasta_file_path.name + '.filtered.fa')
 
-        fasta_record_iter = SeqIO.parse(fasta_file_path, 'fasta')
+        fasta_record_iter = SeqIO.parse(str(fasta_file_path), 'fasta')
         SeqIO.write(self._fasta_filter_contigs_generator(fasta_record_iter, min_contig_length),
-                    filtered_fasta_file_path, 'fasta')
+                    str(filtered_fasta_file_path), 'fasta')
 
         return filtered_fasta_file_path
 
@@ -223,7 +229,7 @@ class FastaToAssembly:
                                           })[0]
         return obj_info
 
-    def _save_fasta_file_to_shock(self, fasta_file_path):
+    def _save_fasta_file_to_shock(self, fasta_file_path: Path):
         """ Given the path to the file, upload to shock and return Handle information
             returns:
                 typedef structure {
@@ -236,31 +242,42 @@ class FastaToAssembly:
         """
         print(f'Uploading FASTA file ({fasta_file_path}) to SHOCK')
         sys.stdout.flush()
-        return self._dfu.file_to_shock({'file_path': fasta_file_path, 'make_handle': 1})
+        return self._dfu.file_to_shock({'file_path': str(fasta_file_path), 'make_handle': 1})
 
-    def _stage_input(self, params):
-        """ Setup the input_directory by fetching the files and returning the path to the file"""
-        file_path = None
+    def _stage_input(self, tmpdir: Path, params) -> Path:
+        """
+        Setup the input file, fetching it from the Blobstore / Shock if necessary,
+        and returning the path to the file.
+        """
         if 'file' in params:
             if not os.path.isfile(params['file']['path']):
                 raise ValueError('KBase Assembly Utils tried to save an assembly, but the calling application specified a file ('+params['file']['path']+') that is missing. Please check the application logs for details.')
-            file_path = os.path.abspath(params['file']['path'])
+            # Ideally we'd have some sort of security check here but the DTN files could
+            # be mounted anywhere...
+            # TODO check with sysadmin about this
+            fp = Path(params['file']['path']).resolve(strict=True)
+            # make the downstream unpack call unpack into scratch rather than wherever the
+            # source file might be
+            file_path = tmpdir / fp.name
+            # symlink doesn't work, because in DFU filemagic doesn't follow symlinks, and so
+            # DFU won't unpack symlinked files
+            os.link(fp, file_path)
         elif 'shock_id' in params:
             print(f'Downloading file from SHOCK node: {params["shock_id"]}')
             sys.stdout.flush()
-            input_directory = os.path.join(self._scratch, 'assembly-upload-staging-' + str(uuid.uuid4()))
-            os.makedirs(input_directory)
-            file_name = self._dfu.shock_to_file({'file_path': input_directory,
-                                                'shock_id': params['shock_id']
-                                                })['node_file_name']
-            file_path = os.path.join(input_directory, file_name)
-
+            file_name = self._dfu.shock_to_file(
+                {
+                    'file_path': str(tmpdir),
+                    'shock_id': params['shock_id']
+                 })['node_file_name']
+            file_path = tmpdir / file_name
+        else:  # Not testable just by calling the import_fasta method
+            raise RuntimeError(
+                "Invalid params passed to stage_input method. This is a programming error. "
+                + "Were the params not validated?")
         # extract the file if it is compressed
-        if file_path is not None:
-            unpacked_file = self._dfu.unpack_file({'file_path': file_path})
-            return unpacked_file['file_path']
-
-        raise ValueError('No valid FASTA could be extracted based on the input parameters')
+        unpacked_file = self._dfu.unpack_file({'file_path': str(file_path)})
+        return Path(unpacked_file['file_path'])
 
 
     @staticmethod
