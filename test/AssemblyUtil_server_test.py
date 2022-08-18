@@ -159,7 +159,7 @@ class AssemblyUtilTest(unittest.TestCase):
                          'The combination of data and input parameters '
                          'resulted in no valid output.', str(e))
 
-    """def test_legacy_contigset_download(self):
+    def test_legacy_contigset_download(self):
         ws_obj_name4 = 'LegacyContigs'
         contigset_data = {'id': 'contigset',
                           'md5': '5217cb4e8684817ba925ebe125caf54a',
@@ -240,24 +240,6 @@ class AssemblyUtilTest(unittest.TestCase):
         self.assertEqual(assembly['external_source_id'], 'id')
         self.assertEqual(assembly['external_source_origination_date'], 'sunday')
 
-    def test_filtered_everything(self):
-        assemblyUtil = self.getImpl()
-
-        tmp_dir = self.__class__.cfg['scratch']
-        file_name = "legacy_test.fna"
-        shutil.copy(os.path.join("data", file_name), tmp_dir)
-        fasta_path = os.path.join(tmp_dir, file_name)
-        print('attempting upload')
-        ws_obj_name = 'FilteredAssembly'
-        with self.assertRaisesRegex(ValueError, 'There are no contigs to save, '
-                                                'thus there is no valid assembly.'):
-            assemblyUtil.save_assembly_from_fasta(self.getContext(),
-                                                       {'file': {'path': fasta_path},
-                                                        'workspace_name': self.getWsName(),
-                                                        'assembly_name': ws_obj_name,
-                                                        'min_contig_length': 500
-                                                        })
-
     def test_assembly_does_not_exist(self):
         assemblyUtil = self.getImpl()
         tmp_dir = self.__class__.cfg['scratch']
@@ -271,4 +253,4 @@ class AssemblyUtilTest(unittest.TestCase):
                                                         'workspace_name': self.getWsName(),
                                                         'assembly_name': ws_obj_name,
                                                         'min_contig_length': 500
-                                                        })"""
+                                                        })
