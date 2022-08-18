@@ -1,7 +1,13 @@
 ## 2.0.0
 ### Update
-    - removed the unused UI import apps.
-    - removed the `ftp_url` parameter from `save_assembly_from_fasta`
+    - Removed the unused UI import apps.
+    - Removed the `ftp_url` parameter from `save_assembly_from_fasta`
+    - Clarified `save_assembly_from_fasta` documentation
+    - Fixed a bug in `save_assembly_from_fasta` that could cause file name collisions if
+      multiple `AssemblyUtil` instances are run in parallel
+    - Clarified the error message text when an empty file is submitted or results from
+      contig filtering, and prevented a guaranteed to fail attempt to save the file to the
+      Blobstore
 
 ## 1.2.6
 ### Update

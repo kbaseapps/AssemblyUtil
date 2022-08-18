@@ -8,7 +8,6 @@ from AssemblyUtil.FastaToAssembly import FastaToAssembly
 from AssemblyUtil.AssemblyToFasta import AssemblyToFasta
 from AssemblyUtil.TypeToFasta import TypeToFasta
 from installed_clients.WorkspaceClient import Workspace
-from installed_clients.baseclient import ServerError
 
 #END_HEADER
 
@@ -30,7 +29,7 @@ class AssemblyUtil:
     ######################################### noqa
     VERSION = "2.0.0"
     GIT_URL = "https://github.com/kbaseapps/AssemblyUtil"
-    GIT_COMMIT_HASH = "80b6b8ce41ffff9c2d45caa3f0177278b4668429"
+    GIT_COMMIT_HASH = "d3d3e8ac5f7d34cad858c8679ebd096680b95d58"
 
     #BEGIN_CLASS_HEADER
 
@@ -165,26 +164,20 @@ class AssemblyUtil:
 
     def save_assembly_from_fasta(self, ctx, params):
         """
-        WARNING: has the side effect of moving the file to a temporary staging directory, because the upload
-        script for assemblies currently requires a working directory, not a specific file.  It will attempt
-        to upload everything in that directory.  This will move the file back to the original location, but
-        if you are trying to keep an open file handle or are trying to do things concurrently to that file,
-        this will break.  So this method is certainly NOT thread safe on the input file.
-        :param params: instance of type "SaveAssemblyParams" (Options
-           supported: file / shock_id - mutually exclusive parameters
-           pointing to file content workspace_name - target workspace
-           assembly_name - target object name type - should be one of
-           'isolate', 'metagenome', (maybe 'transcriptome') min_contig_length
-           - if set and value is greater than 1, this will only include
-           sequences with length greater or equal to the min_contig_length
-           specified, discarding all other sequences taxon_ref         - sets
-           the taxon_ref if present contig_info       - map from contig_id to
-           a small structure that can be used to set the is_circular and
-           description fields for Assemblies (optional) Uploader options not
-           yet supported taxon_reference: The ws reference the assembly
-           points to.  (Optional) source: The source of the data (Ex: Refseq)
-           date_string: Date (or date range) associated with data.
-           (Optional)) -> structure: parameter "file" of type
+        :param params: instance of type "SaveAssemblyParams" (Required
+           arguments: One, and only one, of: file - a pre-existing FASTA file
+           to import. The 'assembly_name' field in the FastaAssemblyFile
+           object is ignored. shock_id - an ID of a node in the Blobstore
+           containing the FASTA file. workspace_name - target workspace
+           assembly_name - target object name Optional arguments: type -
+           should be one of 'isolate', 'metagenome', (maybe 'transcriptome')
+           - defaults to 'Unknown min_contig_length - if set and value is
+           greater than 1, this will only include sequences with length
+           greater or equal to the min_contig_length specified, discarding
+           all other sequences taxon_ref - sets the taxon_ref if present
+           contig_info - map from contig_id to a small structure that can be
+           used to set the is_circular and description fields for Assemblies
+           (optional)) -> structure: parameter "file" of type
            "FastaAssemblyFile" -> structure: parameter "path" of String,
            parameter "assembly_name" of String, parameter "shock_id" of type
            "ShockNodeId", parameter "workspace_name" of String, parameter
