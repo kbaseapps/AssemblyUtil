@@ -7,6 +7,7 @@ from pathlib import Path
 from AssemblyUtil.FastaToAssembly import FastaToAssembly
 from AssemblyUtil.AssemblyToFasta import AssemblyToFasta
 from AssemblyUtil.TypeToFasta import TypeToFasta
+from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.WorkspaceClient import Workspace
 
 #END_HEADER
@@ -200,8 +201,11 @@ class AssemblyUtil:
         print('save_assembly_from_fasta -- paramaters = ')
         #pprint(params)
 
-        fta = FastaToAssembly(self.callback_url, Path(self.sharedFolder), self.ws_url)
-        assembly_info = fta.import_fasta(ctx, params)
+        assembly_info = FastaToAssembly(
+            DataFileUtil(self.callback_url, token=ctx['token']),
+            Workspace(self.ws_url, token=ctx['token']),
+            Path(self.sharedFolder)
+        ).import_fasta(params)
         ref = f'{assembly_info[6]}/{assembly_info[0]}/{assembly_info[4]}'
 
         #END save_assembly_from_fasta
