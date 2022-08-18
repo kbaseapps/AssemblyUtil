@@ -97,26 +97,27 @@ module AssemblyUtil {
 
 
     /*
-        Options supported:
-            file / shock_id - mutually exclusive parameters pointing to file content
+        Required arguments:
+            Exactly one of:
+                file - a pre-existing FASTA file to import. The 'assembly_name' field in the
+                    FastaAssemblyFile object is ignored.
+                shock_id - an ID of a node in the Blobstore containing the FASTA file.
             workspace_name - target workspace
             assembly_name - target object name
 
-            type - should be one of 'isolate', 'metagenome', (maybe 'transcriptome')
+        Optional arguments:
+            
+            type - should be one of 'isolate', 'metagenome', (maybe 'transcriptome').
+                Defaults to 'Unknown'
 
-            min_contig_length - if set and value is greater than 1, this will only include sequences
-                                with length greater or equal to the min_contig_length specified, discarding
-                                all other sequences
+            min_contig_length - if set and value is greater than 1, this will only
+                include sequences with length greater or equal to the min_contig_length
+                specified, discarding all other sequences
 
-            taxon_ref         - sets the taxon_ref if present
+            taxon_ref - sets the taxon_ref if present
 
-            contig_info       - map from contig_id to a small structure that can be used to set the is_circular
-                                and description fields for Assemblies (optional)
-
-        Uploader options not yet supported
-            taxon_reference: The ws reference the assembly points to.  (Optional)
-            source: The source of the data (Ex: Refseq)
-            date_string: Date (or date range) associated with data. (Optional)
+            contig_info - map from contig_id to a small structure that can be used to set the
+                is_circular and description fields for Assemblies (optional)
     */
     typedef structure {
         FastaAssemblyFile file;
@@ -132,16 +133,9 @@ module AssemblyUtil {
 
         int min_contig_length;
 
-        mapping<string,ExtraContigInfo> contig_info; 
+        mapping<string, ExtraContigInfo> contig_info; 
 
     } SaveAssemblyParams;
 
-    /*
-        WARNING: has the side effect of moving the file to a temporary staging directory, because the upload
-        script for assemblies currently requires a working directory, not a specific file.  It will attempt
-        to upload everything in that directory.  This will move the file back to the original location, but
-        if you are trying to keep an open file handle or are trying to do things concurrently to that file,
-        this will break.  So this method is certainly NOT thread safe on the input file.
-    */
     funcdef save_assembly_from_fasta(SaveAssemblyParams params) returns (string ref) authentication required;
 };
