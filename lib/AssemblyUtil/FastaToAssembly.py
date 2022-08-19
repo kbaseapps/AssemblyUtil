@@ -4,6 +4,7 @@ import os.path
 from pathlib import Path
 import sys
 import uuid
+from typing import List
 from collections import Counter
 from hashlib import md5
 
@@ -12,6 +13,9 @@ from Bio import SeqIO
 from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.WorkspaceClient import Workspace
 
+
+def _ref(object_info):
+    return f'{object_info[6]}/{object_info[0]}/{object_info[4]}'
 
 class FastaToAssembly:
 
@@ -25,53 +29,93 @@ class FastaToAssembly:
 
     def import_fasta(self, params):
         print('validating parameters')
-        self._validate_params(params)
-        tmpdir = self._scratch / ("import_fasta_" + str(uuid.uuid4()))
-        os.makedirs(tmpdir)
+        self._validate_single_params(params)
+        inputs = dict(params)
+        inputs.pop('workspace_name', None)
+        inputs.pop('min_contig_length', None)
+        inputs.pop('shock_id', None)
+        mass_params = {
+            'workspace_name': params['workspace_name'],
+            'min_contig_length': params.get('min_contig_length'),
+            'inputs': [inputs]
+        }
+        if 'file' in params:
+            mass_params['inputs'][0]['file'] = params['file']['path']
+        else:
+            mass_params['inputs'][0]['node'] = params['shock_id']
+        return self._import_fastas(mass_params)[0]
 
-        print(f'staging input files in directory {tmpdir}')
-        fasta_file_path = self._stage_input(tmpdir, params)
+    def _import_fastas(self, params):
+        # TODO TEST with muliple files
+        # TODO check that inputs are all either files or shock nodes
+        # TODO check inputs generally
+        # TODO expose in API
+        # For now this is completely serial, but theoretically we could start uploading
+        # Blobstore nodes when some fraction of the initial checks are done, start uploading
+        # Workspace obects when some fraction of the Blobstore nodes are done, parallelize
+        # the file filtering parsing, etc.
+        # For now keep it simple
+        # Also note all the assembly data is kept in memory once parsed, but it contains
+        # no sequence info and so shouldn't be too huge. Could push to KBase in batches or
+        # save to disk if that's an issue
+        # We also probably want to add some retries for saving data, but that should go
+        # in DataFileUtils if it's not there already
+        # Finally, if more than 1G work of assembly object data is sent to the workspace at once,
+        # the call will fail. May need to add some checking / splitting code around this.
+        if 'file' in params['inputs'][0]:
+            input_files = self._stage_file_inputs(params['inputs'])
+        else:
+            input_files = self._stage_blobstore_inputs(params['inputs'])
 
-        if 'min_contig_length' in params:
-            min_contig_length = int(params['min_contig_length'])
-            print(f'filtering FASTA file by contig length (min len={min_contig_length} bp)')
-            fasta_file_path = self._filter_contigs_by_length(
-                tmpdir, fasta_file_path, min_contig_length)
+        mcl = params.get('min_contig_length')
+        mcl = int(mcl) if mcl else None  # TODO TEST no key and None
+        assembly_data = []
+        for i in range(len(input_files)):
+            # Hmm, all through these printouts we should really put the blobstore node here as
+            # well as the file if it exists... wait and see if that code path is still actually
+            # used
+            if mcl:
+                print(f'filtering FASTA file {input_files[i]} by contig length '
+                      + f'(min len={mcl} bp)')
+                input_files[i] = self._filter_contigs_by_length(input_files[i], mcl)
+            print(f'parsing FASTA file: {input_files[i]}')
+            assdata = self._parse_fasta(
+                input_files[i],
+                params['inputs'][i].get('contig_info') or {})
+            print(f' - parsed {assdata["num_contigs"]} contigs, {assdata["dna_size"]} bp')
+            if not assdata["num_contigs"]:
+                raise ValueError("Either the original FASTA file contained no sequences or they "
+                                 + "were all filtered out based on the min_contig_length "
+                                 + f"parameter for file {input_files[i]}")
+            assembly_data.append(assdata)
 
-        print(f'parsing FASTA file: {fasta_file_path}')
-        assembly_data = self._parse_fasta(fasta_file_path, params)
-        print(f' - parsed {assembly_data["num_contigs"]} contigs,{assembly_data["dna_size"]} bp')
-        if not assembly_data["num_contigs"]:
-            raise ValueError("Either the original FASTA file contained no sequences or they "
-                             + "were all filtered out based on the min_contig_length parameter")
-        print('saving assembly to KBase')
-
-        # save file to shock and build handle
-        fasta_file_handle_info = self._save_fasta_file_to_shock(fasta_file_path)
-        # construct the output object
-        assembly_object_to_save = self._build_assembly_object(assembly_data,
-                                                             fasta_file_handle_info,
-                                                             params)
-        # this appears to be completely unused
-        with open(tmpdir / "example.json", 'w') as f:
-            json.dump(assembly_object_to_save, f)
+        print('saving assemblies to KBase')
+        file_handles = self._save_files_to_blobstore(input_files)
+        assobjects = []
+        for assdata, file_handle, inputs, sourcefile in zip(
+                assembly_data, file_handles, params['inputs'], input_files):
+            ao = self._build_assembly_object(assdata, file_handle, inputs)
+            assobjects.append(ao)
+            # this appears to be completely unused
+            with open(sourcefile.parent / "example.json", "w") as f:
+                json.dump(ao, f)
 
         # save to WS and return
         if 'workspace_id' in params:
             workspace_id = int(params['workspace_id'])
         else:
             workspace_id = self._dfu.ws_name_to_id(params['workspace_name'])
-        assembly_info = self._save_assembly_object(workspace_id,
-                                                  params['assembly_name'],
-                                                  assembly_object_to_save)
-
-        return assembly_info
+        assembly_infos = self._save_assembly_objects(
+            workspace_id,
+            [p['assembly_name'] for p in params['inputs']],
+            assobjects
+        )
+        return [_ref(ai) for ai in assembly_infos]
 
     def _build_assembly_object(self, assembly_data, fasta_file_handle_info, params):
         """ construct the WS object data to save based on the parsed info and params """
         assembly_data['assembly_id'] = params['assembly_name']
         assembly_data['fasta_handle_ref'] = fasta_file_handle_info['handle']['hid']
-        fasta_file_handle_info['handle'] = fasta_file_handle_info['handle']
         assembly_data['fasta_handle_info'] = fasta_file_handle_info
 
         assembly_data['type'] = 'Unknown'
@@ -94,7 +138,7 @@ class FastaToAssembly:
 
         return assembly_data
 
-    def _parse_fasta(self, fasta_file_path: Path, params):
+    def _parse_fasta(self, fasta_file_path: Path, extra_contig_info):
         """ Do the actual work of inspecting each contig """
 
         # variables to store running counts of things
@@ -104,9 +148,6 @@ class FastaToAssembly:
 
         # map from contig_id to contig_info
         all_contig_data = {}
-        extra_contig_info = {}
-        if'contig_info' in params:
-            extra_contig_info = params['contig_info']
 
         for record in SeqIO.parse(str(fasta_file_path), "fasta"):
             # SeqRecord(seq=Seq('TTAT...', SingleLetterAlphabet()),
@@ -198,10 +239,9 @@ class FastaToAssembly:
         print(f' - filtered out {rows - rows_added} of {rows} contigs that were shorter '
               f'than {(min_contig_length)} bp.')
 
-    def _filter_contigs_by_length(
-            self, tmpdir: Path, fasta_file_path: Path, min_contig_length) -> Path:
+    def _filter_contigs_by_length(self, fasta_file_path: Path, min_contig_length) -> Path:
         """ removes all contigs less than the min_contig_length provided """
-        filtered_fasta_file_path = tmpdir / (fasta_file_path.name + '.filtered.fa')
+        filtered_fasta_file_path = Path(str(fasta_file_path) + '.filtered.fa')
 
         fasta_record_iter = SeqIO.parse(str(fasta_file_path), 'fasta')
         SeqIO.write(self._fasta_filter_contigs_generator(fasta_record_iter, min_contig_length),
@@ -209,72 +249,67 @@ class FastaToAssembly:
 
         return filtered_fasta_file_path
 
-    def _save_assembly_object(self, workspace_id, assembly_name, obj_data):
-        print('Saving Assembly to Workspace')
+    def _save_assembly_objects(self, workspace_id, assembly_names, ass_data):
+        print('Saving Assemblies to Workspace')
         sys.stdout.flush()
-        if len(obj_data["contigs"]) == 0:
-            raise ValueError('There are no contigs to save, thus there is no valid assembly.')
-        obj_info = self._dfu.save_objects({'id': workspace_id,
-                                          'objects': [{'type': 'KBaseGenomeAnnotations.Assembly',
-                                                       'data': obj_data,
-                                                       'name': assembly_name
-                                                       }]
-                                          })[0]
-        return obj_info
+        ws_inputs = []
+        for assname, assdata_singular in zip(assembly_names, ass_data):
+            ws_inputs.append({
+                'type': 'KBaseGenomeAnnotations.Assembly',  # This should really be versioned...
+                'data': assdata_singular,
+                'name': assname
+            })
+        return self._dfu.save_objects({'id': workspace_id, 'objects': ws_inputs})
 
-    def _save_fasta_file_to_shock(self, fasta_file_path: Path):
-        """ Given the path to the file, upload to shock and return Handle information
-            returns:
-                typedef structure {
-                    string shock_id;
-                    Handle handle;
-                    string node_file_name;
-                    string size;
-                } FileToShockOutput;
-
-        """
-        print(f'Uploading FASTA file ({fasta_file_path}) to SHOCK')
+    def _save_files_to_blobstore(self, files: List[Path]):
+        print(f'Uploading FASTA files to the Blobstore')
         sys.stdout.flush()
-        return self._dfu.file_to_shock({'file_path': str(fasta_file_path), 'make_handle': 1})
+        blob_input = [{'file_path': str(fp), 'make_handle': 1} for fp in files]
+        return self._dfu.file_to_shock_mass(blob_input)
 
-    def _stage_input(self, tmpdir: Path, params) -> Path:
-        """
-        Setup the input file, fetching it from the Blobstore / Shock if necessary,
-        and returning the path to the file.
-        """
-        if 'file' in params:
-            if not os.path.isfile(params['file']['path']):
-                raise ValueError('KBase Assembly Utils tried to save an assembly, but the calling application specified a file ('+params['file']['path']+') that is missing. Please check the application logs for details.')
+    def _stage_file_inputs(self, inputs) -> List[Path]:
+        files = []
+        for inp in inputs:
+            if not os.path.isfile(inp['file']):
+                raise ValueError(  # TODO TEST
+                    "KBase Assembly Utils tried to save an assembly, but the calling "
+                    + f"application specified a file ('{inp['file']}') that is missing. "
+                    + "Please check the application logs for details.")
             # Ideally we'd have some sort of security check here but the DTN files could
             # be mounted anywhere...
             # TODO check with sysadmin about this
-            fp = Path(params['file']['path']).resolve(strict=True)
+            fp = Path(inp['file']).resolve(strict=True)
             # make the downstream unpack call unpack into scratch rather than wherever the
             # source file might be
-            file_path = tmpdir / fp.name
+            file_path = self._create_temp_dir() / fp.name
             # symlink doesn't work, because in DFU filemagic doesn't follow symlinks, and so
             # DFU won't unpack symlinked files
             os.link(fp, file_path)
-        elif 'shock_id' in params:
-            print(f'Downloading file from SHOCK node: {params["shock_id"]}')
-            sys.stdout.flush()
-            file_name = self._dfu.shock_to_file(
-                {
-                    'file_path': str(tmpdir),
-                    'shock_id': params['shock_id']
-                 })['node_file_name']
-            file_path = tmpdir / file_name
-        else:  # Not testable just by calling the import_fasta method
-            raise RuntimeError(
-                "Invalid params passed to stage_input method. This is a programming error. "
-                + "Were the params not validated?")
-        # extract the file if it is compressed
-        unpacked_file = self._dfu.unpack_file({'file_path': str(file_path)})
-        return Path(unpacked_file['file_path'])
+            # extract the file if it is compressed
+            # TODO Update unpack_file to take multiple files and allow specifying no archives
+            # (in which case an error should be thrown)
+            unpacked_file = self._dfu.unpack_file({'file_path': str(file_path)})
+            files.append(Path(unpacked_file['file_path']))
+        return files
 
+    def _stage_blobstore_inputs(self, inputs) -> List[Path]:
+        blob_params = []
+        for inp in inputs:
+            blob_params.append({
+                'shock_id': inp['node'],
+                'file_path': str(self._create_temp_dir()),
+                'unpack': 'uncompress'  # Will throw an error for archives
+            })
+        dfu_res = self._dfu.shock_to_file_mass(blob_params)
+        return [Path(dr['file_path']) for dr in dfu_res]
+
+    def _create_temp_dir(self):
+        tmpdir = self._scratch / ("import_fasta_" + str(uuid.uuid4()))
+        os.makedirs(tmpdir)
+        return tmpdir
 
     @staticmethod
-    def _validate_params(params):
+    def _validate_single_params(params):
         for key in ('workspace_name', 'assembly_name'):
             if key not in params:
                 raise ValueError('required "' + key + '" field was not defined')

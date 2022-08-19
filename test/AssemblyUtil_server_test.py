@@ -141,7 +141,7 @@ class AssemblyUtilTest(unittest.TestCase):
 
     def test_empty_file_error_message(self):
         assemblyUtil = self.getImpl()
-        tmp_dir = self.__class__.cfg['scratch']
+        tmp_dir = self.cfg['scratch']
         file_name = "empty.FASTA"
         shutil.copy(os.path.join("data", file_name), tmp_dir)
         empty_file_path = os.path.join(tmp_dir, file_name)
@@ -155,10 +155,12 @@ class AssemblyUtilTest(unittest.TestCase):
                                                      })
             raise Exception("Wrong error message")
         except ValueError as e:
-            self.assertEqual(
+            self.assertIn(
                 'Either the original FASTA file contained no sequences or they were all '
-                + 'filtered out based on the min_contig_length parameter',
+                + 'filtered out based on the min_contig_length parameter for file '
+                + '/kb/module/work/tmp/import_fasta_',
                 str(e))
+            self.assertIn('/empty.FASTA.filtered.fa', str(e))
 
     def test_legacy_contigset_download(self):
         ws_obj_name4 = 'LegacyContigs'
