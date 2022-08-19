@@ -13,16 +13,6 @@ from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.WorkspaceClient import Workspace
 
 
-def sort_dict(in_struct):
-    """Recursively sort a dictionary by dictionary keys. (saves WS the trouble)"""
-    if isinstance(in_struct, dict):
-        return {k: sort_dict(in_struct[k]) for k in sorted(in_struct)}
-    elif isinstance(in_struct, list):
-        return [sort_dict(k) for k in sorted(in_struct)]
-    else:
-        return in_struct
-
-
 class FastaToAssembly:
 
     # Note added X due to kb|g.1886.fasta
@@ -102,7 +92,7 @@ class FastaToAssembly:
         if 'external_source_origination_date' in params:
             assembly_data['external_source_origination_date'] = params['external_source_origination_date']
 
-        return sort_dict(assembly_data)
+        return assembly_data
 
     def _parse_fasta(self, fasta_file_path: Path, params):
         """ Do the actual work of inspecting each contig """
