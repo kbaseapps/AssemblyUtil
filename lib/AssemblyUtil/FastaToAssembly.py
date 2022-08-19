@@ -18,12 +18,12 @@ class FastaToAssembly:
     # Note added X due to kb|g.1886.fasta
     _VALID_CHARS = "-ACGTUWSMKRYBDHVNX"
     _AMINO_ACID_SPECIFIC_CHARACTERS = "PLIFQE"
-    def __init__(self, callback_url, scratch: Path, ws_url):
+    def __init__(self, dfu: DataFileUtil, ws: Workspace, scratch: Path):
         self._scratch = scratch
-        self._dfu = DataFileUtil(callback_url)
-        self._ws = Workspace(ws_url)
+        self._dfu = dfu
+        self._ws = ws
 
-    def import_fasta(self, ctx, params):
+    def import_fasta(self, params):
         print('validating parameters')
         self._validate_params(params)
         tmpdir = self._scratch / ("import_fasta_" + str(uuid.uuid4()))
