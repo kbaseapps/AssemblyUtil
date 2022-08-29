@@ -201,12 +201,11 @@ class AssemblyUtil:
         print('save_assembly_from_fasta -- paramaters = ')
         #pprint(params)
 
-        assembly_info = FastaToAssembly(
+        ref = FastaToAssembly(
             DataFileUtil(self.callback_url, token=ctx['token']),
             Workspace(self.ws_url, token=ctx['token']),
             Path(self.sharedFolder)
         ).import_fasta(params)
-        ref = f'{assembly_info[6]}/{assembly_info[0]}/{assembly_info[4]}'
 
         #END save_assembly_from_fasta
 
