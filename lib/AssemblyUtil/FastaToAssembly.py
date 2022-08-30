@@ -101,7 +101,7 @@ class FastaToAssembly:
                 json.dump(ao, f)
 
         # save to WS and return
-        if 'workspace_id' in params:
+        if 'workspace_id' in params:  # TODO TEST workspace ID is untested
             workspace_id = int(params['workspace_id'])
         else:
             workspace_id = self._dfu.ws_name_to_id(params['workspace_name'])

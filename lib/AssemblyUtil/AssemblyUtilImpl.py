@@ -30,7 +30,7 @@ class AssemblyUtil:
     ######################################### noqa
     VERSION = "2.0.0"
     GIT_URL = "https://github.com/kbaseapps/AssemblyUtil"
-    GIT_COMMIT_HASH = "d3d3e8ac5f7d34cad858c8679ebd096680b95d58"
+    GIT_COMMIT_HASH = "f2a106d44f76d943b3f653fdf07913da6787913c"
 
     #BEGIN_CLASS_HEADER
 
@@ -166,13 +166,15 @@ class AssemblyUtil:
     def save_assembly_from_fasta(self, ctx, params):
         """
         :param params: instance of type "SaveAssemblyParams" (Required
-           arguments: One, and only one, of: file - a pre-existing FASTA file
-           to import. The 'assembly_name' field in the FastaAssemblyFile
-           object is ignored. shock_id - an ID of a node in the Blobstore
-           containing the FASTA file. workspace_name - target workspace
+           arguments: Exactly one of: file - a pre-existing FASTA file to
+           import. The 'assembly_name' field in the FastaAssemblyFile object
+           is ignored. shock_id - an ID of a node in the Blobstore containing
+           the FASTA file. Exactly one of: workspace_id - the immutable,
+           numeric ID of the target workspace. Always prefer providing the ID
+           over the name. workspace_name - the name of the target workspace.
            assembly_name - target object name Optional arguments: type -
-           should be one of 'isolate', 'metagenome', (maybe 'transcriptome')
-           - defaults to 'Unknown min_contig_length - if set and value is
+           should be one of 'isolate', 'metagenome', (maybe 'transcriptome').
+           Defaults to 'Unknown' min_contig_length - if set and value is
            greater than 1, this will only include sequences with length
            greater or equal to the min_contig_length specified, discarding
            all other sequences taxon_ref - sets the taxon_ref if present
@@ -181,17 +183,18 @@ class AssemblyUtil:
            (optional)) -> structure: parameter "file" of type
            "FastaAssemblyFile" -> structure: parameter "path" of String,
            parameter "assembly_name" of String, parameter "shock_id" of type
-           "ShockNodeId", parameter "workspace_name" of String, parameter
-           "assembly_name" of String, parameter "external_source" of String,
-           parameter "external_source_id" of String, parameter "taxon_ref" of
-           String, parameter "min_contig_length" of Long, parameter
-           "contig_info" of mapping from String to type "ExtraContigInfo"
-           (Structure for setting additional Contig information per contig
-           is_circ - flag if contig is circular, 0 is false, 1 is true,
-           missing indicates unknown description - if set, sets the
-           description of the field in the assembly object which may override
-           what was in the fasta file) -> structure: parameter "is_circ" of
-           Long, parameter "description" of String
+           "ShockNodeId", parameter "workspace_id" of Long, parameter
+           "workspace_name" of String, parameter "assembly_name" of String,
+           parameter "type" of String, parameter "external_source" of String,
+           parameter "external_source_id" of String, parameter
+           "min_contig_length" of Long, parameter "taxon_ref" of String,
+           parameter "contig_info" of mapping from String to type
+           "ExtraContigInfo" (Structure for setting additional Contig
+           information per contig is_circ - flag if contig is circular, 0 is
+           false, 1 is true, missing indicates unknown description - if set,
+           sets the description of the field in the assembly object which may
+           override what was in the fasta file) -> structure: parameter
+           "is_circ" of Long, parameter "description" of String
         :returns: instance of String
         """
         # ctx is the context object

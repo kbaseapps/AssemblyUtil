@@ -102,7 +102,10 @@ module AssemblyUtil {
                 file - a pre-existing FASTA file to import. The 'assembly_name' field in the
                     FastaAssemblyFile object is ignored.
                 shock_id - an ID of a node in the Blobstore containing the FASTA file.
-            workspace_name - target workspace
+            Exactly one of:
+                workspace_id - the immutable, numeric ID of the target workspace. Always prefer
+                    providing the ID over the name.
+                workspace_name - the name of the target workspace.
             assembly_name - target object name
 
         Optional arguments:
@@ -123,19 +126,22 @@ module AssemblyUtil {
         FastaAssemblyFile file;
         ShockNodeId shock_id;
 
+        int workspace_id;
         string workspace_name;
         string assembly_name;
 
+        string type;
         string external_source;
         string external_source_id;
 
-        string taxon_ref;
-
         int min_contig_length;
+        
+        string taxon_ref;
 
         mapping<string, ExtraContigInfo> contig_info; 
 
     } SaveAssemblyParams;
 
-    funcdef save_assembly_from_fasta(SaveAssemblyParams params) returns (string ref) authentication required;
+    funcdef save_assembly_from_fasta(SaveAssemblyParams params) returns (string ref)
+        authentication required;
 };
