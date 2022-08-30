@@ -53,14 +53,14 @@ class FastaToAssembly:
         # For now this is completely serial, but theoretically we could start uploading
         # Blobstore nodes when some fraction of the initial checks are done, start uploading
         # Workspace obects when some fraction of the Blobstore nodes are done, parallelize
-        # the file filtering parsing, etc.
+        # the file filtering / parsing, etc.
         # For now keep it simple
         # Also note all the assembly data is kept in memory once parsed, but it contains
         # no sequence info and so shouldn't be too huge. Could push to KBase in batches or
         # save to disk if that's an issue
         # We also probably want to add some retries for saving data, but that should go
         # in DataFileUtils if it's not there already
-        # Finally, if more than 1G work of assembly object data is sent to the workspace at once,
+        # Finally, if more than 1G worth of assembly object data is sent to the workspace at once,
         # the call will fail. May need to add some checking / splitting code around this.
         if 'file' in params['inputs'][0]:
             input_files = self._stage_file_inputs(params['inputs'])
@@ -141,6 +141,7 @@ class FastaToAssembly:
     def _parse_fasta(self, fasta_file_path: Path, extra_contig_info):
         """ Do the actual work of inspecting each contig """
 
+        # TODO TEST this needs more extensive unit testing
         # variables to store running counts of things
         total_length = 0
         base_counts = {'A': 0, 'G': 0, 'C': 0, 'T': 0}
@@ -268,7 +269,7 @@ class FastaToAssembly:
         return self._dfu.file_to_shock_mass(blob_input)
 
     def _stage_file_inputs(self, inputs) -> List[Path]:
-        files = []
+        in_files = []
         for inp in inputs:
             if not os.path.isfile(inp['file']):
                 raise ValueError(  # TODO TEST
@@ -277,7 +278,7 @@ class FastaToAssembly:
                     + "Please check the application logs for details.")
             # Ideally we'd have some sort of security check here but the DTN files could
             # be mounted anywhere...
-            # TODO check with sysadmin about this
+            # TODO check with sysadmin about this - checked, waiting on clear list of safedirs
             fp = Path(inp['file']).resolve(strict=True)
             # make the downstream unpack call unpack into scratch rather than wherever the
             # source file might be
@@ -285,12 +286,12 @@ class FastaToAssembly:
             # symlink doesn't work, because in DFU filemagic doesn't follow symlinks, and so
             # DFU won't unpack symlinked files
             os.link(fp, file_path)
-            # extract the file if it is compressed
-            # TODO Update unpack_file to take multiple files and allow specifying no archives
-            # (in which case an error should be thrown)
-            unpacked_file = self._dfu.unpack_file({'file_path': str(file_path)})
-            files.append(Path(unpacked_file['file_path']))
-        return files
+            in_files.append(file_path)
+        # extract the file if it is compressed
+        # could add a target dir argument to unpack_files, not sure how much work that might be
+        fs = [{'file_path': str(fp), 'unpack': 'uncompress'} for fp in in_files]
+        unpacked_files = self._dfu.unpack_files(fs)
+        return [Path(uf['file_path']) for uf in unpacked_files]
 
     def _stage_blobstore_inputs(self, inputs) -> List[Path]:
         blob_params = []
