@@ -54,7 +54,11 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       run: |
         sh $GITHUB_WORKSPACE/kb_sdk_actions/bin/kb-sdk test
+        ls -a .
+        ls -a test_local
+        ls -a test_local/workdir
 
+        # codecov https://docs.codecov.com/docs/codecov-uploader#integrity-checking-the-uploader
         curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
         curl -Os https://uploader.codecov.io/latest/linux/codecov
         curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM
