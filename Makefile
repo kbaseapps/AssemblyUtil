@@ -46,11 +46,16 @@ build-startup-script:
 build-test-script:
 	echo '#!/bin/bash' > $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'script_dir=$$(dirname "$$(readlink -f "$$0")")' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
+	echo 'lib=$$script_dir/../$(LIB_DIR)/$(SERVICE_CAPS)' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'export KB_DEPLOYMENT_CONFIG=$$script_dir/../deploy.cfg' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'export KB_AUTH_TOKEN=`cat /kb/module/work/token`' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'export PYTHONPATH=$$script_dir/../$(LIB_DIR):$$PATH:$$PYTHONPATH' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'cd $$script_dir/../$(TEST_DIR)' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
-	echo 'python -m nose --with-coverage --cover-package=$(SERVICE_CAPS) --cover-html --cover-html-dir=/kb/module/work/test_coverage --cover-xml --cover-xml-file=/kb/module/work/test_coverage/coverage.xml --nocapture  --nologcapture .' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
+	echo 'pytest  -vv --cov=$$lib --cov-config=coveragerc --cov-report=html --cov-report=xml .' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
+	echo 'mv .coverage /kb/module/work/' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
+	echo 'mv coverage.xml /kb/module/work/' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
+	echo 'rm -r /kb/module/work/test_coverage' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
+	echo 'mv htmlcov /kb/module/work/test_coverage' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	chmod +x $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 
 test:
