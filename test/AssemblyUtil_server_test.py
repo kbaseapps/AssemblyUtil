@@ -27,8 +27,7 @@ class AssemblyUtilTest(unittest.TestCase):
         config.read(config_file)
         for nameval in config.items('AssemblyUtil'):
             cls.cfg[nameval[0]] = nameval[1]
-        authServiceUrl = cls.cfg.get('auth-service-url',
-                                     'https://kbase.us/services/authorization/Sessions/Login')
+        authServiceUrl = cls.cfg['auth-service-url']
         auth_client = _KBaseAuth(authServiceUrl)
         user_id = auth_client.get_user(token)
         # WARNING: don't call any logging methods on the context object,
@@ -44,33 +43,28 @@ class AssemblyUtilTest(unittest.TestCase):
                         'authenticated': 1})
         cls.wsURL = cls.cfg['workspace-url']
         cls.wsClient = workspaceService(cls.wsURL, token=token)
+        ws = cls.wsClient.create_workspace(
+            {'workspace': 'test_AssemblyUtil_' + str(int(time.time() * 1000))})
+        cls.ws_name = ws[1]
+        cls.ws_id = ws[0]
         cls.serviceImpl = AssemblyUtil(cls.cfg)
         cls.scratch = cls.cfg['scratch']
         cls.callback_url = os.environ['SDK_CALLBACK_URL']
 
     @classmethod
     def tearDownClass(cls):
-        if hasattr(cls, 'wsName'):
-            cls.wsClient.delete_workspace({'workspace': cls.wsName})
+        if hasattr(cls, 'ws_name'):
+            cls.wsClient.delete_workspace({'workspace': cls.ws_name})
             print('Test workspace was deleted')
 
     def getWsClient(self):
-        return self.__class__.wsClient
-
-    def getWsName(self):
-        if hasattr(self.__class__, 'wsName'):
-            return self.__class__.wsName
-        suffix = int(time.time() * 1000)
-        wsName = "test_AssemblyUtil_" + str(suffix)
-        self.getWsClient().create_workspace({'workspace': wsName})
-        self.__class__.wsName = wsName
-        return wsName
+        return self.wsClient
 
     def getImpl(self):
-        return self.__class__.serviceImpl
+        return self.serviceImpl
 
     def getContext(self):
-        return self.__class__.ctx
+        return self.ctx
 
     def check_fasta_file(self, ws_obj_name, expected_file):
         assemblyUtil = self.getImpl()
@@ -78,7 +72,7 @@ class AssemblyUtilTest(unittest.TestCase):
         print('attempting download')
         fasta = assemblyUtil.get_assembly_as_fasta(
             self.getContext(),
-            {'ref': self.getWsName() + "/" + ws_obj_name}
+            {'ref': self.ws_name + "/" + ws_obj_name}
         )[0]
         pprint(fasta)
         # let's compare files pointed from fasta['path'] and expected_file
@@ -106,7 +100,7 @@ class AssemblyUtilTest(unittest.TestCase):
         ws_obj_name = 'MyNewAssembly'
         result = assemblyUtil.save_assembly_from_fasta(self.getContext(),
                                                        {'file': {'path': fasta_path},
-                                                        'workspace_name': self.getWsName(),
+                                                        'workspace_name': self.ws_name,
                                                         'assembly_name': ws_obj_name,
                                                         'taxon_ref': 'ReferenceTaxons/unknown_taxon',
                                                         })
@@ -120,7 +114,7 @@ class AssemblyUtilTest(unittest.TestCase):
             self.getContext(),
             {
                 'file': {'path': str(Path(tmp_dir) / "test2.fna.gz")},
-                'workspace_name': self.getWsName(),
+                'workspace_name': self.ws_name,
                 'assembly_name': 'MyNewAssembly_gzip',
                 'taxon_ref': 'ReferenceTaxons/unknown_taxon',
             })
@@ -133,7 +127,7 @@ class AssemblyUtilTest(unittest.TestCase):
         ws_obj_name2 = 'MyNewAssembly.2'
         result2 = assemblyUtil.save_assembly_from_fasta(self.getContext(),
                                                         {'shock_id': shock_id,
-                                                         'workspace_name': self.getWsName(),
+                                                         'workspace_name': self.ws_name,
                                                          'assembly_name': ws_obj_name2
                                                          })
         pprint(result2)
@@ -148,7 +142,7 @@ class AssemblyUtilTest(unittest.TestCase):
         try:
             assemblyUtil.save_assembly_from_fasta(self.getContext(),
                                                     {'file': {'path': empty_file_path},
-                                                     'workspace_name': self.getWsName(),
+                                                     'workspace_name': self.ws_name,
                                                      'assembly_name': 'empty',
                                                      'taxon_ref': 'ReferenceTaxons/unknown_taxon',
                                                      "min_contig_length": 500
@@ -182,7 +176,7 @@ class AssemblyUtilTest(unittest.TestCase):
                                        }]
                           }
 
-        obj_info = self.getWsClient().save_objects({'workspace': self.getWsName(),
+        obj_info = self.getWsClient().save_objects({'workspace': self.ws_name,
                                                     'objects': [{'type': 'KBaseGenomes.ContigSet',
                                                                  'name': ws_obj_name4,
                                                                  'data': contigset_data
@@ -191,7 +185,7 @@ class AssemblyUtilTest(unittest.TestCase):
 
         assemblyUtil = self.getImpl()
         fasta = assemblyUtil.get_assembly_as_fasta(self.getContext(),
-                                                   {'ref': self.getWsName() + '/' + obj_info[1],
+                                                   {'ref': self.ws_name + '/' + obj_info[1],
                                                     'filename': 'legacy.fa'})[0]
 
         file_name = "legacy_test.fna"
@@ -214,7 +208,7 @@ class AssemblyUtilTest(unittest.TestCase):
         ws_obj_name = 'FilteredAssembly'
         result = assemblyUtil.save_assembly_from_fasta(self.getContext(),
                                                        {'file': {'path': fasta_path},
-                                                        'workspace_name': self.getWsName(),
+                                                        'workspace_name': self.ws_name,
                                                         'assembly_name': ws_obj_name,
                                                         'min_contig_length': 9,
                                                         'external_source': 'someplace',
@@ -253,7 +247,7 @@ class AssemblyUtilTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'KBase Assembly Utils tried to save an assembly'):
             assemblyUtil.save_assembly_from_fasta(self.getContext(),
                                                        {'file': {'path': fasta_path},
-                                                        'workspace_name': self.getWsName(),
+                                                        'workspace_name': self.ws_name,
                                                         'assembly_name': ws_obj_name,
                                                         'min_contig_length': 500
                                                         })
