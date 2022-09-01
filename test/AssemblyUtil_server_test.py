@@ -107,14 +107,14 @@ class AssemblyUtilTest(unittest.TestCase):
         pprint(result)
         self.check_fasta_file(ws_obj_name, fasta_path)
 
-        print('attempting upload of gzipped file')
+        print('attempting upload of gzipped file using workspace id vs name')
         # DFU can't see the file unless it's in scratch
         shutil.copy(Path("data") / "test2.fna.gz", tmp_dir)
         result = assemblyUtil.save_assembly_from_fasta(
             self.getContext(),
             {
                 'file': {'path': str(Path(tmp_dir) / "test2.fna.gz")},
-                'workspace_name': self.ws_name,
+                'workspace_id': self.ws_id,
                 'assembly_name': 'MyNewAssembly_gzip',
                 'taxon_ref': 'ReferenceTaxons/unknown_taxon',
             })
@@ -244,7 +244,10 @@ class AssemblyUtilTest(unittest.TestCase):
         fasta_path = tmp_dir + "/" + file_name
         print('attempting upload')
         ws_obj_name = 'FilteredAssembly'
-        with self.assertRaisesRegex(ValueError, 'KBase Assembly Utils tried to save an assembly'):
+        err = ("KBase Assembly Utils tried to save an assembly, but the calling "
+               + f"application specified a file \\('{tmp_dir}/not_a_real_file.fna'\\) "
+               + "that is missing. Please check the application logs for details.")
+        with self.assertRaisesRegex(ValueError, err):
             assemblyUtil.save_assembly_from_fasta(self.getContext(),
                                                        {'file': {'path': fasta_path},
                                                         'workspace_name': self.ws_name,
