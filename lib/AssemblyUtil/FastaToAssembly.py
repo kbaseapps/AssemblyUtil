@@ -14,6 +14,9 @@ from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.WorkspaceClient import Workspace
 
 
+_WSID = 'workspace_id'
+
+
 def _ref(object_info):
     return f'{object_info[6]}/{object_info[0]}/{object_info[4]}'
 
@@ -29,16 +32,15 @@ class FastaToAssembly:
 
     def import_fasta(self, params):
         print('validating parameters')
-        self._validate_single_params(params)
-        inputs = dict(params)
-        inputs.pop('workspace_name', None)
+        inputs = self._set_up_single_params(params)
         inputs.pop('min_contig_length', None)
         inputs.pop('shock_id', None)
         mass_params = {
-            'workspace_name': params['workspace_name'],
+            _WSID: inputs[_WSID],
             'min_contig_length': params.get('min_contig_length'),
             'inputs': [inputs]
         }
+        inputs.pop(_WSID, None)
         if 'file' in params:
             mass_params['inputs'][0]['file'] = params['file']['path']
         else:
@@ -101,12 +103,8 @@ class FastaToAssembly:
                 json.dump(ao, f)
 
         # save to WS and return
-        if 'workspace_id' in params:  # TODO TEST workspace ID is untested
-            workspace_id = int(params['workspace_id'])
-        else:
-            workspace_id = self._dfu.ws_name_to_id(params['workspace_name'])
         assembly_infos = self._save_assembly_objects(
-            workspace_id,
+            params[_WSID],
             [p['assembly_name'] for p in params['inputs']],
             assobjects
         )
@@ -272,7 +270,7 @@ class FastaToAssembly:
         in_files = []
         for inp in inputs:
             if not os.path.isfile(inp['file']):
-                raise ValueError(  # TODO TEST
+                raise ValueError(
                     "KBase Assembly Utils tried to save an assembly, but the calling "
                     + f"application specified a file ('{inp['file']}') that is missing. "
                     + "Please check the application logs for details.")
@@ -309,23 +307,35 @@ class FastaToAssembly:
         os.makedirs(tmpdir)
         return tmpdir
 
-    @staticmethod
-    def _validate_single_params(params):
-        for key in ('workspace_name', 'assembly_name'):
-            if key not in params:
-                raise ValueError('required "' + key + '" field was not defined')
+    def _set_up_single_params(self, params):
+        new_params = dict(params)
+        ws_id = params.get(_WSID)
+        ws_name = params.get('workspace_name')
+        new_params.pop('workspace_name', None)
+        if not (bool(ws_id) ^ bool(ws_name)):  # not xor
+            raise ValueError(f"Exactly one of a {_WSID} > 0 or a workspace_name must be provided")
+        if ws_id:
+            try:
+                new_params[_WSID] = int(ws_id)
+            except ValueError as e:
+                raise ValueError(f"{_WSID} must be an integer, got: {ws_id}") from e
+            if new_params[_WSID] < 1:
+                raise ValueError(f"{_WSID} must be an integer > 0")
+        else:
+            print(f"Translating workspace name {ws_name} to a workspace ID. Prefer submitting "
+                  + "a workspace ID over a mutable workspace name that may cause race conditions")
+            new_params[_WSID] = self._dfu.ws_name_to_id(params['workspace_name'])
+
+        if not new_params.get('assembly_name'):
+            raise ValueError("Required parameter assembly_name was not defined")
 
         # one and only one of either 'file' or 'shock_id' is required
-        input_count = 0
-        for key in ('file', 'shock_id'):
-            if key in params and params[key] is not None:
-                input_count = input_count + 1
-                if key == 'file':
-                    if not isinstance(params[key], dict) or 'path' not in params[key]:
-                        raise ValueError('when specifying a FASTA file input, "path" field was not defined in "file"')
-
-        if input_count == 0:
-            raise ValueError('required FASTA file as input, set as either "file" or "shock_id"')
-        if input_count > 1:
-            raise ValueError('required exactly one FASTA file as input source, you set more ' +
-                             'than one of these fields: "file", "shock_id"')
+        file_ = new_params.get('file')
+        shock_id = new_params.get('shock_id')
+        if not (bool(file_) ^ bool(shock_id)):
+            raise ValueError(f"Exactly one of file or shock_id is required")
+        if file_:
+            if not isinstance(file_, dict) or 'path' not in file_:
+                raise ValueError(
+                    'When specifying a FASTA file input, "path" field was not defined in "file"')
+        return new_params
