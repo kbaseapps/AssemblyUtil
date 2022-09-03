@@ -15,6 +15,11 @@ from installed_clients.WorkspaceClient import Workspace
 
 
 _WSID = 'workspace_id'
+_MCL = 'min_contig_length'
+_INPUTS = 'inputs'
+_FILE = 'file'
+_NODE = 'node'
+_ASSEMBLY_NAME = 'assembly_name'
 
 
 def _ref(object_info):
@@ -32,19 +37,7 @@ class FastaToAssembly:
 
     def import_fasta(self, params):
         print('validating parameters')
-        inputs = self._set_up_single_params(params)
-        inputs.pop('min_contig_length', None)
-        inputs.pop('shock_id', None)
-        mass_params = {
-            _WSID: inputs[_WSID],
-            'min_contig_length': params.get('min_contig_length'),
-            'inputs': [inputs]
-        }
-        inputs.pop(_WSID, None)
-        if 'file' in params:
-            mass_params['inputs'][0]['file'] = params['file']['path']
-        else:
-            mass_params['inputs'][0]['node'] = params['shock_id']
+        mass_params = self._set_up_single_params(params)
         return self._import_fastas(mass_params)[0]
 
     def _import_fastas(self, params):
@@ -64,12 +57,12 @@ class FastaToAssembly:
         # in DataFileUtils if it's not there already
         # Finally, if more than 1G worth of assembly object data is sent to the workspace at once,
         # the call will fail. May need to add some checking / splitting code around this.
-        if 'file' in params['inputs'][0]:
-            input_files = self._stage_file_inputs(params['inputs'])
+        if _FILE in params[_INPUTS][0]:
+            input_files = self._stage_file_inputs(params[_INPUTS])
         else:
-            input_files = self._stage_blobstore_inputs(params['inputs'])
+            input_files = self._stage_blobstore_inputs(params[_INPUTS])
 
-        mcl = params.get('min_contig_length')
+        mcl = params.get(_MCL)
         mcl = int(mcl) if mcl else None  # TODO TEST no key and None
         assembly_data = []
         for i in range(len(input_files)):
@@ -83,7 +76,7 @@ class FastaToAssembly:
             print(f'parsing FASTA file: {input_files[i]}')
             assdata = self._parse_fasta(
                 input_files[i],
-                params['inputs'][i].get('contig_info') or {})
+                params[_INPUTS][i].get('contig_info') or {})
             print(f' - parsed {assdata["num_contigs"]} contigs, {assdata["dna_size"]} bp')
             if not assdata["num_contigs"]:
                 raise ValueError("Either the original FASTA file contained no sequences or they "
@@ -95,7 +88,7 @@ class FastaToAssembly:
         file_handles = self._save_files_to_blobstore(input_files)
         assobjects = []
         for assdata, file_handle, inputs, sourcefile in zip(
-                assembly_data, file_handles, params['inputs'], input_files):
+                assembly_data, file_handles, params[_INPUTS], input_files):
             ao = self._build_assembly_object(assdata, file_handle, inputs)
             assobjects.append(ao)
             # this appears to be completely unused
@@ -105,14 +98,14 @@ class FastaToAssembly:
         # save to WS and return
         assembly_infos = self._save_assembly_objects(
             params[_WSID],
-            [p['assembly_name'] for p in params['inputs']],
+            [p[_ASSEMBLY_NAME] for p in params[_INPUTS]],
             assobjects
         )
         return [_ref(ai) for ai in assembly_infos]
 
     def _build_assembly_object(self, assembly_data, fasta_file_handle_info, params):
         """ construct the WS object data to save based on the parsed info and params """
-        assembly_data['assembly_id'] = params['assembly_name']
+        assembly_data['assembly_id'] = params[_ASSEMBLY_NAME]
         assembly_data['fasta_handle_ref'] = fasta_file_handle_info['handle']['hid']
         assembly_data['fasta_handle_info'] = fasta_file_handle_info
 
@@ -132,6 +125,9 @@ class FastaToAssembly:
             assembly_data['external_source_id'] = params['external_source_id']
 
         if 'external_source_origination_date' in params:
+            # TODO this is an arbitrary string, which isn't useful. If this field is actually
+            # used, make a new field with a standard timestamp format (epoch date?), validate that
+            # format, and deprecate this field
             assembly_data['external_source_origination_date'] = params['external_source_origination_date']
 
         return assembly_data
@@ -269,15 +265,15 @@ class FastaToAssembly:
     def _stage_file_inputs(self, inputs) -> List[Path]:
         in_files = []
         for inp in inputs:
-            if not os.path.isfile(inp['file']):
+            if not os.path.isfile(inp[_FILE]):
                 raise ValueError(
                     "KBase Assembly Utils tried to save an assembly, but the calling "
-                    + f"application specified a file ('{inp['file']}') that is missing. "
+                    + f"application specified a file ('{inp[_FILE]}') that is missing. "
                     + "Please check the application logs for details.")
             # Ideally we'd have some sort of security check here but the DTN files could
             # be mounted anywhere...
             # TODO check with sysadmin about this - checked, waiting on clear list of safedirs
-            fp = Path(inp['file']).resolve(strict=True)
+            fp = Path(inp[_FILE]).resolve(strict=True)
             # make the downstream unpack call unpack into scratch rather than wherever the
             # source file might be
             file_path = self._create_temp_dir() / fp.name
@@ -295,7 +291,7 @@ class FastaToAssembly:
         blob_params = []
         for inp in inputs:
             blob_params.append({
-                'shock_id': inp['node'],
+                'shock_id': inp[_NODE],
                 'file_path': str(self._create_temp_dir()),
                 'unpack': 'uncompress'  # Will throw an error for archives
             })
@@ -308,34 +304,43 @@ class FastaToAssembly:
         return tmpdir
 
     def _set_up_single_params(self, params):
-        new_params = dict(params)
-        ws_id = params.get(_WSID)
-        ws_name = params.get('workspace_name')
-        new_params.pop('workspace_name', None)
-        if not (bool(ws_id) ^ bool(ws_name)):  # not xor
-            raise ValueError(f"Exactly one of a {_WSID} > 0 or a workspace_name must be provided")
-        if ws_id:
-            try:
-                new_params[_WSID] = int(ws_id)
-            except ValueError as e:
-                raise ValueError(f"{_WSID} must be an integer, got: {ws_id}") from e
-            if new_params[_WSID] < 1:
-                raise ValueError(f"{_WSID} must be an integer > 0")
-        else:
+        inputs = dict(params)
+        ws_id = self._get_int(inputs.pop(_WSID, None), _WSID)
+        ws_name = inputs.pop('workspace_name', None)
+        if (bool(ws_id) == bool(ws_name)):  # xnor
+            raise ValueError(f"Exactly one of a {_WSID} or a workspace_name must be provided")
+        if not ws_id:
             print(f"Translating workspace name {ws_name} to a workspace ID. Prefer submitting "
                   + "a workspace ID over a mutable workspace name that may cause race conditions")
-            new_params[_WSID] = self._dfu.ws_name_to_id(params['workspace_name'])
+            ws_id = self._dfu.ws_name_to_id(params['workspace_name'])
 
-        if not new_params.get('assembly_name'):
-            raise ValueError("Required parameter assembly_name was not defined")
+        if not inputs.get(_ASSEMBLY_NAME):
+            raise ValueError(f"Required parameter {_ASSEMBLY_NAME} was not defined")
 
         # one and only one of either 'file' or 'shock_id' is required
-        file_ = new_params.get('file')
-        shock_id = new_params.get('shock_id')
-        if not (bool(file_) ^ bool(shock_id)):
-            raise ValueError(f"Exactly one of file or shock_id is required")
+        file_ = inputs.pop(_FILE, None)
+        shock_id = inputs.pop('shock_id', None)
+        if (bool(file_) == bool(shock_id)):  # xnor
+            raise ValueError(f"Exactly one of {_FILE} or shock_id is required")
         if file_:
             if not isinstance(file_, dict) or 'path' not in file_:
-                raise ValueError(
-                    'When specifying a FASTA file input, "path" field was not defined in "file"')
-        return new_params
+                raise ValueError('When specifying a FASTA file input, "path" field was '
+                                 + f'not defined in "{_FILE}"')
+        mass_params = {
+            _WSID: ws_id,
+            _MCL: self._get_int(inputs.pop(_MCL, None), f"If provided, {_MCL}"),
+            _INPUTS: [inputs]
+        }
+        if file_:
+            inputs[_FILE] = params[_FILE]['path']
+        else:
+            inputs[_NODE] = params['shock_id']
+        return mass_params
+
+    def _get_int(self, putative_int, name):
+        if putative_int is not None:
+            if type(putative_int) != int:
+                raise ValueError(f"{name} must be an integer, got: {putative_int}")
+            if putative_int < 1:
+                raise ValueError(f"{name} must be an integer > 0")
+        return putative_int
