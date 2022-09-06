@@ -23,14 +23,18 @@ def _set_up_mocks(path: str = 'fake_scratch'):
     return fta, dfu, ws
 
 
-def _run_test_spec(test_spec, print_spec=False):
+def _run_test_spec_fail(test_spec, print_spec=False):
     fta, _, _ = _set_up_mocks()
     for err, params in test_spec:
         if print_spec:
             print(f"spec:\n{params}")
+        _run_test_fail(fta, params, err)
+
+
+def _run_test_fail(fta, params, expected):
         with raises(Exception) as got:
             fta.import_fasta(params)
-        assert_exception_correct(got.value, ValueError(err))
+        assert_exception_correct(got.value, ValueError(expected))
 
 
 def test_import_fasta_workspace_name_id_input_fail():
@@ -48,17 +52,15 @@ def test_import_fasta_workspace_name_id_input_fail():
         (err2, {'workspace_id': -100}),
         ('workspace_id must be an integer, got: foo', {'workspace_id': 'foo'}),
     ]
-    _run_test_spec(test_spec)
+    _run_test_spec_fail(test_spec)
 
 
 def test_import_fasta_no_assembly_name():
     fta, dfu, _ = _set_up_mocks()
     dfu.ws_name_to_id.return_value = 34
 
-    with raises(Exception) as got:
-        fta.import_fasta({'workspace_name': 'whee'})
-    assert_exception_correct(got.value, ValueError(
-        'Required parameter assembly_name was not defined'))
+    _run_test_fail(
+        fta, {'workspace_name': 'whee'}, 'Required parameter assembly_name was not defined')
 
     dfu.ws_name_to_id.assert_called_once_with('whee')
 
@@ -82,7 +84,7 @@ def test_import_fasta_file_source_fail():
         (err2, _update(b, {'file': '/foo/bar'})),
         (err2, _update(b, {'file': {'perth': '/foo/bar'}})),
     ]
-    _run_test_spec(test_spec)
+    _run_test_spec_fail(test_spec)
 
 
 def test_import_fasta_min_contig_length_fail():
@@ -100,4 +102,4 @@ def test_import_fasta_min_contig_length_fail():
         ('If provided, min_contig_length must be an integer, got: []',
           _update(b, {'min_contig_length': []})),
     ]
-    _run_test_spec(test_spec)
+    _run_test_spec_fail(test_spec)
