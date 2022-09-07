@@ -10,6 +10,8 @@ LBIN_DIR = bin
 EXECUTABLE_SCRIPT_NAME = run_$(SERVICE_CAPS)_async_job.sh
 STARTUP_SCRIPT_NAME = start_server.sh
 TEST_SCRIPT_NAME = run_tests.sh
+#TEST_SPEC = *_unit_test.py
+TEST_SPEC = .
 
 .PHONY: test
 
@@ -51,7 +53,7 @@ build-test-script:
 	echo 'export KB_AUTH_TOKEN=`cat /kb/module/work/token`' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'export PYTHONPATH=$$script_dir/../$(LIB_DIR):$$PATH:$$PYTHONPATH' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'cd $$script_dir/../$(TEST_DIR)' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
-	echo 'pytest  -vv --cov=$$lib --cov-config=coveragerc --cov-report=html --cov-report=xml .' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
+	echo 'pytest  -vv --cov=$$lib --cov-config=coveragerc --cov-report=html --cov-report=xml $(TEST_SPEC)' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'mv .coverage /kb/module/work/' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'mv coverage.xml /kb/module/work/' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'rm -r /kb/module/work/test_coverage' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
