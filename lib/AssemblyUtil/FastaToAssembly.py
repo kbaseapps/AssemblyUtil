@@ -4,7 +4,7 @@ import os.path
 from pathlib import Path
 import sys
 import uuid
-from typing import List
+from typing import List, Callable
 from collections import Counter
 from hashlib import md5
 
@@ -30,17 +30,27 @@ class FastaToAssembly:
     # Note added X due to kb|g.1886.fasta
     _VALID_CHARS = "-ACGTUWSMKRYBDHVNX"
     _AMINO_ACID_SPECIFIC_CHARACTERS = "PLIFQE"
-    def __init__(self, dfu: DataFileUtil, ws: Workspace, scratch: Path):
+    def __init__(self,
+             dfu: DataFileUtil,
+             ws: Workspace,
+             scratch: Path,
+             uuid_gen: Callable[[], uuid.UUID] = lambda: uuid.uuid4()):
         self._scratch = scratch
         self._dfu = dfu
         self._ws = ws
+        self._uuid_gen = uuid_gen
 
     def import_fasta(self, params):
         print('validating parameters')
         mass_params = self._set_up_single_params(params)
-        return self._import_fastas(mass_params)[0]
+        return self._import_fasta_mass(mass_params)[0]
 
-    def _import_fastas(self, params):
+    def import_fasta_mass(self, params):
+        print('validating parameters')
+        self._validate_mass_params(params)
+        return self._import_fasta_mass(params)
+
+    def _import_fasta_mass(self, params):
         # TODO TEST with muliple files
         # TODO check that inputs are all either files or shock nodes
         # TODO check inputs generally
@@ -63,7 +73,6 @@ class FastaToAssembly:
             input_files = self._stage_blobstore_inputs(params[_INPUTS])
 
         mcl = params.get(_MCL)
-        mcl = int(mcl) if mcl else None  # TODO TEST no key and None
         assembly_data = []
         for i in range(len(input_files)):
             # Hmm, all through these printouts we should really put the blobstore node here as
@@ -113,10 +122,13 @@ class FastaToAssembly:
         if 'type' in params:
             assembly_data['type'] = params['type']
 
+        # TODO this could be batched, or better yet, make a DFU function that wraps this
+        # At least it's not starting a container
+        # No longer used per Shane Canon, remove?
         if 'taxon_ref' in params:
             info = self._ws.get_object_info3(
                 {'objects':[{'ref': params['taxon_ref']}]})['infos'][0]
-            assembly_data['taxon_ref'] = f'{info[6]}/{info[0]}/{info[4]}'
+            assembly_data['taxon_ref'] = _ref(info)
 
         if 'external_source' in params:
             assembly_data['external_source'] = params['external_source']
@@ -182,8 +194,10 @@ class FastaToAssembly:
                 contig_info['Ncount'] = Ncount
 
             # 2b) record if the contig is circular
+            # TODO should throw an error if ECI has invalid record IDs
             if record.id in extra_contig_info:
                 if 'is_circ' in extra_contig_info[record.id]:
+                    # TODO supposed to be a boolean, should check for 1 or 0
                     contig_info['is_circ'] = int(extra_contig_info[record.id]['is_circ'])
                 if 'description' in extra_contig_info[record.id]:
                     contig_info['description'] = str(extra_contig_info[record.id]['description'])
@@ -299,8 +313,8 @@ class FastaToAssembly:
         return [Path(dr['file_path']) for dr in dfu_res]
 
     def _create_temp_dir(self):
-        tmpdir = self._scratch / ("import_fasta_" + str(uuid.uuid4()))
-        os.makedirs(tmpdir)
+        tmpdir = self._scratch / ("import_fasta_" + str(self._uuid_gen()))
+        os.makedirs(tmpdir, exist_ok=True)
         return tmpdir
 
     def _set_up_single_params(self, params):
@@ -336,6 +350,29 @@ class FastaToAssembly:
         else:
             inputs[_NODE] = params['shock_id']
         return mass_params
+
+    def _validate_mass_params(self, params):
+        ws_id = self._get_int(params.get(_WSID), _WSID)
+        if not ws_id:
+            raise ValueError(f"{_WSID} is required")
+        inputs = params.get(_INPUTS)
+        if not inputs or type(inputs) != list:
+            raise ValueError(f"{_INPUTS} field is required and must be a non-empty list")
+        for i, inp in enumerate(inputs, start=1):
+            if type(inp) != dict:
+                raise ValueError(f"Entry #{i} in {_INPUTS} field is not a mapping as required")
+        file_ = inputs[0].get(_FILE)
+        if bool(file_) == bool(inputs[0].get(_NODE)):  # xnor
+            raise ValueError(f"Entry #1 in {_INPUTS} field must have exactly one of "
+                             + f"{_FILE} or {_NODE} specified")
+        field = _FILE if file_ else _NODE
+        for i, inp in enumerate(inputs, start=1):
+            if not inp.get(field):
+                raise ValueError(
+                    f"Entry #{i} in {_INPUTS} must have a {field} field to match entry #1")
+            if not inp.get(_ASSEMBLY_NAME):
+                raise ValueError(f"Missing {_ASSEMBLY_NAME} field in {_INPUTS} entry #{i}")
+        self._get_int(params.get(_MCL), f"If provided, {_MCL}")
 
     def _get_int(self, putative_int, name):
         if putative_int is not None:
