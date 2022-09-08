@@ -11,7 +11,6 @@ from hashlib import md5
 from Bio import SeqIO
 
 from installed_clients.DataFileUtilClient import DataFileUtil
-from installed_clients.WorkspaceClient import Workspace
 
 
 _WSID = 'workspace_id'
