@@ -331,6 +331,7 @@ class FastaToAssembly:
                                  + f'not defined in "{_FILE}"')
         mass_params = {
             _WSID: ws_id,
+            # Ideally set of minimum of 2 here, but left at 1 for backwards compatibility
             _MCL: self._get_int(inputs.pop(_MCL, None), f"If provided, {_MCL}"),
             _INPUTS: [inputs]
         }
@@ -361,12 +362,12 @@ class FastaToAssembly:
                     f"Entry #{i} in {_INPUTS} must have a {field} field to match entry #1")
             if not inp.get(_ASSEMBLY_NAME):
                 raise ValueError(f"Missing {_ASSEMBLY_NAME} field in {_INPUTS} entry #{i}")
-        self._get_int(params.get(_MCL), f"If provided, {_MCL}")
+        self._get_int(params.get(_MCL), f"If provided, {_MCL}", minimum=2)
 
-    def _get_int(self, putative_int, name):
+    def _get_int(self, putative_int, name, minimum=1):
         if putative_int is not None:
             if type(putative_int) != int:
                 raise ValueError(f"{name} must be an integer, got: {putative_int}")
-            if putative_int < 1:
-                raise ValueError(f"{name} must be an integer > 0")
+            if putative_int < minimum:
+                raise ValueError(f"{name} must be an integer >= {minimum}")
         return putative_int

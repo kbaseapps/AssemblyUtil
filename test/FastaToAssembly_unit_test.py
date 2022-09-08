@@ -59,7 +59,7 @@ def test_import_fasta_workspace_name_id_input_fail():
     Tests the cases where workspace identifiers are submitted incorrectly.
     '''
     err1 = 'Exactly one of a workspace_id or a workspace_name must be provided'
-    err2 = 'workspace_id must be an integer > 0'
+    err2 = 'workspace_id must be an integer >= 1'
     test_spec = [
         (err1, {}),
         (err1, {'werksce_nme': 'foo'}),
@@ -108,7 +108,7 @@ def test_import_fasta_min_contig_length_fail():
     '''
     Tests illegal min_contig_length values.
     '''
-    err1 = 'If provided, min_contig_length must be an integer > 0'
+    err1 = 'If provided, min_contig_length must be an integer >= 1'
     b = {'workspace_id': 1, 'assembly_name': 'foo', 'shock_id': 'fake_id'}
     test_spec = [
         ('If provided, min_contig_length must be an integer, got: foo',
@@ -541,7 +541,7 @@ def test_import_fasta_mass_fail_workspace_id_input():
     Tests the cases where workspace identifiers are submitted incorrectly.
     '''
     err1 = 'workspace_id is required'
-    err2 = 'workspace_id must be an integer > 0'
+    err2 = 'workspace_id must be an integer >= 1'
     test_spec = [
         (err1, {}),
         (err1, {'werksce_nme': 'foo'}),
@@ -606,11 +606,12 @@ def test_import_fasta_mass_fail_missing_assembly_name():
 
 
 def test_import_fasta_mass_fail_min_contig_length():
-    err1 = 'If provided, min_contig_length must be an integer > 0'
+    err1 = 'If provided, min_contig_length must be an integer >= 2'
     b = {'workspace_id': 1, 'inputs': [{'assembly_name': 'foo', 'node': 'fake_id'}]}
     test_spec = [
         ('If provided, min_contig_length must be an integer, got: foo',
           _update(b, {'min_contig_length': 'foo'})),
+        (err1, _update(b, {'min_contig_length': 1})),
         (err1, _update(b, {'min_contig_length': 0})),
         (err1, _update(b, {'min_contig_length': -1})),
         (err1, _update(b, {'min_contig_length': -100})),
