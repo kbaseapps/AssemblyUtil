@@ -205,7 +205,6 @@ class AssemblyUtil:
 
         ref = FastaToAssembly(
             DataFileUtil(self.callback_url, token=ctx['token']),
-            Workspace(self.ws_url, token=ctx['token']),
             Path(self.sharedFolder)
         ).import_fasta(params)
 
