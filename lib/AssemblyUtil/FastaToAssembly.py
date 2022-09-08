@@ -122,14 +122,6 @@ class FastaToAssembly:
         if 'type' in params:
             assembly_data['type'] = params['type']
 
-        # TODO this could be batched, or better yet, make a DFU function that wraps this
-        # At least it's not starting a container
-        # No longer used per Shane Canon, remove?
-        if 'taxon_ref' in params:
-            info = self._ws.get_object_info3(
-                {'objects':[{'ref': params['taxon_ref']}]})['infos'][0]
-            assembly_data['taxon_ref'] = _ref(info)
-
         if 'external_source' in params:
             assembly_data['external_source'] = params['external_source']
 

@@ -2,6 +2,8 @@
 ### Update
     - Removed the unused UI import apps.
     - Removed the `ftp_url` parameter from `save_assembly_from_fasta`
+    - Removed the `taxon_ref` parameter from `save_assembly_from_fasta`. It is now silently
+      ignored.
     - Clarified `save_assembly_from_fasta` documentation
     - Fixed a bug in `save_assembly_from_fasta` that could cause file name collisions if
       multiple `AssemblyUtil` instances are run in parallel

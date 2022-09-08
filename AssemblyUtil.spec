@@ -117,8 +117,6 @@ module AssemblyUtil {
                 include sequences with length greater or equal to the min_contig_length
                 specified, discarding all other sequences
 
-            taxon_ref - sets the taxon_ref if present
-
             contig_info - map from contig_id to a small structure that can be used to set the
                 is_circular and description fields for Assemblies (optional)
     */
@@ -136,8 +134,6 @@ module AssemblyUtil {
 
         int min_contig_length;
         
-        string taxon_ref;
-
         mapping<string, ExtraContigInfo> contig_info; 
 
     } SaveAssemblyParams;

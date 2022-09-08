@@ -200,8 +200,6 @@ def _test_import_fasta_mass_file(tmp_path, params_root):
             'size': 90
         },
     ]
-    ws.get_object_info3.return_value = {
-        'infos': [[42, 'name', 'type', 'time', 1, 'user', 6, 'wsname', 'md5', 78, {}]]}
     dfu.save_objects.return_value = [
         [4, 'name', 'type', 'time', 75, 'user', 42, 'wsname', 'md5', 78, {}],
         [7, 'name', 'type', 'time', 1, 'user', 42, 'wsname', 'md5', 78, {}],
@@ -218,7 +216,7 @@ def _test_import_fasta_mass_file(tmp_path, params_root):
                 'type': 'There should be a controlled vocabulary for this field',
                 'external_source': 'ext source',
                 'external_source_id': 'ext source id',
-                'taxon_ref': 'MyWS/MyObj/3',
+                'taxon_ref': 'MyWS/MyObj/3',  # Silently ignored, removed in 2.0.0
                 'contig_info': {
                     'contig3': {'is_circ': 1, 'description': 'desc goes here'},
                     'contig4': {'is_circ': -2}
@@ -238,7 +236,6 @@ def _test_import_fasta_mass_file(tmp_path, params_root):
         {'file_path': str(dir1 / 'f1.fasta'), 'make_handle': 1},
         {'file_path': str(dir2 / 'f2.fasta'), 'make_handle': 1}
     ])
-    ws.get_object_info3.assert_called_once_with({'objects': [{'ref': 'MyWS/MyObj/3'}]})
     dfu.save_objects.assert_called_once_with({
         'id': 42,
         'objects': [
@@ -332,7 +329,6 @@ def _test_import_fasta_mass_file(tmp_path, params_root):
                         'size': 90
                     },
                     'type': 'There should be a controlled vocabulary for this field',
-                    'taxon_ref': '6/42/1',
                     'external_source': 'ext source',
                     'external_source_id': 'ext source id',
                 },
