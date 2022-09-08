@@ -32,12 +32,10 @@ class FastaToAssembly:
     _AMINO_ACID_SPECIFIC_CHARACTERS = "PLIFQE"
     def __init__(self,
              dfu: DataFileUtil,
-             ws: Workspace,
              scratch: Path,
              uuid_gen: Callable[[], uuid.UUID] = lambda: uuid.uuid4()):
         self._scratch = scratch
         self._dfu = dfu
-        self._ws = ws
         self._uuid_gen = uuid_gen
 
     def import_fasta(self, params):

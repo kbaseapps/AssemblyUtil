@@ -13,7 +13,6 @@ from unittest.mock import create_autospec
 
 from AssemblyUtil.FastaToAssembly import FastaToAssembly
 from installed_clients.DataFileUtilClient import DataFileUtil
-from installed_clients.WorkspaceClient import Workspace
 from testing_helpers import assert_exception_correct
 
 
@@ -25,16 +24,15 @@ def _set_up_mocks(
         uuid_gen: Optional[Callable[[], uuid.UUID]] = None
         ):
     dfu = create_autospec(DataFileUtil, spec_set=True, instance=True)
-    ws = create_autospec(Workspace, spec_set=True, instance=True)
     if uuid_gen:
-        fta = FastaToAssembly(dfu, ws, Path(path), uuid_gen=uuid_gen)
+        fta = FastaToAssembly(dfu, Path(path), uuid_gen=uuid_gen)
     else:
-        fta = FastaToAssembly(dfu, ws, Path(path))
-    return fta, dfu, ws
+        fta = FastaToAssembly(dfu, Path(path))
+    return fta, dfu
 
 
 def _run_test_spec_fail(test_spec, mass=False, print_spec=False):
-    fta, _, _ = _set_up_mocks()
+    fta, _ = _set_up_mocks()
     for err, params in test_spec:
         if print_spec:
             print(f"spec:\n{params}")
@@ -75,7 +73,7 @@ def test_import_fasta_workspace_name_id_input_fail():
 
 
 def test_import_fasta_no_assembly_name():
-    fta, dfu, _ = _set_up_mocks()
+    fta, dfu = _set_up_mocks()
     dfu.ws_name_to_id.return_value = 34
 
     _run_test_fail(
@@ -162,7 +160,7 @@ def _test_import_fasta_mass_file(tmp_path, params_root):
     uuid2 = uuid.uuid4()
     dir1 = scratch / ('import_fasta_' + str(uuid1))
     dir2 = scratch / ('import_fasta_' + str(uuid2))
-    fta, dfu, ws = _set_up_mocks(
+    fta, dfu = _set_up_mocks(
         path=str(scratch),
         uuid_gen=lambda i=iter([uuid1, uuid2]): next(i)
     )
@@ -373,7 +371,7 @@ def test_import_fasta_mass_blobstore_min_contig_length(tmp_path):
         ])
 
     ### Set up FastaToAssembly ###
-    fta, dfu, _ = _set_up_mocks(
+    fta, dfu = _set_up_mocks(
         path=str(scratch),
         uuid_gen=lambda i=iter([uuid1, uuid2]): next(i)
     )
@@ -570,7 +568,6 @@ def test_import_fasta_mass_fail_bad_inputs_field():
 
 def test_import_fasta_mass_fail_mixed_input_types():
     err1 = 'Entry #1 in inputs field must have exactly one of file or node specified'
-    err2 = 'Entry #3 in inputs must have a node field to match entry #1'
     test_spec = [
         (err1, {'workspace_id': 3, 'inputs': [{}, {'node': 'a'}]}),
         (err1, {'workspace_id': 3, 'inputs': [{'file': 'a', 'node': 'b'}, {'node': 'a'}]}),
