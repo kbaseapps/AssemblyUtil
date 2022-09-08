@@ -30,7 +30,7 @@ class AssemblyUtil:
     ######################################### noqa
     VERSION = "2.0.0"
     GIT_URL = "https://github.com/kbaseapps/AssemblyUtil"
-    GIT_COMMIT_HASH = "f2a106d44f76d943b3f653fdf07913da6787913c"
+    GIT_COMMIT_HASH = "b958ecdf77d12a39835011e8225812d493e4fb05"
 
     #BEGIN_CLASS_HEADER
 
@@ -177,24 +177,23 @@ class AssemblyUtil:
            Defaults to 'Unknown' min_contig_length - if set and value is
            greater than 1, this will only include sequences with length
            greater or equal to the min_contig_length specified, discarding
-           all other sequences taxon_ref - sets the taxon_ref if present
-           contig_info - map from contig_id to a small structure that can be
-           used to set the is_circular and description fields for Assemblies
-           (optional)) -> structure: parameter "file" of type
-           "FastaAssemblyFile" -> structure: parameter "path" of String,
-           parameter "assembly_name" of String, parameter "shock_id" of type
-           "ShockNodeId", parameter "workspace_id" of Long, parameter
+           all other sequences contig_info - map from contig_id to a small
+           structure that can be used to set the is_circular and description
+           fields for Assemblies (optional)) -> structure: parameter "file"
+           of type "FastaAssemblyFile" -> structure: parameter "path" of
+           String, parameter "assembly_name" of String, parameter "shock_id"
+           of type "ShockNodeId", parameter "workspace_id" of Long, parameter
            "workspace_name" of String, parameter "assembly_name" of String,
            parameter "type" of String, parameter "external_source" of String,
            parameter "external_source_id" of String, parameter
-           "min_contig_length" of Long, parameter "taxon_ref" of String,
-           parameter "contig_info" of mapping from String to type
-           "ExtraContigInfo" (Structure for setting additional Contig
-           information per contig is_circ - flag if contig is circular, 0 is
-           false, 1 is true, missing indicates unknown description - if set,
-           sets the description of the field in the assembly object which may
-           override what was in the fasta file) -> structure: parameter
-           "is_circ" of Long, parameter "description" of String
+           "min_contig_length" of Long, parameter "contig_info" of mapping
+           from String to type "ExtraContigInfo" (Structure for setting
+           additional Contig information per contig is_circ - flag if contig
+           is circular, 0 is false, 1 is true, missing indicates unknown
+           description - if set, sets the description of the field in the
+           assembly object which may override what was in the fasta file) ->
+           structure: parameter "is_circ" of Long, parameter "description" of
+           String
         :returns: instance of String
         """
         # ctx is the context object
