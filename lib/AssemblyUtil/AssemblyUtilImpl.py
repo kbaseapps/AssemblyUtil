@@ -44,7 +44,6 @@ class AssemblyUtil:
         self.callback_url = os.environ['SDK_CALLBACK_URL']
         self.ws_url = config['workspace-url']
         #END_CONSTRUCTOR
-        pass
 
 
     def get_assembly_as_fasta(self, ctx, params):
@@ -285,6 +284,7 @@ class AssemblyUtil:
                              'upas is not type dict as required.')
         # return the results
         return [upas]
+
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK", 'message': "", 'version': self.VERSION, 

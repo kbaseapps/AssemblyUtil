@@ -34,17 +34,13 @@ def _ref(object_info):
 
 @fixture(scope='module')
 def config():
-    token = os.environ['KB_AUTH_TOKEN']
-    config_file = os.environ['KB_DEPLOYMENT_CONFIG']
-    config = ConfigParser()
-    config.read(config_file)
-    cfg = {'file_config': {}}
-    for nameval in config.items('AssemblyUtil'):
-        cfg['file_config'][nameval[0]] = nameval[1]
+    cfg = {'token': os.environ['KB_AUTH_TOKEN']}
+    parser = ConfigParser()
+    parser.read(os.environ['KB_DEPLOYMENT_CONFIG'])
+    cfg['file_config'] = {k: v for k, v in parser.items('AssemblyUtil')}
 
     auth_client = KBaseAuth(cfg['file_config']['auth-service-url'])
-    cfg['token'] = token
-    cfg['user'] = auth_client.get_user(token)
+    cfg['user'] = auth_client.get_user(cfg['token'])
 
     cfg['callback_url'] = os.environ['SDK_CALLBACK_URL']
 
