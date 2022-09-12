@@ -122,7 +122,7 @@ class AssemblyUtilTest(unittest.TestCase):
         self.check_fasta_file('MyNewAssembly_gzip', "data/test2.fna")
 
         print('attempting upload through shock')
-        data_file_cli = DataFileUtil(os.environ['SDK_CALLBACK_URL'])
+        data_file_cli = DataFileUtil(self.callback_url)
         shock_id = data_file_cli.file_to_shock({'file_path': fasta_path})['shock_id']
         ws_obj_name2 = 'MyNewAssembly.2'
         result2 = assemblyUtil.save_assembly_from_fasta(self.getContext(),
@@ -218,7 +218,7 @@ class AssemblyUtilTest(unittest.TestCase):
                                                         'contig_info': {'s3': {'is_circ': 0, 'description': 'somethin'}}
                                                         })
 
-        dfu = DataFileUtil(os.environ['SDK_CALLBACK_URL'])
+        dfu = DataFileUtil(self.callback_url)
         assembly = dfu.get_objects({'object_refs': [result[0]]})['data'][0]['data']
 
         self.assertEqual(len(assembly['contigs']), 1)

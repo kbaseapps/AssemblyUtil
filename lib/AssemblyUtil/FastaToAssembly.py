@@ -48,10 +48,6 @@ class FastaToAssembly:
         return self._import_fasta_mass(params)
 
     def _import_fasta_mass(self, params):
-        # TODO TEST with muliple files
-        # TODO check that inputs are all either files or shock nodes
-        # TODO check inputs generally
-        # TODO expose in API
         # For now this is completely serial, but theoretically we could start uploading
         # Blobstore nodes when some fraction of the initial checks are done, start uploading
         # Workspace obects when some fraction of the Blobstore nodes are done, parallelize
