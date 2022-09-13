@@ -133,6 +133,13 @@ class AssemblyUtilTest(unittest.TestCase):
         pprint(result2)
         self.check_fasta_file(ws_obj_name2, fasta_path)
 
+        # todo: add checks here on ws object
+
+        result4 = assemblyUtil.export_assembly_as_fasta(
+            self.getContext(),
+            {'input_ref': self.ws_name + '/' + ws_obj_name2})
+        pprint(result4)
+
     def test_empty_file_error_message(self):
         assemblyUtil = self.getImpl()
         tmp_dir = self.cfg['scratch']
