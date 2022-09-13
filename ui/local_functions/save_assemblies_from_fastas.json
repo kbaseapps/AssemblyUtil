@@ -1,0 +1,19 @@
+{
+    "name" : "Save genome Assemblies from FASTA files",
+    "short_description" : 
+        "KBase Assemblies represent assembled sequence data.  Use this method to create new KBase Assemblies from a FASTA files.",
+
+    "long_description" : "Takes one or more FASTA input files, whether from the local file system or the Blobstore, and imports them as Assembly workspace objects in KBase",
+
+    "tags" : {
+        "categories" : [],
+        "input": {
+            "file_types": ["fasta"],
+            "kb_types": []
+        },
+        "output": {
+            "file_types": [],
+            "kb_types": ["KBaseGenomeAnnotations.Assembly"]
+        }
+    }
+}

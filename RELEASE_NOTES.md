@@ -1,5 +1,6 @@
 ## 2.0.0
 ### Update
+    - Added the save_assemblies_from_fastas_function
     - Removed the unused UI import apps.
     - Removed the `ftp_url` parameter from `save_assembly_from_fasta`
     - Removed the `taxon_ref` parameter from `save_assembly_from_fasta`. It is now silently

@@ -140,4 +140,73 @@ module AssemblyUtil {
 
     funcdef save_assembly_from_fasta(SaveAssemblyParams params) returns (string ref)
         authentication required;
+
+    /* An input FASTA file and metadata for import.
+        Required arguments:
+            Exactly one of:
+                file - a path to an input FASTA file. Must be accessible inside the AssemblyUtil
+                    docker continer.
+                node - a node ID for a Blobstore (formerly Shock) node containing an input FASTA
+                    file.
+            assembly_name - the workspace name under which to save the Assembly object.
+        Optional arguments:
+            type - should be one of 'isolate', 'metagenome', (maybe 'transcriptome').
+                Defaults to 'Unknown'
+            external_source - the source of the input data. E.g. JGI, NCBI, etc.
+            external_source_id - the ID of the input data at the source.
+            contig_info - map from contig_id to a small structure that can be used to set the
+                is_circular and description fields for Assemblies
+    */
+    typedef structure {
+        string file;
+        string node;
+        string assembly_name;
+        string type;
+        string external_source;
+        string external_source_id;
+        mapping<string, ExtraContigInfo> contig_info; 
+    } FASTAInput;
+
+    /* Input for the save_assemblies_from_fastas function.
+        Required arguments:
+            workspace_id - the numerical ID of the workspace in which to save the Assemblies.
+            inputs - a list of FASTA files to import. All of the files must be from the same
+                source - either all local files or all Blobstore nodes.
+        Optional arguments:
+            min_contig_length - an integer > 1. If present, sequences of lesser length will
+                be removed from the input FASTA files.
+    */
+    typedef structure {
+        int workspace_id;
+        list<FASTAInput> inputs;
+        int min_contig_length;
+    } SaveAssembliesParams;
+
+    /* A Unique Permanent Address for a workspace object, which is of the form W/O/V,
+        where W is the numeric workspace ID, O is the numeric object ID, and V is the object
+        version. 
+    */
+    typedef string upa;
+
+    /* Results fo the save_assemblies_from_fastas function.
+        upas - the list of resulting workspace object references in the same order as the input.
+    */
+    typedef structure {
+        list<upa> upas;
+    } SaveAssembliesResults;
+
+    /* Save multiple assembly objects from FASTA files.
+        WARNING: The code currently saves all assembly object data in memory before sending it
+        to the workspace in a single batch. Since the object data doesn't include sequences,
+        it is typically small and so in most cases this shouldn't cause issues. However, many
+        assemblies and / or many contigs could conceivably cause memeory issues or could
+        cause the workspace to reject the data package if the serialized data is > 1GB.
+
+        TODO: If this becomes a common issue (not particularly likely?) update the code to
+           * Save assembly object data on disk if it becomes too large
+           * Batch uploads to the workspace based on data size
+     */
+    funcdef save_assemblies_from_fastas(SaveAssembliesParams params)
+        returns(SaveAssembliesResults upas)
+        authentication required;
 };

@@ -30,7 +30,7 @@ class AssemblyUtil:
     ######################################### noqa
     VERSION = "2.0.0"
     GIT_URL = "https://github.com/kbaseapps/AssemblyUtil"
-    GIT_COMMIT_HASH = "b958ecdf77d12a39835011e8225812d493e4fb05"
+    GIT_COMMIT_HASH = "dc4841765c47eb13bd80d77697c4898a9d154b58"
 
     #BEGIN_CLASS_HEADER
 
@@ -44,7 +44,6 @@ class AssemblyUtil:
         self.callback_url = os.environ['SDK_CALLBACK_URL']
         self.ws_url = config['workspace-url']
         #END_CONSTRUCTOR
-        pass
 
 
     def get_assembly_as_fasta(self, ctx, params):
@@ -216,6 +215,76 @@ class AssemblyUtil:
                              'ref is not type str as required.')
         # return the results
         return [ref]
+
+    def save_assemblies_from_fastas(self, ctx, params):
+        """
+        Save multiple assembly objects from FASTA files.
+        WARNING: The code currently saves all assembly object data in memory before sending it
+        to the workspace in a single batch. Since the object data doesn't include sequences,
+        it is typically small and so in most cases this shouldn't cause issues. However, many
+        assemblies and / or many contigs could conceivably cause memeory issues or could
+        cause the workspace to reject the data package if the serialized data is > 1GB.
+        TODO: If this becomes a common issue (not particularly likely?) update the code to
+         Save assembly object data on disk if it becomes too large
+         Batch uploads to the workspace based on data size
+        :param params: instance of type "SaveAssembliesParams" (Input for the
+           save_assemblies_from_fastas function. Required arguments:
+           workspace_id - the numerical ID of the workspace in which to save
+           the Assemblies. inputs - a list of FASTA files to import. All of
+           the files must be from the same source - either all local files or
+           all Blobstore nodes. Optional arguments: min_contig_length - an
+           integer > 1. If present, sequences of lesser length will be
+           removed from the input FASTA files.) -> structure: parameter
+           "workspace_id" of Long, parameter "inputs" of list of type
+           "FASTAInput" (An input FASTA file and metadata for import.
+           Required arguments: Exactly one of: file - a path to an input
+           FASTA file. Must be accessible inside the AssemblyUtil docker
+           continer. node - a node ID for a Blobstore (formerly Shock) node
+           containing an input FASTA file. assembly_name - the workspace name
+           under which to save the Assembly object. Optional arguments: type
+           - should be one of 'isolate', 'metagenome', (maybe
+           'transcriptome'). Defaults to 'Unknown' external_source - the
+           source of the input data. E.g. JGI, NCBI, etc. external_source_id
+           - the ID of the input data at the source. contig_info - map from
+           contig_id to a small structure that can be used to set the
+           is_circular and description fields for Assemblies) -> structure:
+           parameter "file" of String, parameter "node" of String, parameter
+           "assembly_name" of String, parameter "type" of String, parameter
+           "external_source" of String, parameter "external_source_id" of
+           String, parameter "contig_info" of mapping from String to type
+           "ExtraContigInfo" (Structure for setting additional Contig
+           information per contig is_circ - flag if contig is circular, 0 is
+           false, 1 is true, missing indicates unknown description - if set,
+           sets the description of the field in the assembly object which may
+           override what was in the fasta file) -> structure: parameter
+           "is_circ" of Long, parameter "description" of String, parameter
+           "min_contig_length" of Long
+        :returns: instance of type "SaveAssembliesResults" (Results fo the
+           save_assemblies_from_fastas function. upas - the list of resulting
+           workspace object references in the same order as the input.) ->
+           structure: parameter "upas" of list of type "upa" (A Unique
+           Permanent Address for a workspace object, which is of the form
+           W/O/V, where W is the numeric workspace ID, O is the numeric
+           object ID, and V is the object version.)
+        """
+        # ctx is the context object
+        # return variables are: upas
+        #BEGIN save_assemblies_from_fastas
+        upas = {
+            'upas': FastaToAssembly(
+                DataFileUtil(self.callback_url, token=ctx['token']),
+                Path(self.sharedFolder)
+            ).import_fasta_mass(params)
+        }
+        #END save_assemblies_from_fastas
+
+        # At some point might do deeper type checking...
+        if not isinstance(upas, dict):
+            raise ValueError('Method save_assemblies_from_fastas return value ' +
+                             'upas is not type dict as required.')
+        # return the results
+        return [upas]
+
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK", 'message': "", 'version': self.VERSION, 

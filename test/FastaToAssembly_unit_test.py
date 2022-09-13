@@ -13,7 +13,7 @@ from unittest.mock import create_autospec
 
 from AssemblyUtil.FastaToAssembly import FastaToAssembly
 from installed_clients.DataFileUtilClient import DataFileUtil
-from testing_helpers import assert_exception_correct
+from conftest import assert_exception_correct
 
 
 # TODO Add more unit tests when changing things until entire file is covered by unit tests
