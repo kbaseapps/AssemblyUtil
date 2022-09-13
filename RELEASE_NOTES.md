@@ -1,3 +1,8 @@
+## 2.0.1
+### Update
+    - No changes, just a version bump to allow registering the most recent version of the code on
+      the CI environment.
+
 ## 2.0.0
 ### Update
     - Added the save_assemblies_from_fastas_function
