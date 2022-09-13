@@ -1,88 +1,119 @@
 import json
 import os
 import os.path
+from pathlib import Path
 import sys
 import uuid
+from typing import List, Callable
 from collections import Counter
 from hashlib import md5
 
 from Bio import SeqIO
 
 from installed_clients.DataFileUtilClient import DataFileUtil
-from installed_clients.WorkspaceClient import Workspace
 
 
-def sort_dict(in_struct):
-    """Recursively sort a dictionary by dictionary keys. (saves WS the trouble)"""
-    if isinstance(in_struct, dict):
-        return {k: sort_dict(in_struct[k]) for k in sorted(in_struct)}
-    elif isinstance(in_struct, list):
-        return [sort_dict(k) for k in sorted(in_struct)]
-    else:
-        return in_struct
+_WSID = 'workspace_id'
+_MCL = 'min_contig_length'
+_INPUTS = 'inputs'
+_FILE = 'file'
+_NODE = 'node'
+_ASSEMBLY_NAME = 'assembly_name'
 
+
+def _ref(object_info):
+    return f'{object_info[6]}/{object_info[0]}/{object_info[4]}'
 
 class FastaToAssembly:
 
-    def __init__(self, callback_url, scratch, ws_url):
-        self.scratch = scratch
-        self.dfu = DataFileUtil(callback_url)
-        self.ws = Workspace(ws_url)
+    # Note added X due to kb|g.1886.fasta
+    _VALID_CHARS = "-ACGTUWSMKRYBDHVNX"
+    _AMINO_ACID_SPECIFIC_CHARACTERS = "PLIFQE"
+    def __init__(self,
+             dfu: DataFileUtil,
+             scratch: Path,
+             uuid_gen: Callable[[], uuid.UUID] = lambda: uuid.uuid4()):
+        self._scratch = scratch
+        self._dfu = dfu
+        self._uuid_gen = uuid_gen
 
-        # Note added X due to kb|g.1886.fasta
-        self.valid_chars = "-ACGTUWSMKRYBDHVNX"
-        self.amino_acid_specific_characters = "PLIFQE"
-
-    def import_fasta(self, ctx, params):
+    def import_fasta(self, params):
         print('validating parameters')
-        self.validate_params(params)
+        mass_params = self._set_up_single_params(params)
+        return self._import_fasta_mass(mass_params)[0]
 
-        print('staging input files')
-        fasta_file_path = self.stage_input(params)
+    def import_fasta_mass(self, params):
+        print('validating parameters')
+        self._validate_mass_params(params)
+        return self._import_fasta_mass(params)
 
-        if 'min_contig_length' in params:
-            min_contig_length = int(params['min_contig_length'])
-            print(f'filtering FASTA file by contig length (min len={min_contig_length} bp)')
-            fasta_file_path = self.filter_contigs_by_length(fasta_file_path, min_contig_length)
+    def _import_fasta_mass(self, params):
+        # For now this is completely serial, but theoretically we could start uploading
+        # Blobstore nodes when some fraction of the initial checks are done, start uploading
+        # Workspace obects when some fraction of the Blobstore nodes are done, parallelize
+        # the file filtering / parsing, etc.
+        # For now keep it simple
+        # Also note all the assembly data is kept in memory once parsed, but it contains
+        # no sequence info and so shouldn't be too huge. Could push to KBase in batches or
+        # save to disk if that's an issue
+        # We also probably want to add some retries for saving data, but that should go
+        # in DataFileUtils if it's not there already
+        # Finally, if more than 1G worth of assembly object data is sent to the workspace at once,
+        # the call will fail. May need to add some checking / splitting code around this.
+        if _FILE in params[_INPUTS][0]:
+            input_files = self._stage_file_inputs(params[_INPUTS])
+        else:
+            input_files = self._stage_blobstore_inputs(params[_INPUTS])
 
-        print(f'parsing FASTA file: {fasta_file_path}')
-        assembly_data = self.parse_fasta(fasta_file_path, params)
-        print(f' - parsed {assembly_data["num_contigs"]} contigs,{assembly_data["dna_size"]} bp')
-        print('saving assembly to KBase')
+        mcl = params.get(_MCL)
+        assembly_data = []
+        for i in range(len(input_files)):
+            # Hmm, all through these printouts we should really put the blobstore node here as
+            # well as the file if it exists... wait and see if that code path is still actually
+            # used
+            if mcl:
+                print(f'filtering FASTA file {input_files[i]} by contig length '
+                      + f'(min len={mcl} bp)')
+                input_files[i] = self._filter_contigs_by_length(input_files[i], mcl)
+            print(f'parsing FASTA file: {input_files[i]}')
+            assdata = self._parse_fasta(
+                input_files[i],
+                params[_INPUTS][i].get('contig_info') or {})
+            print(f' - parsed {assdata["num_contigs"]} contigs, {assdata["dna_size"]} bp')
+            if not assdata["num_contigs"]:
+                raise ValueError("Either the original FASTA file contained no sequences or they "
+                                 + "were all filtered out based on the min_contig_length "
+                                 + f"parameter for file {input_files[i]}")
+            assembly_data.append(assdata)
 
-        # save file to shock and build handle
-        fasta_file_handle_info = self.save_fasta_file_to_shock(fasta_file_path)
-        # construct the output object
-        assembly_object_to_save = self.build_assembly_object(assembly_data,
-                                                             fasta_file_handle_info,
-                                                             params)
-        json.dump(assembly_object_to_save, open(self.scratch+"/example.json", 'w'))
+        print('saving assemblies to KBase')
+        file_handles = self._save_files_to_blobstore(input_files)
+        assobjects = []
+        for assdata, file_handle, inputs, sourcefile in zip(
+                assembly_data, file_handles, params[_INPUTS], input_files):
+            ao = self._build_assembly_object(assdata, file_handle, inputs)
+            assobjects.append(ao)
+            # this appears to be completely unused
+            with open(sourcefile.parent / "example.json", "w") as f:
+                json.dump(ao, f)
 
         # save to WS and return
-        if 'workspace_id' in params:
-            workspace_id = int(params['workspace_id'])
-        else:
-            workspace_id = self.dfu.ws_name_to_id(params['workspace_name'])
-        assembly_info = self.save_assembly_object(workspace_id,
-                                                  params['assembly_name'],
-                                                  assembly_object_to_save)
+        assembly_infos = self._save_assembly_objects(
+            params[_WSID],
+            [p[_ASSEMBLY_NAME] for p in params[_INPUTS]],
+            assobjects
+        )
+        return [_ref(ai) for ai in assembly_infos]
 
-        return assembly_info
-
-    def build_assembly_object(self, assembly_data, fasta_file_handle_info, params):
+    def _build_assembly_object(self, assembly_data, fasta_file_handle_info, params):
         """ construct the WS object data to save based on the parsed info and params """
-        assembly_data['assembly_id'] = params['assembly_name']
+        assembly_data['assembly_id'] = params[_ASSEMBLY_NAME]
         assembly_data['fasta_handle_ref'] = fasta_file_handle_info['handle']['hid']
-        fasta_file_handle_info['handle'] = fasta_file_handle_info['handle']
         assembly_data['fasta_handle_info'] = fasta_file_handle_info
 
         assembly_data['type'] = 'Unknown'
         if 'type' in params:
             assembly_data['type'] = params['type']
-
-        if 'taxon_ref' in params:
-            info = self.ws.get_object_info3({'objects':[{'ref': params['taxon_ref']}]})['infos'][0]
-            assembly_data['taxon_ref'] = f'{info[6]}/{info[0]}/{info[4]}'
 
         if 'external_source' in params:
             assembly_data['external_source'] = params['external_source']
@@ -91,13 +122,17 @@ class FastaToAssembly:
             assembly_data['external_source_id'] = params['external_source_id']
 
         if 'external_source_origination_date' in params:
+            # TODO this is an arbitrary string, which isn't useful. If this field is actually
+            # used, make a new field with a standard timestamp format (epoch date?), validate that
+            # format, and deprecate this field
             assembly_data['external_source_origination_date'] = params['external_source_origination_date']
 
-        return sort_dict(assembly_data)
+        return assembly_data
 
-    def parse_fasta(self, fasta_file_path, params):
+    def _parse_fasta(self, fasta_file_path: Path, extra_contig_info):
         """ Do the actual work of inspecting each contig """
 
+        # TODO TEST this needs more extensive unit testing
         # variables to store running counts of things
         total_length = 0
         base_counts = {'A': 0, 'G': 0, 'C': 0, 'T': 0}
@@ -105,11 +140,8 @@ class FastaToAssembly:
 
         # map from contig_id to contig_info
         all_contig_data = {}
-        extra_contig_info = {}
-        if'contig_info' in params:
-            extra_contig_info = params['contig_info']
 
-        for record in SeqIO.parse(fasta_file_path, "fasta"):
+        for record in SeqIO.parse(str(fasta_file_path), "fasta"):
             # SeqRecord(seq=Seq('TTAT...', SingleLetterAlphabet()),
             #           id='gi|113968346|ref|NC_008321.1|',
             #           name='gi|113968346|ref|NC_008321.1|',
@@ -133,8 +165,8 @@ class FastaToAssembly:
                     base_counts[character] = base_counts[character] + sequence_count_table[character]
                 else:
                     base_counts[character] = sequence_count_table[character]
-                if character not in self.valid_chars:
-                    if character in self.amino_acid_specific_characters:
+                if character not in self._VALID_CHARS:
+                    if character in self._AMINO_ACID_SPECIFIC_CHARACTERS:
                         raise ValueError('This FASTA file may have amino acids in it instead '
                                          'of the required nucleotides.')
                     raise ValueError(f"This FASTA file has non nucleic acid characters: "
@@ -147,8 +179,10 @@ class FastaToAssembly:
                 contig_info['Ncount'] = Ncount
 
             # 2b) record if the contig is circular
+            # TODO should throw an error if ECI has invalid record IDs
             if record.id in extra_contig_info:
                 if 'is_circ' in extra_contig_info[record.id]:
+                    # TODO supposed to be a boolean, should check for 1 or 0
                     contig_info['is_circ'] = int(extra_contig_info[record.id]['is_circ'])
                 if 'description' in extra_contig_info[record.id]:
                     contig_info['description'] = str(extra_contig_info[record.id]['description'])
@@ -187,7 +221,7 @@ class FastaToAssembly:
         return assembly_data
 
     @staticmethod
-    def fasta_filter_contigs_generator(fasta_record_iter, min_contig_length):
+    def _fasta_filter_contigs_generator(fasta_record_iter, min_contig_length):
         """ generates SeqRecords iterator for writing from a legacy contigset object """
         rows = 0
         rows_added = 0
@@ -199,92 +233,137 @@ class FastaToAssembly:
         print(f' - filtered out {rows - rows_added} of {rows} contigs that were shorter '
               f'than {(min_contig_length)} bp.')
 
-    def filter_contigs_by_length(self, fasta_file_path, min_contig_length):
+    def _filter_contigs_by_length(self, fasta_file_path: Path, min_contig_length) -> Path:
         """ removes all contigs less than the min_contig_length provided """
-        filtered_fasta_file_path = fasta_file_path + '.filtered.fa'
+        filtered_fasta_file_path = Path(str(fasta_file_path) + '.filtered.fa')
 
-        fasta_record_iter = SeqIO.parse(fasta_file_path, 'fasta')
-        SeqIO.write(self.fasta_filter_contigs_generator(fasta_record_iter, min_contig_length),
-                    filtered_fasta_file_path, 'fasta')
+        fasta_record_iter = SeqIO.parse(str(fasta_file_path), 'fasta')
+        SeqIO.write(self._fasta_filter_contigs_generator(fasta_record_iter, min_contig_length),
+                    str(filtered_fasta_file_path), 'fasta')
 
         return filtered_fasta_file_path
 
-    def save_assembly_object(self, workspace_id, assembly_name, obj_data):
-        print('Saving Assembly to Workspace')
+    def _save_assembly_objects(self, workspace_id, assembly_names, ass_data):
+        print('Saving Assemblies to Workspace')
         sys.stdout.flush()
-        if len(obj_data["contigs"]) == 0:
-            raise ValueError('There are no contigs to save, thus there is no valid assembly.')
-        obj_info = self.dfu.save_objects({'id': workspace_id,
-                                          'objects': [{'type': 'KBaseGenomeAnnotations.Assembly',
-                                                       'data': obj_data,
-                                                       'name': assembly_name
-                                                       }]
-                                          })[0]
-        return obj_info
+        ws_inputs = []
+        for assname, assdata_singular in zip(assembly_names, ass_data):
+            ws_inputs.append({
+                'type': 'KBaseGenomeAnnotations.Assembly',  # This should really be versioned...
+                'data': assdata_singular,
+                'name': assname
+            })
+        return self._dfu.save_objects({'id': workspace_id, 'objects': ws_inputs})
 
-    def save_fasta_file_to_shock(self, fasta_file_path):
-        """ Given the path to the file, upload to shock and return Handle information
-            returns:
-                typedef structure {
-                    string shock_id;
-                    Handle handle;
-                    string node_file_name;
-                    string size;
-                } FileToShockOutput;
-
-        """
-        print(f'Uploading FASTA file ({fasta_file_path}) to SHOCK')
+    def _save_files_to_blobstore(self, files: List[Path]):
+        print(f'Uploading FASTA files to the Blobstore')
         sys.stdout.flush()
-        return self.dfu.file_to_shock({'file_path': fasta_file_path, 'make_handle': 1})
+        blob_input = [{'file_path': str(fp), 'make_handle': 1} for fp in files]
+        return self._dfu.file_to_shock_mass(blob_input)
 
-    def stage_input(self, params):
-        """ Setup the input_directory by fetching the files and returning the path to the file"""
-        file_path = None
-        if 'file' in params:
-            if not os.path.isfile(params['file']['path']):
-                raise ValueError('KBase Assembly Utils tried to save an assembly, but the calling application specified a file ('+params['file']['path']+') that is missing. Please check the application logs for details.')
-            file_path = os.path.abspath(params['file']['path'])
-        elif 'shock_id' in params:
-            print(f'Downloading file from SHOCK node: {params["shock_id"]}')
-            sys.stdout.flush()
-            input_directory = os.path.join(self.scratch, 'assembly-upload-staging-' + str(uuid.uuid4()))
-            os.makedirs(input_directory)
-            file_name = self.dfu.shock_to_file({'file_path': input_directory,
-                                                'shock_id': params['shock_id']
-                                                })['node_file_name']
-            file_path = os.path.join(input_directory, file_name)
-        elif 'ftp_url' in params:
-            print(f'Downloading file from: {params["ftp_url"]}')
-            sys.stdout.flush()
-            file_path = self.dfu.download_web_file({'file_url': params['ftp_url'],
-                                                    'download_type': 'FTP'
-                                                    })['copy_file_path']
-
+    def _stage_file_inputs(self, inputs) -> List[Path]:
+        in_files = []
+        for inp in inputs:
+            if not os.path.isfile(inp[_FILE]):
+                raise ValueError(
+                    "KBase Assembly Utils tried to save an assembly, but the calling "
+                    + f"application specified a file ('{inp[_FILE]}') that is missing. "
+                    + "Please check the application logs for details.")
+            # Ideally we'd have some sort of security check here but the DTN files could
+            # be mounted anywhere...
+            # TODO check with sysadmin about this - checked, waiting on clear list of safedirs
+            fp = Path(inp[_FILE]).resolve(strict=True)
+            # make the downstream unpack call unpack into scratch rather than wherever the
+            # source file might be
+            file_path = self._create_temp_dir() / fp.name
+            # symlink doesn't work, because in DFU filemagic doesn't follow symlinks, and so
+            # DFU won't unpack symlinked files
+            os.link(fp, file_path)
+            in_files.append(file_path)
         # extract the file if it is compressed
-        if file_path is not None:
-            unpacked_file = self.dfu.unpack_file({'file_path': file_path})
-            return unpacked_file['file_path']
+        # could add a target dir argument to unpack_files, not sure how much work that might be
+        fs = [{'file_path': str(fp), 'unpack': 'uncompress'} for fp in in_files]
+        unpacked_files = self._dfu.unpack_files(fs)
+        return [Path(uf['file_path']) for uf in unpacked_files]
 
-        raise ValueError('No valid FASTA could be extracted based on the input parameters')
+    def _stage_blobstore_inputs(self, inputs) -> List[Path]:
+        blob_params = []
+        for inp in inputs:
+            blob_params.append({
+                'shock_id': inp[_NODE],
+                'file_path': str(self._create_temp_dir()),
+                'unpack': 'uncompress'  # Will throw an error for archives
+            })
+        dfu_res = self._dfu.shock_to_file_mass(blob_params)
+        return [Path(dr['file_path']) for dr in dfu_res]
 
+    def _create_temp_dir(self):
+        tmpdir = self._scratch / ("import_fasta_" + str(self._uuid_gen()))
+        os.makedirs(tmpdir, exist_ok=True)
+        return tmpdir
 
-    @staticmethod
-    def validate_params(params):
-        for key in ('workspace_name', 'assembly_name'):
-            if key not in params:
-                raise ValueError('required "' + key + '" field was not defined')
+    def _set_up_single_params(self, params):
+        inputs = dict(params)
+        ws_id = self._get_int(inputs.pop(_WSID, None), _WSID)
+        ws_name = inputs.pop('workspace_name', None)
+        if (bool(ws_id) == bool(ws_name)):  # xnor
+            raise ValueError(f"Exactly one of a {_WSID} or a workspace_name must be provided")
+        if not ws_id:
+            print(f"Translating workspace name {ws_name} to a workspace ID. Prefer submitting "
+                  + "a workspace ID over a mutable workspace name that may cause race conditions")
+            ws_id = self._dfu.ws_name_to_id(params['workspace_name'])
 
-        # one and only one of either 'file', 'shock_id', or ftp_url is required
-        input_count = 0
-        for key in ('file', 'shock_id', 'ftp_url'):
-            if key in params and params[key] is not None:
-                input_count = input_count + 1
-                if key == 'file':
-                    if not isinstance(params[key], dict) or 'path' not in params[key]:
-                        raise ValueError('when specifying a FASTA file input, "path" field was not defined in "file"')
+        if not inputs.get(_ASSEMBLY_NAME):
+            raise ValueError(f"Required parameter {_ASSEMBLY_NAME} was not defined")
 
-        if input_count == 0:
-            raise ValueError('required FASTA file as input, set as either "file", "shock_id", or "ftp_url"')
-        if input_count > 1:
-            raise ValueError('required exactly one FASTA file as input source, you set more than one of ' +
-                             'these fields: "file", "shock_id", or "ftp_url"')
+        # one and only one of either 'file' or 'shock_id' is required
+        file_ = inputs.pop(_FILE, None)
+        shock_id = inputs.pop('shock_id', None)
+        if (bool(file_) == bool(shock_id)):  # xnor
+            raise ValueError(f"Exactly one of {_FILE} or shock_id is required")
+        if file_:
+            if not isinstance(file_, dict) or 'path' not in file_:
+                raise ValueError('When specifying a FASTA file input, "path" field was '
+                                 + f'not defined in "{_FILE}"')
+        mass_params = {
+            _WSID: ws_id,
+            # Ideally set of minimum of 2 here, but left at 1 for backwards compatibility
+            _MCL: self._get_int(inputs.pop(_MCL, None), f"If provided, {_MCL}"),
+            _INPUTS: [inputs]
+        }
+        if file_:
+            inputs[_FILE] = params[_FILE]['path']
+        else:
+            inputs[_NODE] = params['shock_id']
+        return mass_params
+
+    def _validate_mass_params(self, params):
+        ws_id = self._get_int(params.get(_WSID), _WSID)
+        if not ws_id:
+            raise ValueError(f"{_WSID} is required")
+        inputs = params.get(_INPUTS)
+        if not inputs or type(inputs) != list:
+            raise ValueError(f"{_INPUTS} field is required and must be a non-empty list")
+        for i, inp in enumerate(inputs, start=1):
+            if type(inp) != dict:
+                raise ValueError(f"Entry #{i} in {_INPUTS} field is not a mapping as required")
+        file_ = inputs[0].get(_FILE)
+        if bool(file_) == bool(inputs[0].get(_NODE)):  # xnor
+            raise ValueError(f"Entry #1 in {_INPUTS} field must have exactly one of "
+                             + f"{_FILE} or {_NODE} specified")
+        field = _FILE if file_ else _NODE
+        for i, inp in enumerate(inputs, start=1):
+            if not inp.get(field):
+                raise ValueError(
+                    f"Entry #{i} in {_INPUTS} must have a {field} field to match entry #1")
+            if not inp.get(_ASSEMBLY_NAME):
+                raise ValueError(f"Missing {_ASSEMBLY_NAME} field in {_INPUTS} entry #{i}")
+        self._get_int(params.get(_MCL), f"If provided, {_MCL}", minimum=2)
+
+    def _get_int(self, putative_int, name, minimum=1):
+        if putative_int is not None:
+            if type(putative_int) != int:
+                raise ValueError(f"{name} must be an integer, got: {putative_int}")
+            if putative_int < minimum:
+                raise ValueError(f"{name} must be an integer >= {minimum}")
+        return putative_int

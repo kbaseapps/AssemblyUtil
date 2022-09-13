@@ -2,9 +2,9 @@ name: KBase SDK Tests
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, develop ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, develop ]
 
 jobs:
 
@@ -54,5 +54,9 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       run: |
         sh $GITHUB_WORKSPACE/kb_sdk_actions/bin/kb-sdk test
-        bash <(curl -s https://codecov.io/bash)
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        fail_ci_if_error: true
 

@@ -1,3 +1,17 @@
+## 2.0.0
+### Update
+    - Added the save_assemblies_from_fastas_function
+    - Removed the unused UI import apps.
+    - Removed the `ftp_url` parameter from `save_assembly_from_fasta`
+    - Removed the `taxon_ref` parameter from `save_assembly_from_fasta`. It is now silently
+      ignored.
+    - Clarified `save_assembly_from_fasta` documentation
+    - Fixed a bug in `save_assembly_from_fasta` that could cause file name collisions if
+      multiple `AssemblyUtil` instances are run in parallel
+    - Clarified the error message text when an empty file is submitted or results from
+      contig filtering, and prevented a guaranteed to fail attempt to save the file to the
+      Blobstore
+
 ## 1.2.6
 ### Update
 	- Added unit test for error message
