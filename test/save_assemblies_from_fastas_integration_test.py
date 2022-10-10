@@ -133,10 +133,14 @@ def test_import_local_files(config, impl, context, scratch):
                 }
             ]
         }
-    )[0]['upas']
+    )[0]['results']
+    # middle part of path is a UUID, so no way to test in an integration test
+    assert res[0]['filtered_input'].endswith('/legacy_test.fna.filtered.fa')
+    assert res[1]['filtered_input'].endswith('/test2.fna.filtered.fa')
+
     handleid, blobid = _check_object(
         config,
-        res[0],
+        res[0]['upa'],
         {
             'name': 'legacy',
             'meta': {
@@ -206,7 +210,7 @@ def test_import_local_files(config, impl, context, scratch):
     )
     handleid, blobid = _check_object(
         config,
-        res[1],
+        res[1]['upa'],
         {
             'name': 'test2',
             'meta': {
@@ -299,10 +303,13 @@ def test_import_blobstore_files(config, impl, context, scratch):
                 {'node': nodes[1]['shock_id'], 'assembly_name': 'test22'}
             ]
         }
-    )[0]['upas']
+    )[0]['results']
+    assert res[0]['filtered_input'] is None
+    assert res[1]['filtered_input'] is None
+
     handleid, blobid = _check_object(
         config,
-        res[0],
+        res[0]['upa'],
         {
             'name': 'legacy2',
             'meta': {
@@ -387,7 +394,7 @@ def test_import_blobstore_files(config, impl, context, scratch):
     )
     handleid, blobid = _check_object(
         config,
-        res[1],
+        res[1]['upa'],
         {
             'name': 'test22',
             'meta': {

@@ -21,7 +21,7 @@ _NODE = 'node'
 _ASSEMBLY_NAME = 'assembly_name'
 
 
-def _ref(object_info):
+def _upa(object_info):
     return f'{object_info[6]}/{object_info[0]}/{object_info[4]}'
 
 class FastaToAssembly:
@@ -67,6 +67,7 @@ class FastaToAssembly:
 
         mcl = params.get(_MCL)
         assembly_data = []
+        output = []
         for i in range(len(input_files)):
             # Hmm, all through these printouts we should really put the blobstore node here as
             # well as the file if it exists... wait and see if that code path is still actually
@@ -75,6 +76,7 @@ class FastaToAssembly:
                 print(f'filtering FASTA file {input_files[i]} by contig length '
                       + f'(min len={mcl} bp)')
                 input_files[i] = self._filter_contigs_by_length(input_files[i], mcl)
+            output.append({'filtered_input': str(input_files[i]) if mcl else None})
             print(f'parsing FASTA file: {input_files[i]}')
             assdata = self._parse_fasta(
                 input_files[i],
@@ -103,7 +105,9 @@ class FastaToAssembly:
             [p[_ASSEMBLY_NAME] for p in params[_INPUTS]],
             assobjects
         )
-        return [_ref(ai) for ai in assembly_infos]
+        for out, ai in zip(output, assembly_infos):
+            out['upa'] = _upa(ai)
+        return output
 
     def _build_assembly_object(self, assembly_data, fasta_file_handle_info, params):
         """ construct the WS object data to save based on the parsed info and params """
