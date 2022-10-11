@@ -66,14 +66,11 @@ class AssemblyUtilTest(unittest.TestCase):
     def getContext(self):
         return self.ctx
 
-    def check_fasta_file(self, ws_obj_name, expected_file):
+    def check_fasta_file(self, ref, expected_file):
         assemblyUtil = self.getImpl()
 
         print('attempting download')
-        fasta = assemblyUtil.get_assembly_as_fasta(
-            self.getContext(),
-            {'ref': self.ws_name + "/" + ws_obj_name}
-        )[0]
+        fasta = assemblyUtil.get_assembly_as_fasta(self.getContext(), {'ref': ref})[0]
         pprint(fasta)
         # let's compare files pointed from fasta['path'] and expected_file
         with open(expected_file, 'r') as f:
@@ -81,6 +78,13 @@ class AssemblyUtilTest(unittest.TestCase):
         with open(fasta['path'], 'r') as f:
             actual_data = f.read()
         self.assertEqual(actual_data, expected_data)
+
+    def check_ws_name(self, upa, name):
+        res = self.wsClient.get_object_info3({'objects': [{'ref': upa}]})
+        assert res['infos'][0][1] == name
+
+    def get_save_funcs(self, assemblyUtil):
+        return [assemblyUtil.save_assembly_from_fasta, assemblyUtil.save_assembly_from_fasta2]
 
     # @unittest.skip('x')
     def test_basic_upload_and_download(self):
@@ -97,48 +101,53 @@ class AssemblyUtilTest(unittest.TestCase):
         shutil.copy(os.path.join("data", file_name), tmp_dir)
         fasta_path = os.path.join(tmp_dir, file_name)
         print('attempting upload')
-        ws_obj_name = 'MyNewAssembly'
-        result = assemblyUtil.save_assembly_from_fasta(self.getContext(),
-                                                       {'file': {'path': fasta_path},
-                                                        'workspace_name': self.ws_name,
-                                                        'assembly_name': ws_obj_name,
-                                                        'taxon_ref': 'ReferenceTaxons/unknown_taxon',
-                                                        })
-        pprint(result)
-        self.check_fasta_file(ws_obj_name, fasta_path)
+        params = {'file': {'path': fasta_path},
+                  'workspace_name': self.ws_name,
+                  'taxon_ref': 'ReferenceTaxons/unknown_taxon',
+                  }
+        self._basic_upload_and_download_check(
+            assemblyUtil, params, "MyNewAssembly", "MyNewAssembly2", fasta_path)
 
         print('attempting upload of gzipped file using workspace id vs name')
         # DFU can't see the file unless it's in scratch
         shutil.copy(Path("data") / "test2.fna.gz", tmp_dir)
-        result = assemblyUtil.save_assembly_from_fasta(
-            self.getContext(),
-            {
-                'file': {'path': str(Path(tmp_dir) / "test2.fna.gz")},
-                'workspace_id': self.ws_id,
-                'assembly_name': 'MyNewAssembly_gzip',
-                'taxon_ref': 'ReferenceTaxons/unknown_taxon',
-            })
-        pprint(result)
-        self.check_fasta_file('MyNewAssembly_gzip', "data/test2.fna")
+        params = {
+            'file': {'path': str(Path(tmp_dir) / "test2.fna.gz")},
+            'workspace_id': self.ws_id,
+            'taxon_ref': 'ReferenceTaxons/unknown_taxon',
+        }
+        self._basic_upload_and_download_check(
+            assemblyUtil, params, "MyNewAssembly_gzip", "MyNewAssembly_gzip2", "data/test2.fna")
 
         print('attempting upload through shock')
         data_file_cli = DataFileUtil(self.callback_url)
         shock_id = data_file_cli.file_to_shock({'file_path': fasta_path})['shock_id']
-        ws_obj_name2 = 'MyNewAssembly.2'
-        result2 = assemblyUtil.save_assembly_from_fasta(self.getContext(),
-                                                        {'shock_id': shock_id,
-                                                         'workspace_name': self.ws_name,
-                                                         'assembly_name': ws_obj_name2
-                                                         })
-        pprint(result2)
-        self.check_fasta_file(ws_obj_name2, fasta_path)
+        params = {
+            'shock_id': shock_id,
+            'workspace_name': self.ws_name,
+        }
+        self._basic_upload_and_download_check(
+            assemblyUtil, params, "MyNewAssembly_shock", "MyNewAssembly_shock2", fasta_path)
 
         # todo: add checks here on ws object
 
         result4 = assemblyUtil.export_assembly_as_fasta(
             self.getContext(),
-            {'input_ref': self.ws_name + '/' + ws_obj_name2})
+            {'input_ref': self.ws_name + '/' + 'MyNewAssembly_shock'})
         pprint(result4)
+
+    def _basic_upload_and_download_check(self, assemblyUtil, params, name1, name2, fasta_path):
+        params['assembly_name'] = name1
+        result = assemblyUtil.save_assembly_from_fasta(self.getContext(), params)
+        pprint(result)
+        self.check_fasta_file(result[0], fasta_path)
+        self.check_ws_name(result[0], name1)
+        params['assembly_name'] = name2
+        result = assemblyUtil.save_assembly_from_fasta2(self.getContext(), params)
+        pprint(result)
+        self.check_fasta_file(result[0]['upa'], fasta_path)
+        self.check_ws_name(result[0]['upa'], name2)
+        assert result[0]['filtered_input'] is None
 
     def test_empty_file_error_message(self):
         assemblyUtil = self.getImpl()
@@ -146,22 +155,23 @@ class AssemblyUtilTest(unittest.TestCase):
         file_name = "empty.FASTA"
         shutil.copy(os.path.join("data", file_name), tmp_dir)
         empty_file_path = os.path.join(tmp_dir, file_name)
-        try:
-            assemblyUtil.save_assembly_from_fasta(self.getContext(),
-                                                    {'file': {'path': empty_file_path},
-                                                     'workspace_name': self.ws_name,
-                                                     'assembly_name': 'empty',
-                                                     'taxon_ref': 'ReferenceTaxons/unknown_taxon',
-                                                     "min_contig_length": 500
-                                                     })
-            raise Exception("Wrong error message")
-        except ValueError as e:
-            self.assertIn(
-                'Either the original FASTA file contained no sequences or they were all '
-                + 'filtered out based on the min_contig_length parameter for file '
-                + '/kb/module/work/tmp/import_fasta_',
-                str(e))
-            self.assertIn('/empty.FASTA.filtered.fa', str(e))
+        for func in self.get_save_funcs(assemblyUtil):
+            try:
+                func(self.getContext(),
+                    {'file': {'path': empty_file_path},
+                    'workspace_name': self.ws_name,
+                    'assembly_name': 'empty',
+                    'taxon_ref': 'ReferenceTaxons/unknown_taxon',
+                    "min_contig_length": 500
+                    })
+                raise Exception("Wrong error message")
+            except ValueError as e:
+                self.assertIn(
+                    'Either the original FASTA file contained no sequences or they were all '
+                    + 'filtered out based on the min_contig_length parameter for file '
+                    + '/kb/module/work/tmp/import_fasta_',
+                    str(e))
+                self.assertIn('/empty.FASTA.filtered.fa', str(e))
 
     def test_legacy_contigset_download(self):
         ws_obj_name4 = 'LegacyContigs'
@@ -213,20 +223,26 @@ class AssemblyUtilTest(unittest.TestCase):
         fasta_path = os.path.join(tmp_dir, file_name)
         print('attempting upload')
         ws_obj_name = 'FilteredAssembly'
-        result = assemblyUtil.save_assembly_from_fasta(self.getContext(),
-                                                       {'file': {'path': fasta_path},
-                                                        'workspace_name': self.ws_name,
-                                                        'assembly_name': ws_obj_name,
-                                                        'min_contig_length': 9,
-                                                        'external_source': 'someplace',
-                                                        'external_source_id': 'id',
-                                                        'external_source_origination_date': 'sunday',
-                                                        'type': 'metagenome',
-                                                        'contig_info': {'s3': {'is_circ': 0, 'description': 'somethin'}}
-                                                        })
+        params = {'file': {'path': fasta_path},
+                  'workspace_name': self.ws_name,
+                  'assembly_name': ws_obj_name,
+                  'min_contig_length': 9,
+                  'external_source': 'someplace',
+                  'external_source_id': 'id',
+                  'external_source_origination_date': 'sunday',
+                  'type': 'metagenome',
+                  'contig_info': {'s3': {'is_circ': 0, 'description': 'somethin'}}
+                  }
+        result = assemblyUtil.save_assembly_from_fasta(self.getContext(), params)
+        self._load_with_filter_and_options_check(result[0])
+        params['assembly_name'] = 'FilteredAssembly2'
+        result = assemblyUtil.save_assembly_from_fasta2(self.getContext(), params)
+        self._load_with_filter_and_options_check(result[0]['upa'])
+        self.assertTrue(result[0]['filtered_input'].endswith('/legacy_test.fna.filtered.fa'))
 
+    def _load_with_filter_and_options_check(self, upa):
         dfu = DataFileUtil(self.callback_url)
-        assembly = dfu.get_objects({'object_refs': [result[0]]})['data'][0]['data']
+        assembly = dfu.get_objects({'object_refs': [upa]})['data'][0]['data']
 
         self.assertEqual(len(assembly['contigs']), 1)
         self.assertEqual(assembly['contigs']['s3']['md5'], '4f339bd56e5f43ecb52e8682a790a111')
@@ -254,10 +270,11 @@ class AssemblyUtilTest(unittest.TestCase):
         err = ("KBase Assembly Utils tried to save an assembly, but the calling "
                + f"application specified a file \\('{tmp_dir}/not_a_real_file.fna'\\) "
                + "that is missing. Please check the application logs for details.")
-        with self.assertRaisesRegex(ValueError, err):
-            assemblyUtil.save_assembly_from_fasta(self.getContext(),
-                                                       {'file': {'path': fasta_path},
-                                                        'workspace_name': self.ws_name,
-                                                        'assembly_name': ws_obj_name,
-                                                        'min_contig_length': 500
-                                                        })
+        for func in self.get_save_funcs(assemblyUtil):
+            with self.assertRaisesRegex(ValueError, err):
+                func(self.getContext(),
+                    {'file': {'path': fasta_path},
+                        'workspace_name': self.ws_name,
+                        'assembly_name': ws_obj_name,
+                        'min_contig_length': 500
+                    })

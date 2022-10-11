@@ -143,9 +143,6 @@ module AssemblyUtil {
 
     } SaveAssemblyParams;
 
-    funcdef save_assembly_from_fasta(SaveAssemblyParams params) returns (string ref)
-        authentication required;
-
     /* Results from saving an assembly.
         upa - the address of the resulting workspace object.
         filtered_input - the filtered input file if the minimum contig length parameter is
@@ -155,6 +152,14 @@ module AssemblyUtil {
         upa upa;
         string filtered_input;
     } SaveAssemblyResult;
+
+    /* Save a KBase Workspace assembly object from a FASTA file. */
+    funcdef save_assembly_from_fasta2(SaveAssemblyParams params)
+        returns (SaveAssemblyResult result) authentication required;
+
+    /* @deprecated AssemblyUtil.save_assembly_from_fasta2  */
+    funcdef save_assembly_from_fasta(SaveAssemblyParams params) returns (string ref)
+        authentication required;
 
     /* An input FASTA file and metadata for import.
         Required arguments:
