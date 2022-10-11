@@ -28,9 +28,9 @@ class AssemblyUtil:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "2.0.0"
+    VERSION = "3.0.0"
     GIT_URL = "https://github.com/kbaseapps/AssemblyUtil"
-    GIT_COMMIT_HASH = "dc4841765c47eb13bd80d77697c4898a9d154b58"
+    GIT_COMMIT_HASH = "72183303c99ec8e88534173adbc47499da2e9b56"
 
     #BEGIN_CLASS_HEADER
 
@@ -44,7 +44,6 @@ class AssemblyUtil:
         self.callback_url = os.environ['SDK_CALLBACK_URL']
         self.ws_url = config['workspace-url']
         #END_CONSTRUCTOR
-
 
     def get_assembly_as_fasta(self, ctx, params):
         """
@@ -162,8 +161,66 @@ class AssemblyUtil:
         # return the results
         return [output]
 
+    def save_assembly_from_fasta2(self, ctx, params):
+        """
+        Save a KBase Workspace assembly object from a FASTA file.
+        :param params: instance of type "SaveAssemblyParams" (Required
+           arguments: Exactly one of: file - a pre-existing FASTA file to
+           import. The 'assembly_name' field in the FastaAssemblyFile object
+           is ignored. shock_id - an ID of a node in the Blobstore containing
+           the FASTA file. Exactly one of: workspace_id - the immutable,
+           numeric ID of the target workspace. Always prefer providing the ID
+           over the name. workspace_name - the name of the target workspace.
+           assembly_name - target object name Optional arguments: type -
+           should be one of 'isolate', 'metagenome', (maybe 'transcriptome').
+           Defaults to 'Unknown' min_contig_length - if set and value is
+           greater than 1, this will only include sequences with length
+           greater or equal to the min_contig_length specified, discarding
+           all other sequences contig_info - map from contig_id to a small
+           structure that can be used to set the is_circular and description
+           fields for Assemblies (optional)) -> structure: parameter "file"
+           of type "FastaAssemblyFile" -> structure: parameter "path" of
+           String, parameter "assembly_name" of String, parameter "shock_id"
+           of type "ShockNodeId", parameter "workspace_id" of Long, parameter
+           "workspace_name" of String, parameter "assembly_name" of String,
+           parameter "type" of String, parameter "external_source" of String,
+           parameter "external_source_id" of String, parameter
+           "min_contig_length" of Long, parameter "contig_info" of mapping
+           from String to type "ExtraContigInfo" (Structure for setting
+           additional Contig information per contig is_circ - flag if contig
+           is circular, 0 is false, 1 is true, missing indicates unknown
+           description - if set, sets the description of the field in the
+           assembly object which may override what was in the fasta file) ->
+           structure: parameter "is_circ" of Long, parameter "description" of
+           String
+        :returns: instance of type "SaveAssemblyResult" (Results from saving
+           an assembly. upa - the address of the resulting workspace object.
+           filtered_input - the filtered input file if the minimum contig
+           length parameter is present and > 0. null otherwise.) ->
+           structure: parameter "upa" of type "upa" (A Unique Permanent
+           Address for a workspace object, which is of the form W/O/V, where
+           W is the numeric workspace ID, O is the numeric object ID, and V
+           is the object version.), parameter "filtered_input" of String
+        """
+        # ctx is the context object
+        # return variables are: result
+        #BEGIN save_assembly_from_fasta2
+        result = FastaToAssembly(
+            DataFileUtil(self.callback_url, token=ctx['token']),
+            Path(self.sharedFolder)
+        ).import_fasta(params)
+        #END save_assembly_from_fasta2
+
+        # At some point might do deeper type checking...
+        if not isinstance(result, dict):
+            raise ValueError('Method save_assembly_from_fasta2 return value ' +
+                             'result is not type dict as required.')
+        # return the results
+        return [result]
+
     def save_assembly_from_fasta(self, ctx, params):
         """
+        @deprecated AssemblyUtil.save_assembly_from_fasta2
         :param params: instance of type "SaveAssemblyParams" (Required
            arguments: Exactly one of: file - a pre-existing FASTA file to
            import. The 'assembly_name' field in the FastaAssemblyFile object
@@ -201,11 +258,7 @@ class AssemblyUtil:
 
         print('save_assembly_from_fasta -- paramaters = ')
         #pprint(params)
-
-        ref = FastaToAssembly(
-            DataFileUtil(self.callback_url, token=ctx['token']),
-            Path(self.sharedFolder)
-        ).import_fasta(params)
+        ref = self.save_assembly_from_fasta2(ctx, params)[0]['upa']
 
         #END save_assembly_from_fasta
 
@@ -259,19 +312,24 @@ class AssemblyUtil:
            override what was in the fasta file) -> structure: parameter
            "is_circ" of Long, parameter "description" of String, parameter
            "min_contig_length" of Long
-        :returns: instance of type "SaveAssembliesResults" (Results fo the
-           save_assemblies_from_fastas function. upas - the list of resulting
-           workspace object references in the same order as the input.) ->
-           structure: parameter "upas" of list of type "upa" (A Unique
+        :returns: instance of type "SaveAssembliesResults" (Results for the
+           save_assemblies_from_fastas function. results - the results of the
+           save operation in the same order as the input.) -> structure:
+           parameter "results" of list of type "SaveAssemblyResult" (Results
+           from saving an assembly. upa - the address of the resulting
+           workspace object. filtered_input - the filtered input file if the
+           minimum contig length parameter is present and > 0. null
+           otherwise.) -> structure: parameter "upa" of type "upa" (A Unique
            Permanent Address for a workspace object, which is of the form
            W/O/V, where W is the numeric workspace ID, O is the numeric
-           object ID, and V is the object version.)
+           object ID, and V is the object version.), parameter
+           "filtered_input" of String
         """
         # ctx is the context object
-        # return variables are: upas
+        # return variables are: results
         #BEGIN save_assemblies_from_fastas
-        upas = {
-            'upas': FastaToAssembly(
+        results = {
+            'results': FastaToAssembly(
                 DataFileUtil(self.callback_url, token=ctx['token']),
                 Path(self.sharedFolder)
             ).import_fasta_mass(params)
@@ -279,11 +337,11 @@ class AssemblyUtil:
         #END save_assemblies_from_fastas
 
         # At some point might do deeper type checking...
-        if not isinstance(upas, dict):
+        if not isinstance(results, dict):
             raise ValueError('Method save_assemblies_from_fastas return value ' +
-                             'upas is not type dict as required.')
+                             'results is not type dict as required.')
         # return the results
-        return [upas]
+        return [results]
 
     def status(self, ctx):
         #BEGIN_STATUS
