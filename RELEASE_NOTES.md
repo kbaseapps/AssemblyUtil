@@ -1,6 +1,8 @@
 ## 3.0.0
     - BACKWARDS INCOMPATIBILIY: the output structure for the `save_assemblies_from_fastas`
       method has changed.
+    - DEPRECATION: `save_assembly_from_fasta`.
+    - Added the `save_assembly_from_fasta2` function.
     - Updated `save_assemblies_from_fastas` to return the path to the filtered input file as
       well as the workspace UPA.
 
