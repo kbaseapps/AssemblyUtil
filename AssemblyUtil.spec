@@ -3,6 +3,11 @@
 */
 module AssemblyUtil {
 
+    /* A Unique Permanent Address for a workspace object, which is of the form W/O/V,
+        where W is the numeric workspace ID, O is the numeric object ID, and V is the object
+        version. 
+    */
+    typedef string upa;
 
     typedef structure {
         string path;
@@ -141,6 +146,16 @@ module AssemblyUtil {
     funcdef save_assembly_from_fasta(SaveAssemblyParams params) returns (string ref)
         authentication required;
 
+    /* Results from saving an assembly.
+        upa - the address of the resulting workspace object.
+        filtered_input - the filtered input file if the minimum contig length parameter is
+           present and > 0. null otherwise.
+    */
+    typedef structure {
+        upa upa;
+        string filtered_input;
+    } SaveAssemblyResult;
+
     /* An input FASTA file and metadata for import.
         Required arguments:
             Exactly one of:
@@ -182,17 +197,11 @@ module AssemblyUtil {
         int min_contig_length;
     } SaveAssembliesParams;
 
-    /* A Unique Permanent Address for a workspace object, which is of the form W/O/V,
-        where W is the numeric workspace ID, O is the numeric object ID, and V is the object
-        version. 
-    */
-    typedef string upa;
-
-    /* Results fo the save_assemblies_from_fastas function.
-        upas - the list of resulting workspace object references in the same order as the input.
+    /* Results for the save_assemblies_from_fastas function.
+        results - the results of the save operation in the same order as the input.
     */
     typedef structure {
-        list<upa> upas;
+        list<SaveAssemblyResult> results;
     } SaveAssembliesResults;
 
     /* Save multiple assembly objects from FASTA files.
@@ -207,6 +216,6 @@ module AssemblyUtil {
            * Batch uploads to the workspace based on data size
      */
     funcdef save_assemblies_from_fastas(SaveAssembliesParams params)
-        returns(SaveAssembliesResults upas)
+        returns(SaveAssembliesResults results)
         authentication required;
 };
