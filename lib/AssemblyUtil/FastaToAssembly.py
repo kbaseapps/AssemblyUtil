@@ -1,17 +1,21 @@
+import itertools
 import json
+import math
 import os
-import os.path
-from pathlib import Path
 import sys
 import uuid
-from typing import List, Callable
 from collections import Counter
 from hashlib import md5
+from pathlib import Path
+from typing import Callable, List
 
 from Bio import SeqIO
-
 from installed_clients.DataFileUtilClient import DataFileUtil
+from pathos.multiprocessing import ProcessingPool as Pool
 
+_MAX_DATA_SIZE = 1024 * 1024 * 1024 # 1 GB
+_MEMORY_UTILIZATION = 0.95
+_SYSTEM_UTILIZATION = 1
 
 _WSID = 'workspace_id'
 _MCL = 'min_contig_length'
@@ -45,7 +49,7 @@ class FastaToAssembly:
     def import_fasta_mass(self, params):
         print('validating parameters')
         self._validate_mass_params(params)
-        return self._import_fasta_mass(params)
+        return self._run_parallel_import_fasta_mass(params)
 
     def _import_fasta_mass(self, params):
         # For now this is completely serial, but theoretically we could start uploading
@@ -100,14 +104,40 @@ class FastaToAssembly:
                 json.dump(ao, f)
 
         # save to WS and return
-        assembly_infos = self._save_assembly_objects(
-            params[_WSID],
-            [p[_ASSEMBLY_NAME] for p in params[_INPUTS]],
-            assobjects
-        )
+        assembly_infos = []
+        assembly_names = [p[_ASSEMBLY_NAME] for p in params[_INPUTS]]
+        # generator to process files in bach. Avoid memory issues
+        for assobject_batch, assembly_name_batch in self._assembly_objects_generator(
+            assobjects, assembly_names
+        ):
+            assembly_infos.extend(
+                self._save_assembly_objects(params[_WSID], assembly_name_batch, assobject_batch)
+            )
+
         for out, ai in zip(output, assembly_infos):
             out['upa'] = _upa(ai)
         return output
+
+    def _run_parallel_import_fasta_mass(self, params):
+        threads = max(int(os.cpu_count() * min(_SYSTEM_UTILIZATION, 1)), 1)
+        print(f' - running {threads} parallel threads')
+
+        # distribute inputs evenly across threads
+        chunk_size = math.ceil(len(params[_INPUTS]) / threads)
+        mcl = params.get(_MCL, None)
+        batch_input = [
+            (
+                {
+                    _WSID: params[_WSID],
+                    _MCL: mcl,
+                    _INPUTS: params[_INPUTS][i : i + chunk_size]
+                }
+            )
+            for i in range(0, len(params[_INPUTS]), chunk_size)
+        ]
+        batch_result = Pool(threads).map(self._import_fasta_mass, batch_input)
+        result = list(itertools.chain.from_iterable(batch_result))
+        return result
 
     def _build_assembly_object(self, assembly_data, fasta_file_handle_info, params):
         """ construct the WS object data to save based on the parsed info and params """
@@ -223,6 +253,24 @@ class FastaToAssembly:
             'num_contigs': len(all_contig_data)
         }
         return assembly_data
+
+    @staticmethod
+    def _assembly_objects_generator(assembly_objects, assembly_names):
+        """ generates assembly objects iterator for uploading to the target workspace"""
+        start_idx = 0
+        cumsize = 0
+        # precalculate max_cumsize here to avoid memory issue
+        max_cumsize = _MAX_DATA_SIZE * _MEMORY_UTILIZATION
+        for idx, ao in enumerate(assembly_objects):
+            aosize = sys.getsizeof(ao)
+            if aosize + cumsize <= max_cumsize:
+                cumsize += aosize
+            else:
+                yield assembly_objects[start_idx:idx], assembly_names[start_idx:idx]
+                start_idx = idx
+                cumsize = aosize
+        # yield the last batch
+        yield assembly_objects[start_idx:], assembly_names[start_idx:]
 
     @staticmethod
     def _fasta_filter_contigs_generator(fasta_record_iter, min_contig_length):
