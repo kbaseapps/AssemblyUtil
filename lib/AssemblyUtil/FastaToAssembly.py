@@ -123,17 +123,16 @@ class FastaToAssembly:
         print(f' - running {threads} parallel threads')
 
         # distribute inputs evenly across threads
-        chunk_size = math.ceil(len(params[_INPUTS]) / threads)
-        mcl = params.get(_MCL, None)
+        param_inputs = params.pop(_INPUTS)
+        chunk_size = math.ceil(len(param_inputs) / threads)
         batch_input = [
             (
                 {
-                    _WSID: params[_WSID],
-                    _MCL: mcl,
-                    _INPUTS: params[_INPUTS][i : i + chunk_size]
+                    **params,
+                    _INPUTS: param_inputs[i : i + chunk_size]
                 }
             )
-            for i in range(0, len(params[_INPUTS]), chunk_size)
+            for i in range(0, len(param_inputs), chunk_size)
         ]
         batch_result = Pool(threads).map(self._import_fasta_mass, batch_input)
         result = list(itertools.chain.from_iterable(batch_result))
