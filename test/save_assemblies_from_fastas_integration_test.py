@@ -577,3 +577,40 @@ def test_fail_mismatched_inputs(config, impl, context, scratch):
         )
     assert_exception_correct(got.value, ValueError(
         'Entry #2 in inputs must have a file field to match entry #1'))
+
+
+def test_parallelize_import_fasta_mass(config, impl, context, scratch):
+    tmp_dir = scratch / ("test_parallelize_import_fasta_mass" + str(uuid.uuid4()))
+    os.makedirs(tmp_dir)
+    data = Path('data')
+    file_names = [
+        'GCA_002506415.1_ASM250641v1_genomic.fna.gz',
+        'GCF_000007065.1_ASM706v1_genomic.fna.gz',
+        'GCF_000970165.1_ASM97016v1_genomic.fna.gz',
+        'GCF_000970185.1_ASM97018v1_genomic.fna.gz',
+        'GCF_000970205.1_ASM97020v1_genomic.fna.gz',
+        'GCF_000970245.1_ASM97024v1_genomic.fna.gz'
+    ]
+
+    for file_name in file_names:
+        shutil.copy(data / file_name, tmp_dir)
+
+    params = {
+        'workspace_id': config['ws_id'],
+        'inputs': [
+            {'file': tmp_dir / 'GCA_002506415.1_ASM250641v1_genomic.fna.gz', 'assembly_name': 'GCA_002506415.1_ASM250641v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000007065.1_ASM706v1_genomic.fna.gz', 'assembly_name': 'GCF_000007065.1_ASM706v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000970165.1_ASM97016v1_genomic.fna.gz', 'assembly_name': 'GCF_000970165.1_ASM97016v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000970185.1_ASM97018v1_genomic.fna.gz', 'assembly_name': 'GCF_000970185.1_ASM97018v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000970205.1_ASM97020v1_genomic.fna.gz', 'assembly_name': 'GCF_000970205.1_ASM97020v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000970245.1_ASM97024v1_genomic.fna.gz', 'assembly_name': 'GCF_000970245.1_ASM97024v1_genomic.fna.gz'}
+        ]
+    }
+
+    results = impl.save_assemblies_from_fastas(context, params)[0]['results']
+    for res in results:
+        assert res['filtered_input'] is None
+
+    expected_sorted_upa_object_version = ["1/1", "2/1", "3/1", "4/1", "5/1", "6/1"]
+    sorted_upa_object_version = sorted([res['upa'][-3:] for res in results])
+    assert sorted_upa_object_version == expected_sorted_upa_object_version

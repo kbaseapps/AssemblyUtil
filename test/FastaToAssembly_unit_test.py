@@ -222,7 +222,7 @@ def _test_import_fasta_mass_file(tmp_path, params_root):
             }
         ]
     })
-    res = fta.import_fasta_mass(params_root)
+    res = fta.import_fasta_mass(params_root, parallelize=False)
     assert res == [
         {'upa': '42/4/75', 'filtered_input': None},
         {'upa': '42/7/1', 'filtered_input': None}
@@ -422,7 +422,7 @@ def test_import_fasta_mass_blobstore_min_contig_length(tmp_path):
             {'node': 'fake_id_1', 'assembly_name': 'foo1'},
             {'node': 'fake_id_2', 'assembly_name': 'foo2'}
         ]
-    })
+    }, parallelize=False)
     assert res == [
         {'upa': '42/3/75', 'filtered_input': str(dir1 / 'f1.blobstore.fasta.filtered.fa')},
         {'upa': '42/6/1', 'filtered_input': str(dir2 / 'f2.blobstore.fasta.filtered.fa')}

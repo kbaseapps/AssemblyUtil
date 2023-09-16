@@ -46,9 +46,11 @@ class FastaToAssembly:
         mass_params = self._set_up_single_params(params)
         return self._import_fasta_mass(mass_params)[0]
 
-    def import_fasta_mass(self, params):
+    def import_fasta_mass(self, params, parallelize=True):
         print('validating parameters')
         self._validate_mass_params(params)
+        if not parallelize or len(params[_INPUTS]) == 1:
+            return self._import_fasta_mass(params)
         return self._run_parallel_import_fasta_mass(params)
 
     def _import_fasta_mass(self, params):
