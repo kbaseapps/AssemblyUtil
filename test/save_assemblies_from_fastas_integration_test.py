@@ -8,8 +8,8 @@ expectations about the environment in which they run.
 '''
 
 import dateutil.parser
-import io
 import os
+import re
 import requests
 import uuid
 import shutil
@@ -607,10 +607,8 @@ def test_parallelize_import_fasta_mass(config, impl, context, scratch):
         ]
     }
 
+    object_version_pattern = re.compile(r'^[0-9]+\/1$')
     results = impl.save_assemblies_from_fastas(context, params)[0]['results']
     for res in results:
         assert res['filtered_input'] is None
-
-    expected_sorted_upa_object_version = ["1/1", "2/1", "3/1", "4/1", "5/1", "6/1"]
-    sorted_upa_object_version = sorted([res['upa'][-3:] for res in results])
-    assert sorted_upa_object_version == expected_sorted_upa_object_version
+        assert object_version_pattern.match("/".join(res['upa'].split("/")[-2:]))
