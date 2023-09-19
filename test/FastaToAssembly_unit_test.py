@@ -642,7 +642,7 @@ def test_assembly_objects_generator_with_big_serialized_object_size(mocked_funct
 
 
 @patch('AssemblyUtil.FastaToAssembly._get_serialized_object_size')
-def terst_assembly_objects_generator_with_small_serialized_object_size(mocked_function):
+def test_assembly_objects_generator_with_small_serialized_object_size(mocked_function):
     fta, _ = _set_up_mocks()
     assembly_objects = [
         {'md5': '1e007bad0811a6d6e09a882d3bf802ab', 'base_counts': {'A': 1200415, 'G': 852652, 'C': 846697, 'T': 1191689, 'N': 847}, 'dna_size': 4092300, 'gc_content': 0.41526},
