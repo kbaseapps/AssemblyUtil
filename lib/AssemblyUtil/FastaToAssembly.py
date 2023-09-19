@@ -10,7 +10,8 @@ from pathlib import Path
 from typing import Callable, List
 
 from Bio import SeqIO
-from installed_clients.DataFileUtilClient import DataFileUtil, _JSONObjectEncoder
+from installed_clients.baseclient import _JSONObjectEncoder
+from installed_clients.DataFileUtilClient import DataFileUtil
 from pathos.multiprocessing import ProcessingPool as Pool
 
 _MAX_DATA_SIZE = 1024 * 1024 * 1024 # 1 GB
