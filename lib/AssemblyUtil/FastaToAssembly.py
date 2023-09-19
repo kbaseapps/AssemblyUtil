@@ -10,11 +10,11 @@ from pathlib import Path
 from typing import Callable, List
 
 from Bio import SeqIO
-from installed_clients.DataFileUtilClient import DataFileUtil
+from installed_clients.DataFileUtilClient import DataFileUtil, _JSONObjectEncoder
 from pathos.multiprocessing import ProcessingPool as Pool
 
 _MAX_DATA_SIZE = 1024 * 1024 * 1024 # 1 GB
-_MEMORY_UTILIZATION = 0.95
+_SAFETY_FACTOR = 0.95
 _SYSTEM_UTILIZATION = 1
 
 _WSID = 'workspace_id'
@@ -27,6 +27,11 @@ _ASSEMBLY_NAME = 'assembly_name'
 
 def _upa(object_info):
     return f'{object_info[6]}/{object_info[0]}/{object_info[4]}'
+
+def _get_serialized_object_size(assembly_object):
+    arg_hash = {'params': assembly_object}
+    serialized = json.dumps(arg_hash, cls=_JSONObjectEncoder)
+    return sys.getsizeof(serialized)
 
 class FastaToAssembly:
 
@@ -261,9 +266,9 @@ class FastaToAssembly:
         start_idx = 0
         cumsize = 0
         # precalculate max_cumsize here to avoid memory issue
-        max_cumsize = _MAX_DATA_SIZE * _MEMORY_UTILIZATION
+        max_cumsize = _MAX_DATA_SIZE * _SAFETY_FACTOR
         for idx, ao in enumerate(assembly_objects):
-            aosize = sys.getsizeof(ao)
+            aosize = _get_serialized_object_size(ao)
             if aosize + cumsize <= max_cumsize:
                 cumsize += aosize
             else:

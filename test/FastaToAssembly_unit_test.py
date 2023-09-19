@@ -5,16 +5,14 @@ Integration tests are in the server test file.
 
 import os
 import uuid
-
 from pathlib import Path
-from pytest import raises
-from typing import Optional, Callable
-from unittest.mock import create_autospec
+from typing import Callable, Optional
+from unittest.mock import create_autospec, patch
 
-from AssemblyUtil.FastaToAssembly import FastaToAssembly
-from installed_clients.DataFileUtilClient import DataFileUtil
+from AssemblyUtil.FastaToAssembly import _MAX_DATA_SIZE, FastaToAssembly
 from conftest import assert_exception_correct
-
+from installed_clients.DataFileUtilClient import DataFileUtil
+from pytest import raises
 
 # TODO Add more unit tests when changing things until entire file is covered by unit tests
 
@@ -625,3 +623,34 @@ def test_import_fasta_mass_fail_min_contig_length():
           _update(b, {'min_contig_length': {}})),
     ]
     _run_test_spec_fail(test_spec, mass=True)
+
+
+@patch('AssemblyUtil.FastaToAssembly._get_serialized_object_size')
+def test_assembly_objects_generator_with_big_serialized_object_size(mocked_function):
+    fta, _ = _set_up_mocks()
+    assembly_objects = [
+        {'md5': '1e007bad0811a6d6e09a882d3bf802ab', 'base_counts': {'A': 1200415, 'G': 852652, 'C': 846697, 'T': 1191689, 'N': 847}, 'dna_size': 4092300, 'gc_content': 0.41526},
+        {'md5': 'a26f200923f8c860f86a8d728055fd02', 'base_counts': {'A': 1184671, 'G': 847148, 'C': 850586, 'T': 1196308, 'N': 218}, 'dna_size': 4078931, 'gc_content': 0.41622},
+        {'md5': '8aa6b1244e18c4f93bb3307902bd3a4d', 'base_counts': {'A': 1199516, 'G': 850011, 'C': 845769, 'T': 1183802, 'N': 106}, 'dna_size': 4079204, 'gc_content': 0.41571}
+    ]
+    assembly_names = ["name_1", "name_2", "name_3"]
+    mocked_function.return_value = _MAX_DATA_SIZE * 1/3
+    res = list(fta._assembly_objects_generator(assembly_objects, assembly_names))
+    assert len(res) == 2
+    assert res[0][1] == ["name_1", "name_2"]
+    assert res[1][1] == ["name_3"]
+
+
+@patch('AssemblyUtil.FastaToAssembly._get_serialized_object_size')
+def terst_assembly_objects_generator_with_small_serialized_object_size(mocked_function):
+    fta, _ = _set_up_mocks()
+    assembly_objects = [
+        {'md5': '1e007bad0811a6d6e09a882d3bf802ab', 'base_counts': {'A': 1200415, 'G': 852652, 'C': 846697, 'T': 1191689, 'N': 847}, 'dna_size': 4092300, 'gc_content': 0.41526},
+        {'md5': 'a26f200923f8c860f86a8d728055fd02', 'base_counts': {'A': 1184671, 'G': 847148, 'C': 850586, 'T': 1196308, 'N': 218}, 'dna_size': 4078931, 'gc_content': 0.41622},
+        {'md5': '8aa6b1244e18c4f93bb3307902bd3a4d', 'base_counts': {'A': 1199516, 'G': 850011, 'C': 845769, 'T': 1183802, 'N': 106}, 'dna_size': 4079204, 'gc_content': 0.41571}
+    ]
+    assembly_names = ["name_1", "name_2", "name_3"]
+    mocked_function.return_value = 9
+    res = list(fta._assembly_objects_generator(assembly_objects, assembly_names))
+    assert len(res) == 1
+    assert res[0][1] == assembly_names
