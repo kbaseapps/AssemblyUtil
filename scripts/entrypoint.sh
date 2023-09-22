@@ -8,6 +8,9 @@ if [ -f ./work/token ] ; then
   export KB_AUTH_TOKEN=$(<./work/token)
 fi
 
+export KBASE_SECURE_CONFIG_PARAM_NUM_WORKERS=5
+export KBASE_SECURE_CONFIG_PARAM_MAX_NUM_WORKERS=10
+
 if [ $# -eq 0 ] ; then
   sh ./scripts/start_server.sh
 elif [ "${1}" = "test" ] ; then

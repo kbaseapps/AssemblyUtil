@@ -16,7 +16,8 @@ from pathos.multiprocessing import ProcessingPool as Pool
 
 _MAX_DATA_SIZE = 1024 * 1024 * 1024 # 1 GB
 _SAFETY_FACTOR = 0.95
-_SYSTEM_UTILIZATION = 1
+_NUM_WORKERS = "KBASE_SECURE_CONFIG_PARAM_NUM_WORKERS"
+_MAX_NUM_WORKERS = "KBASE_SECURE_CONFIG_PARAM_MAX_NUM_WORKERS"
 
 _WSID = 'workspace_id'
 _MCL = 'min_contig_length'
@@ -33,6 +34,24 @@ def _get_serialized_object_size(assembly_object):
     arg_hash = {'params': assembly_object}
     serialized = json.dumps(arg_hash, cls=_JSONObjectEncoder)
     return sys.getsizeof(serialized)
+
+def _validate_workers_params(worker_count, var_name):
+    if worker_count is None:
+        raise ValueError(f"{var_name} is required")
+    if not worker_count.isdigit():
+        raise ValueError(f"{var_name} must be a digit")
+    if int(worker_count) < 1:
+        raise ValueError(f"{var_name} must be >= 1")
+    return int(worker_count)
+
+def _get_num_workers():
+    num_workers = os.environ.get(_NUM_WORKERS, None)
+    max_num_workers = os.environ.get(_MAX_NUM_WORKERS, None)
+    num_workers = _validate_workers_params(num_workers, _NUM_WORKERS)
+    max_num_workers = _validate_workers_params(max_num_workers, _MAX_NUM_WORKERS)
+    if num_workers > max_num_workers:
+        raise ValueError(f"Number of workers {num_workers} is greater than max number of workers {max_num_workers}")
+    return num_workers
 
 class FastaToAssembly:
 
@@ -127,7 +146,7 @@ class FastaToAssembly:
         return output
 
     def _run_parallel_import_fasta_mass(self, params):
-        threads = max(int(os.cpu_count() * min(_SYSTEM_UTILIZATION, 1)), 1)
+        threads = _get_num_workers()
         print(f' - running {threads} parallel threads')
 
         # distribute inputs evenly across threads

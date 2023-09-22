@@ -54,8 +54,6 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       run: |
         sh $GITHUB_WORKSPACE/kb_sdk_actions/bin/kb-sdk test
-        returncode=$?
-        if [ $returncode != 0 ]; then exit $returncode; fi
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
