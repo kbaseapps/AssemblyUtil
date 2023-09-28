@@ -16,8 +16,10 @@ from pathos.multiprocessing import ProcessingPool as Pool
 
 _MAX_DATA_SIZE = 1024 * 1024 * 1024 # 1 GB
 _SAFETY_FACTOR = 0.95
-_NUM_WORKERS = "KBASE_SECURE_CONFIG_PARAM_NUM_WORKERS"
-_MAX_NUM_WORKERS = "KBASE_SECURE_CONFIG_PARAM_MAX_NUM_WORKERS"
+_NUM_WORKERS = "NUM_WORKERS"
+_MAX_NUM_WORKERS = "MAX_NUM_WORKERS"
+_DEFAULT_NUM_WORKERS = 5
+_DEFAULT_MAX_NUM_WORKERS = 10
 
 _WSID = 'workspace_id'
 _MCL = 'min_contig_length'
@@ -45,8 +47,8 @@ def _validate_workers_params(worker_count, var_name):
     return int(worker_count)
 
 def _get_num_workers():
-    num_workers = os.environ.get(_NUM_WORKERS, None)
-    max_num_workers = os.environ.get(_MAX_NUM_WORKERS, None)
+    num_workers = os.environ.get(f"KBASE_SECURE_CONFIG_PARAM_{_NUM_WORKERS}", str(_DEFAULT_NUM_WORKERS))
+    max_num_workers = os.environ.get(f"KBASE_SECURE_CONFIG_PARAM_{_MAX_NUM_WORKERS}", str(_DEFAULT_MAX_NUM_WORKERS))
     num_workers = _validate_workers_params(num_workers, _NUM_WORKERS)
     max_num_workers = _validate_workers_params(max_num_workers, _MAX_NUM_WORKERS)
     if num_workers > max_num_workers:
