@@ -39,6 +39,10 @@ def config():
     parser.read(os.environ['KB_DEPLOYMENT_CONFIG'])
     cfg['file_config'] = {k: v for k, v in parser.items('AssemblyUtil')}
 
+    # add catalog secure params
+    cfg['file_config']["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "10"
+    cfg['file_config']["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "2"
+
     auth_client = KBaseAuth(cfg['file_config']['auth-service-url'])
     cfg['user'] = auth_client.get_user(cfg['token'])
 
@@ -609,6 +613,15 @@ def test_parallelize_import_fasta_mass(config, impl, context, scratch):
 
     object_version_pattern = re.compile(r'^[0-9]+\/1$')
     results = impl.save_assemblies_from_fastas(context, params)[0]['results']
-    for res in results:
+    ws = _get_workspace(config)
+    for idx, res in enumerate(results):
+        # check the workspace is returning UPAs
         assert res['filtered_input'] is None
         assert object_version_pattern.match("/".join(res['upa'].split("/")[-2:]))
+
+        # check relevant object info fields
+        obj = ws.get_objects2({'objects': [{'ref': res['upa']}]})['data'][0]
+        info = obj['info']
+        assert info[1] == file_names[idx]
+        assert info[2].split('-')[0] == 'KBaseGenomeAnnotations.Assembly'
+        assert info[6] == config['ws_id']

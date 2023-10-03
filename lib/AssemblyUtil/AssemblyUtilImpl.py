@@ -43,6 +43,7 @@ class AssemblyUtil:
         self.sharedFolder = config['scratch']
         self.callback_url = os.environ['SDK_CALLBACK_URL']
         self.ws_url = config['workspace-url']
+        self.file_config = config
         #END_CONSTRUCTOR
 
     def get_assembly_as_fasta(self, ctx, params):
@@ -332,7 +333,7 @@ class AssemblyUtil:
             'results': FastaToAssembly(
                 DataFileUtil(self.callback_url, token=ctx['token']),
                 Path(self.sharedFolder)
-            ).import_fasta_mass(params)
+            ).import_fasta_mass(params, self.file_config)
         }
         #END save_assemblies_from_fastas
 
