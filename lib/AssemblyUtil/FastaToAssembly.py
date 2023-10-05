@@ -15,9 +15,8 @@ from pathos.multiprocessing import ProcessingPool as Pool
 
 _MAX_DATA_SIZE = 1024 * 1024 * 1024 # 1 GB
 _SAFETY_FACTOR = 0.95
-_THREADS_PER_CPU = "THREADS_PER_CPU"
-_MAX_THREADS = "MAX_THREADS"
 
+_MCS = 'max_cumsize'
 _WSID = 'workspace_id'
 _MCL = 'min_contig_length'
 _INPUTS = 'inputs'
@@ -34,23 +33,17 @@ def _get_serialized_object_size(assembly_object):
     serialized = json.dumps(arg_hash)
     return len(serialized)
 
-def _validate_threads_params(threads_count, var_name):
-    if threads_count is None:
-        raise ValueError(f"{var_name} is required")
-    try:
-        threads_count = int(threads_count)
-    except Exception as e:
-        raise ValueError(f"{var_name} must be an integer") from e
-    if threads_count < 1:
-        raise ValueError(f"{var_name} must be >= 1")
-    return threads_count
+def _validate_max_cumsize(max_cumsize):
+    if max_cumsize is None:
+        max_cumsize = _MAX_DATA_SIZE * _SAFETY_FACTOR
+    else:
+        if type(max_cumsize) not in (int, float) or max_cumsize <= 0:
+            raise ValueError("max_cumsize must be an integer or decimal and > 0")
+    return max_cumsize
 
-def _get_num_workers(file_config):
-    threads_per_cpu = file_config.get(f"KBASE_SECURE_CONFIG_PARAM_{_THREADS_PER_CPU}")
-    max_threads = file_config.get(f"KBASE_SECURE_CONFIG_PARAM_{_MAX_THREADS}")
-    threads_per_cpu = _validate_threads_params(threads_per_cpu, _THREADS_PER_CPU)
-    max_threads = _validate_threads_params(max_threads, _MAX_THREADS)
-    workers = min(threads_per_cpu * os.cpu_count(), max_threads)
+def _get_num_workers(threads_per_cpu, max_threads):
+    threads = int(threads_per_cpu * os.cpu_count())
+    workers = min(max(threads, 1), max_threads)
     return workers
 
 class FastaToAssembly:
@@ -71,12 +64,14 @@ class FastaToAssembly:
         mass_params = self._set_up_single_params(params)
         return self._import_fasta_mass(mass_params)[0]
 
-    def import_fasta_mass(self, params, file_config, parallelize=True):
+    def import_fasta_mass(self, params, threads_per_cpu, max_threads, max_cumsize=None, parallelize=True):
         print('validating parameters')
         self._validate_mass_params(params)
+        params[_MCS] = _validate_max_cumsize(max_cumsize)
         if not parallelize or len(params[_INPUTS]) == 1:
             return self._import_fasta_mass(params)
-        return self._run_parallel_import_fasta_mass(params, file_config)
+        workers = _get_num_workers(threads_per_cpu, max_threads)
+        return self._run_parallel_import_fasta_mass(params, workers)
 
     def _import_fasta_mass(self, params):
         # For now this is completely serial, but theoretically we could start uploading
@@ -91,6 +86,7 @@ class FastaToAssembly:
         # in DataFileUtils if it's not there already
         # Finally, if more than 1G worth of assembly object data is sent to the workspace at once,
         # the call will fail. May need to add some checking / splitting code around this.
+        max_cumsize = params.pop(_MCS) if _MCS in params else _MAX_DATA_SIZE * _SAFETY_FACTOR
         if _FILE in params[_INPUTS][0]:
             input_files = self._stage_file_inputs(params[_INPUTS])
         else:
@@ -134,7 +130,6 @@ class FastaToAssembly:
         assembly_infos = []
         assembly_names = [p[_ASSEMBLY_NAME] for p in params[_INPUTS]]
         # generator to process files in bach. Avoid memory issues
-        max_cumsize = _MAX_DATA_SIZE * _SAFETY_FACTOR
         for assobject_batch, assembly_name_batch in self._assembly_objects_generator(
             assobjects, assembly_names, max_cumsize
         ):
@@ -146,8 +141,7 @@ class FastaToAssembly:
             out['upa'] = _upa(ai)
         return output
 
-    def _run_parallel_import_fasta_mass(self, params, file_config):
-        workers = _get_num_workers(file_config)
+    def _run_parallel_import_fasta_mass(self, params, workers):
         print(f' - running {workers} parallel workers')
 
         # distribute inputs evenly across workers

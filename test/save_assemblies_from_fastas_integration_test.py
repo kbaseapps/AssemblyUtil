@@ -18,6 +18,7 @@ from configparser import ConfigParser
 from pathlib import Path
 from pytest import fixture, raises
 
+from AssemblyUtil.FastaToAssembly import FastaToAssembly
 from AssemblyUtil.authclient import KBaseAuth
 from AssemblyUtil.AssemblyUtilImpl import AssemblyUtil
 from AssemblyUtil.AssemblyUtilServer import MethodContext
@@ -66,6 +67,9 @@ def _clean_up(cfg):
     ws = _get_workspace(cfg)
     # assume here that the tests don't create 10K+ objects
     objects = ws.list_objects({'ids': [cfg['ws_id']], 'showAllVersions': 1})
+    if not objects:
+        ws.delete_workspace({'id': cfg['ws_id']})
+        return
     objdata = ws.get_objects2({
         'objects': [{'ref': _ref(oi)} for oi in objects],
         'no_data': 1,
@@ -596,6 +600,16 @@ def test_parallelize_import_fasta_mass(config, impl, context, scratch):
         'GCF_000970245.1_ASM97024v1_genomic.fna.gz'
     ]
 
+    object_metas = [
+        {'GC content': '0.41675', 'Size': '3839682', 'N Contigs': '130', 'MD5': '8118290bf6d3369f78ebb70a59d85dd3'},
+        {'GC content': '0.41485', 'Size': '4096345', 'N Contigs': '1', 'MD5': '418bf8e730b1b948ffb9cded9acfaf26'},
+        {'GC content': '0.41457', 'Size': '4096482', 'N Contigs': '1', 'MD5': '949a0fe665048cb917c8cf74f75c74b7'},
+        {'GC content': '0.41487', 'Size': '4066551', 'N Contigs': '1', 'MD5': 'd33802829ba0686714a5d74280527615'},
+        {'GC content': '0.41421', 'Size': '4142816', 'N Contigs': '1', 'MD5': 'cf47d74f66a16dffcbaa7a05eb9eec70'},
+        {'GC content': '0.41488', 'Size': '4166241', 'N Contigs': '1', 'MD5': '90178f629aa7bfbeea19bac8e616c467'}
+    ]
+
+    # copy 6 assembly files into the data dir
     for file_name in file_names:
         shutil.copy(data / file_name, tmp_dir)
 
@@ -625,3 +639,112 @@ def test_parallelize_import_fasta_mass(config, impl, context, scratch):
         assert info[1] == file_names[idx]
         assert info[2].split('-')[0] == 'KBaseGenomeAnnotations.Assembly'
         assert info[6] == config['ws_id']
+        assert info[10] == object_metas[idx]
+
+
+def test_invalid_thread_param(config, context, scratch):
+    tmp_dir = scratch / ("test_invalid_thread_param" + str(uuid.uuid4()))
+    os.makedirs(tmp_dir)
+    data = Path('data')
+    file_names = [
+        'GCA_002506415.1_ASM250641v1_genomic.fna.gz',
+        'GCF_000007065.1_ASM706v1_genomic.fna.gz'
+    ]
+
+    # copy 2 assembly files into the data dir
+    for file_name in file_names:
+        shutil.copy(data / file_name, tmp_dir)
+
+    params = {
+        'workspace_id': config['ws_id'],
+        'inputs': [
+            {'file': tmp_dir / 'GCA_002506415.1_ASM250641v1_genomic.fna.gz', 'assembly_name': 'GCA_002506415.1_ASM250641v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000007065.1_ASM706v1_genomic.fna.gz', 'assembly_name': 'GCF_000007065.1_ASM706v1_genomic.fna.gz'}
+        ]
+    }
+
+    var_name = "MAX_THREADS"
+    config['file_config']["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "10e"
+    impl = AssemblyUtil(config['file_config'])
+    with raises(Exception) as got:
+        impl.save_assemblies_from_fastas(context, params)
+    assert_exception_correct(got.value, ValueError(f"Cannot evaluate the string {var_name}"))
+
+    config['file_config']["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "-1"
+    impl = AssemblyUtil(config['file_config'])
+    with raises(Exception) as got:
+        impl.save_assemblies_from_fastas(context, params)
+    assert_exception_correct(got.value, ValueError(f"{var_name} cannot be negative"))
+
+
+def test_generator_overflow(config, scratch):
+    tmp_dir = scratch / ("test_generator_overflow" + str(uuid.uuid4()))
+    os.makedirs(tmp_dir)
+    data = Path('data')
+    file_names = [
+        'GCA_002506415.1_ASM250641v1_genomic.fna.gz',
+        'GCF_000007065.1_ASM706v1_genomic.fna.gz',
+        'GCF_000970165.1_ASM97016v1_genomic.fna.gz',
+        'GCF_000970185.1_ASM97018v1_genomic.fna.gz',
+        'GCF_000970205.1_ASM97020v1_genomic.fna.gz',
+        'GCF_000970245.1_ASM97024v1_genomic.fna.gz'
+    ]
+
+    # copy 6 assembly files into the data dir
+    for file_name in file_names:
+        shutil.copy(data / file_name, tmp_dir)
+
+    params = {
+        'workspace_id': config['ws_id'],
+        'inputs': [
+            {'file': tmp_dir / 'GCA_002506415.1_ASM250641v1_genomic.fna.gz', 'assembly_name': 'GCA_002506415.1_ASM250641v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000007065.1_ASM706v1_genomic.fna.gz', 'assembly_name': 'GCF_000007065.1_ASM706v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000970165.1_ASM97016v1_genomic.fna.gz', 'assembly_name': 'GCF_000970165.1_ASM97016v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000970185.1_ASM97018v1_genomic.fna.gz', 'assembly_name': 'GCF_000970185.1_ASM97018v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000970205.1_ASM97020v1_genomic.fna.gz', 'assembly_name': 'GCF_000970205.1_ASM97020v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000970245.1_ASM97024v1_genomic.fna.gz', 'assembly_name': 'GCF_000970245.1_ASM97024v1_genomic.fna.gz'}
+        ]
+    }
+
+    dfu = DataFileUtil(config['callback_url'], token=config['token'])
+    fta = FastaToAssembly(dfu, scratch)
+    fta.import_fasta_mass(params, 1, 10, 38300)
+
+
+def test_invalid_max_cumsize(config, scratch):
+    tmp_dir = scratch / ("test_invalid_max_cumsize" + str(uuid.uuid4()))
+    os.makedirs(tmp_dir)
+    data = Path('data')
+    file_names = [
+        'GCA_002506415.1_ASM250641v1_genomic.fna.gz',
+        'GCF_000007065.1_ASM706v1_genomic.fna.gz',
+        'GCF_000970165.1_ASM97016v1_genomic.fna.gz',
+        'GCF_000970185.1_ASM97018v1_genomic.fna.gz',
+        'GCF_000970205.1_ASM97020v1_genomic.fna.gz',
+        'GCF_000970245.1_ASM97024v1_genomic.fna.gz'
+    ]
+
+    # copy 6 assembly files into the data dir
+    for file_name in file_names:
+        shutil.copy(data / file_name, tmp_dir)
+
+    params = {
+        'workspace_id': config['ws_id'],
+        'inputs': [
+            {'file': tmp_dir / 'GCA_002506415.1_ASM250641v1_genomic.fna.gz', 'assembly_name': 'GCA_002506415.1_ASM250641v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000007065.1_ASM706v1_genomic.fna.gz', 'assembly_name': 'GCF_000007065.1_ASM706v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000970165.1_ASM97016v1_genomic.fna.gz', 'assembly_name': 'GCF_000970165.1_ASM97016v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000970185.1_ASM97018v1_genomic.fna.gz', 'assembly_name': 'GCF_000970185.1_ASM97018v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000970205.1_ASM97020v1_genomic.fna.gz', 'assembly_name': 'GCF_000970205.1_ASM97020v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000970245.1_ASM97024v1_genomic.fna.gz', 'assembly_name': 'GCF_000970245.1_ASM97024v1_genomic.fna.gz'}
+        ]
+    }
+    dfu = DataFileUtil(config['callback_url'], token=config['token'])
+    fta = FastaToAssembly(dfu, scratch)
+    with raises(Exception) as got:
+        fta.import_fasta_mass(params, 1, 10, "38300")
+    assert_exception_correct(got.value, ValueError("max_cumsize must be an integer or decimal and > 0"))
+
+    with raises(Exception) as got:
+        fta.import_fasta_mass(params, 1, 10, "-1")
+    assert_exception_correct(got.value, ValueError("max_cumsize must be an integer or decimal and > 0"))

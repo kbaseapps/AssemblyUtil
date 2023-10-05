@@ -43,7 +43,8 @@ class AssemblyUtil:
         self.sharedFolder = config['scratch']
         self.callback_url = os.environ['SDK_CALLBACK_URL']
         self.ws_url = config['workspace-url']
-        self.file_config = config
+        self.max_threads = config.get("KBASE_SECURE_CONFIG_PARAM_MAX_THREADS")
+        self.threads_per_cpu = config.get("KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU")
         #END_CONSTRUCTOR
 
     def get_assembly_as_fasta(self, ctx, params):
@@ -329,11 +330,29 @@ class AssemblyUtil:
         # ctx is the context object
         # return variables are: results
         #BEGIN save_assemblies_from_fastas
+        _MAX_THREADS = 10
+        _THREADS_PER_CPU = 2.5
+
+        def _validate_threads_params(threads_count, var_name, default_val):
+            if threads_count is None:
+                print(f"Cannot retrieve {var_name} from the catalog, set {var_name}={default_val}")
+                return default_val
+            try:
+                threads_count = eval(threads_count)
+            except Exception as e:
+                raise ValueError(f"Cannot evaluate the string {var_name}") from e
+            if threads_count < 0:
+                raise ValueError(f"{var_name} cannot be negative")
+            return threads_count
+
+        max_threads = _validate_threads_params(self.max_threads, "MAX_THREADS", _MAX_THREADS)
+        threads_per_cpu = _validate_threads_params(self.threads_per_cpu, "THREADS_PER_CPU", _THREADS_PER_CPU)
+
         results = {
             'results': FastaToAssembly(
                 DataFileUtil(self.callback_url, token=ctx['token']),
                 Path(self.sharedFolder)
-            ).import_fasta_mass(params, self.file_config)
+            ).import_fasta_mass(params, threads_per_cpu, max_threads)
         }
         #END save_assemblies_from_fastas
 
