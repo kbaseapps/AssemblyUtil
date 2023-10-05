@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Callable, Optional
 from unittest.mock import create_autospec
 
-from AssemblyUtil.FastaToAssembly import FastaToAssembly, _validate_threads_params
+from AssemblyUtil.FastaToAssembly import FastaToAssembly
 from conftest import assert_exception_correct
 from installed_clients.DataFileUtilClient import DataFileUtil
 from pytest import raises

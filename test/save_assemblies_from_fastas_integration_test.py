@@ -18,10 +18,10 @@ from configparser import ConfigParser
 from pathlib import Path
 from pytest import fixture, raises
 
-from AssemblyUtil.FastaToAssembly import FastaToAssembly
 from AssemblyUtil.authclient import KBaseAuth
 from AssemblyUtil.AssemblyUtilImpl import AssemblyUtil
 from AssemblyUtil.AssemblyUtilServer import MethodContext
+from AssemblyUtil.FastaToAssembly import FastaToAssembly
 from installed_clients.AbstractHandleClient import AbstractHandle as HandleService
 from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.WorkspaceClient import Workspace
