@@ -34,11 +34,15 @@ def _get_serialized_object_size(assembly_object):
     return len(serialized)
 
 def _validate_max_cumsize(max_cumsize):
+    upper_bound = _MAX_DATA_SIZE * _SAFETY_FACTOR
     if max_cumsize is None:
-        max_cumsize = _MAX_DATA_SIZE * _SAFETY_FACTOR
-    else:
-        if type(max_cumsize) not in (int, float) or max_cumsize <= 0:
-            raise ValueError("max_cumsize must be an integer or decimal and > 0")
+        return upper_bound
+    if type(max_cumsize) not in (int, float):
+        raise ValueError("max_cumsize must be an integer or decimal")
+    if max_cumsize <= 0:
+        raise ValueError("max_cumsize must be > 0")
+    if max_cumsize > upper_bound:
+        raise ValueError(f"max_cumsize must be <= {upper_bound}")
     return max_cumsize
 
 def _get_num_workers(threads_per_cpu, max_threads):

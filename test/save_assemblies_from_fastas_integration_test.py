@@ -743,8 +743,12 @@ def test_invalid_max_cumsize(config, scratch):
     fta = FastaToAssembly(dfu, scratch)
     with raises(Exception) as got:
         fta.import_fasta_mass(params, 1, 10, "38300")
-    assert_exception_correct(got.value, ValueError("max_cumsize must be an integer or decimal and > 0"))
+    assert_exception_correct(got.value, ValueError("max_cumsize must be an integer or decimal"))
 
     with raises(Exception) as got:
-        fta.import_fasta_mass(params, 1, 10, "-1")
-    assert_exception_correct(got.value, ValueError("max_cumsize must be an integer or decimal and > 0"))
+        fta.import_fasta_mass(params, 1, 10, -1)
+    assert_exception_correct(got.value, ValueError("max_cumsize must be > 0"))
+
+    with raises(Exception) as got:
+        fta.import_fasta_mass(params, 1, 10, 1024 * 1024 * 1024 * 1024)
+    assert_exception_correct(got.value, ValueError(f"max_cumsize must be <= {1024 * 1024 * 1024 * 0.95}"))
