@@ -33,6 +33,12 @@ def _get_serialized_object_size(assembly_object):
     serialized = json.dumps(arg_hash)
     return len(serialized)
 
+def _validate_threads_param_input(threads_count, var_name):
+    # max_threads must be an integer and > 0
+    # threads_per_cpu could be either an integer or decimal, and > 0
+    if threads_count <= 0:
+        raise ValueError(f"{var_name} must be > 0")
+
 def _validate_max_cumsize(max_cumsize):
     upper_bound = _MAX_DATA_SIZE * _SAFETY_FACTOR
     if max_cumsize is None:
@@ -71,6 +77,8 @@ class FastaToAssembly:
     def import_fasta_mass(self, params, threads_per_cpu, max_threads, max_cumsize=None, parallelize=True):
         print('validating parameters')
         self._validate_mass_params(params)
+        _validate_threads_param_input(threads_per_cpu, "THREADS_PER_CPU")
+        _validate_threads_param_input(max_threads, "MAX_THREADS")
         params[_MCS] = _validate_max_cumsize(max_cumsize)
         if not parallelize or len(params[_INPUTS]) == 1:
             return self._import_fasta_mass(params)
