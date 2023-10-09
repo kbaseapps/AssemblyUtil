@@ -19,7 +19,7 @@ def _validate_max_threads_type(threads_count, var_name, default_val):
         return default_val
     try:
         threads_count = int(threads_count)
-    except Exception as e:
+    except ValueError as e:
         raise ValueError(f"{var_name} must be an integer") from e
     return threads_count
 
@@ -30,7 +30,7 @@ def _validate_threads_per_cpu_type(threads_count, var_name, default_val):
         return default_val
     try:
         threads_count = float(threads_count)
-    except Exception as e:
+    except ValueError as e:
         raise ValueError(f"{var_name} must be an integer or decimal") from e
     return threads_count
 #END_HEADER
