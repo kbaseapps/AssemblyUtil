@@ -746,7 +746,7 @@ def test_invalid_max_cumsize(config, scratch):
         'GCF_000007065.1_ASM706v1_genomic.fna.gz'
     ]
 
-    # copy 6 assembly files into the data dir
+    # copy 2 assembly files into the data dir
     for file_name in file_names:
         shutil.copy(data / file_name, tmp_dir)
 
