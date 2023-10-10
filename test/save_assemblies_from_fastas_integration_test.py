@@ -738,7 +738,7 @@ def test_generator_overflow(config, scratch):
 
 
 def test_invalid_max_cumsize(config, scratch):
-    tmp_dir = scratch / ("test_invalidate_max_cumsize" + str(uuid.uuid4()))
+    tmp_dir = scratch / ("test_invalid_max_cumsize" + str(uuid.uuid4()))
     os.makedirs(tmp_dir)
     data = Path('data')
     file_names = [
