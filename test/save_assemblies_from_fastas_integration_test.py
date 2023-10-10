@@ -735,39 +735,3 @@ def test_generator_overflow(config, scratch):
     fta = FastaToAssembly(dfu, scratch)
     results = fta.import_fasta_mass(params, 1, 10, 100000, parallelize=False)
     _check_result_object_info_fields(config, results, file_names, object_metas)
-
-
-def test_invalid_max_cumsize(config, scratch):
-    tmp_dir = scratch / ("test_invalid_max_cumsize" + str(uuid.uuid4()))
-    os.makedirs(tmp_dir)
-    data = Path('data')
-    file_names = [
-        'GCA_002506415.1_ASM250641v1_genomic.fna.gz',
-        'GCF_000007065.1_ASM706v1_genomic.fna.gz'
-    ]
-
-    # copy 2 assembly files into the data dir
-    for file_name in file_names:
-        shutil.copy(data / file_name, tmp_dir)
-
-    params = {
-        'workspace_id': config['ws_id'],
-        'inputs': [
-            {'file': tmp_dir / 'GCA_002506415.1_ASM250641v1_genomic.fna.gz', 'assembly_name': 'GCA_002506415.1_ASM250641v1_genomic.fna.gz'},
-            {'file': tmp_dir / 'GCF_000007065.1_ASM706v1_genomic.fna.gz', 'assembly_name': 'GCF_000007065.1_ASM706v1_genomic.fna.gz'}
-        ]
-    }
-
-    dfu = DataFileUtil(config['callback_url'], token=config['token'])
-    fta = FastaToAssembly(dfu, scratch)
-    with raises(Exception) as got:
-        fta.import_fasta_mass(params, 1, 10, "9999")
-    assert_exception_correct(got.value, ValueError("max_cumsize must be an integer or decimal"))
-
-    with raises(Exception) as got:
-        fta.import_fasta_mass(params, 1, 10, -1)
-    assert_exception_correct(got.value, ValueError("max_cumsize must be > 0"))
-
-    with raises(Exception) as got:
-        fta.import_fasta_mass(params, 1, 10, 1024 * 1024 * 1024 * 1024)
-    assert_exception_correct(got.value, ValueError(f"max_cumsize must be <= {1024 * 1024 * 1024 * 0.95}"))

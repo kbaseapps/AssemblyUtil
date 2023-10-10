@@ -29,13 +29,13 @@ def _set_up_mocks(
     return fta, dfu
 
 
-def _run_test_spec_fail(test_spec, mass=False, print_spec=False):
+def _run_test_spec_fail(test_spec, max_cumsize=None, mass=False, print_spec=False):
     fta, _ = _set_up_mocks()
     for err, params in test_spec:
         if print_spec:
             print(f"spec:\n{params}")
         if mass:
-            _run_test_mass_fail(fta, params, err)
+            _run_test_mass_fail(fta, params, max_cumsize, err)
         else:
             _run_test_fail(fta, params, err)
 
@@ -46,9 +46,9 @@ def _run_test_fail(fta, params, expected):
         assert_exception_correct(got.value, ValueError(expected))
 
     
-def _run_test_mass_fail(fta, params, expected):
+def _run_test_mass_fail(fta, params, max_cumsize, expected):
         with raises(Exception) as got:
-            fta.import_fasta_mass(params, 2.5, 10, None, parallelize=False)
+            fta.import_fasta_mass(params, 2.5, 10, max_cumsize, parallelize=False)
         assert_exception_correct(got.value, ValueError(expected))
 
 
@@ -623,3 +623,13 @@ def test_import_fasta_mass_fail_min_contig_length():
           _update(b, {'min_contig_length': {}})),
     ]
     _run_test_spec_fail(test_spec, mass=True)
+
+
+def test_import_fasta_mass_fail_invalid_max_cumsize():
+    b = {"workspace_id": 1, "inputs": [{"file": "b", "assembly_name": "x"}]}
+    test_spec1 = [("max_cumsize must be an integer or decimal", b)]
+    test_spec2 = [("max_cumsize must be > 0", b)]
+    test_spec3 = [(f"max_cumsize must be <= {1024 * 1024 * 1024 * 0.95}", b)]
+    _run_test_spec_fail(test_spec1, max_cumsize="9999", mass=True)
+    _run_test_spec_fail(test_spec2, max_cumsize=-1, mass=True)
+    _run_test_spec_fail(test_spec3, max_cumsize=1024 * 1024 * 1024 * 1024, mass=True)
