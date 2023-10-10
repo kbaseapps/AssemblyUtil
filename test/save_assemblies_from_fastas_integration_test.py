@@ -673,24 +673,22 @@ def test_invalid_threads_param(config, context, scratch):
     # max_threads type check fails
     config_dict["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "10.5"
     config_dict["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "2.5"
-    impl = AssemblyUtil(config_dict)
-    with raises(ValueError) as got:
-        impl.save_assemblies_from_fastas(context, params)
+    with raises(Exception) as got:
+        AssemblyUtil(config_dict)
     assert_exception_correct(got.value, ValueError(f"{MAX_THREADS} must be an integer"))
 
     # threads_per_cpu type check fails
     config_dict["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "10"
     config_dict["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "2.8e"
-    impl = AssemblyUtil(config_dict)
-    with raises(ValueError) as got:
-        impl.save_assemblies_from_fastas(context, params)
+    with raises(Exception) as got:
+        AssemblyUtil(config_dict)
     assert_exception_correct(got.value, ValueError(f"{THREADS_PER_CPU} must be an integer or decimal"))
 
     # max_threads input check fails
     config_dict["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "0"
     config_dict["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "2"
     impl = AssemblyUtil(config_dict)
-    with raises(ValueError) as got:
+    with raises(Exception) as got:
         impl.save_assemblies_from_fastas(context, params)
     assert_exception_correct(got.value, ValueError(f"{MAX_THREADS} must be > 0"))
 
@@ -698,7 +696,7 @@ def test_invalid_threads_param(config, context, scratch):
     config_dict["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "10"
     config_dict["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "0"
     impl = AssemblyUtil(config_dict)
-    with raises(ValueError) as got:
+    with raises(Exception) as got:
         impl.save_assemblies_from_fastas(context, params)
     assert_exception_correct(got.value, ValueError(f"{THREADS_PER_CPU} must be > 0"))
 
