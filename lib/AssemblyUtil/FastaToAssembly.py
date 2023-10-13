@@ -13,6 +13,11 @@ from Bio import SeqIO
 from installed_clients.DataFileUtilClient import DataFileUtil
 from pathos.multiprocessing import ProcessingPool as Pool
 
+# catalog params
+MAX_THREADS = 10
+THREADS_PER_CPU = 2
+
+# max_cumsize
 _MAX_DATA_SIZE = 1024 * 1024 * 1024 # 1 GB
 _SAFETY_FACTOR = 0.95
 
@@ -74,7 +79,14 @@ class FastaToAssembly:
         mass_params = self._set_up_single_params(params)
         return self._import_fasta_mass(mass_params)[0]
 
-    def import_fasta_mass(self, params, threads_per_cpu, max_threads, max_cumsize=None, parallelize=True):
+    def import_fasta_mass(
+        self,
+        params,
+        threads_per_cpu=THREADS_PER_CPU,
+        max_threads=MAX_THREADS,
+        max_cumsize=None,
+        parallelize=True,
+    ):
         print('validating parameters')
         self._validate_mass_params(params)
         _validate_threads_param_input(threads_per_cpu, "THREADS_PER_CPU")

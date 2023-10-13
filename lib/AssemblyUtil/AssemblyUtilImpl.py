@@ -4,14 +4,12 @@
 import os
 from pathlib import Path
 
-from AssemblyUtil.FastaToAssembly import FastaToAssembly
+from AssemblyUtil.FastaToAssembly import FastaToAssembly, MAX_THREADS, THREADS_PER_CPU
 from AssemblyUtil.AssemblyToFasta import AssemblyToFasta
 from AssemblyUtil.TypeToFasta import TypeToFasta
 from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.WorkspaceClient import Workspace
 
-_MAX_THREADS = 10
-_THREADS_PER_CPU = 2
 
 def _validate_max_threads_type(threads_count, var_name, default_val):
     if threads_count is None:
@@ -69,8 +67,8 @@ class AssemblyUtil:
 
         max_threads = config.get("KBASE_SECURE_CONFIG_PARAM_MAX_THREADS")
         threads_per_cpu = config.get("KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU")
-        self.max_threads = _validate_max_threads_type(max_threads, "MAX_THREADS", _MAX_THREADS)
-        self.threads_per_cpu = _validate_threads_per_cpu_type(threads_per_cpu, "THREADS_PER_CPU", _THREADS_PER_CPU)
+        self.max_threads = _validate_max_threads_type(max_threads, "MAX_THREADS", MAX_THREADS)
+        self.threads_per_cpu = _validate_threads_per_cpu_type(threads_per_cpu, "THREADS_PER_CPU", THREADS_PER_CPU)
         #END_CONSTRUCTOR
 
     def get_assembly_as_fasta(self, ctx, params):

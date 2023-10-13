@@ -701,7 +701,11 @@ def test_invalid_threads_param(config, context, scratch):
     assert_exception_correct(got.value, ValueError(f"{THREADS_PER_CPU} must be > 0"))
 
 
-def test_generator_overflow(config, scratch):
+def test_assembly_objects_generator_overflow(config, scratch):
+    # This test is intented for _assembly_objects_generator function in FastaToAssembly
+    # Each batch contains a list of assembily files whose cumulative serialized object size must <= max_cumsize
+    # so that the workspace would not reject the data package
+    # With a max_cumsize set to 100000 below, the first two files will be in batch_1, the last file in batch_2
     tmp_dir = scratch / ("test_generator_overflow" + str(uuid.uuid4()))
     os.makedirs(tmp_dir)
     data = Path('data')
@@ -733,5 +737,5 @@ def test_generator_overflow(config, scratch):
 
     dfu = DataFileUtil(config['callback_url'], token=config['token'])
     fta = FastaToAssembly(dfu, scratch)
-    results = fta.import_fasta_mass(params, 1, 10, 100000, parallelize=False)
+    results = fta.import_fasta_mass(params, max_cumsize=100000, parallelize=False)
     _check_result_object_info_fields(config, results, file_names, object_metas)
