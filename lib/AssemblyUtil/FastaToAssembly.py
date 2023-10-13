@@ -97,7 +97,7 @@ class FastaToAssembly:
         workers = _get_num_workers(threads_per_cpu, max_threads)
         return self._run_parallel_import_fasta_mass(params, workers, max_cumsize)
 
-    def _import_fasta_mass(self, params, max_cumsize):
+    def _import_fasta_mass(self, params, max_cumsize=_MAX_DATA_SIZE * _SAFETY_FACTOR):
         # For now this is completely serial, but theoretically we could start uploading
         # Blobstore nodes when some fraction of the initial checks are done, start uploading
         # Workspace obects when some fraction of the Blobstore nodes are done, parallelize
@@ -110,9 +110,6 @@ class FastaToAssembly:
         # in DataFileUtils if it's not there already
         # Finally, if more than 1G worth of assembly object data is sent to the workspace at once,
         # the call will fail. May need to add some checking / splitting code around this.
-        if not max_cumsize:
-            max_cumsize = _MAX_DATA_SIZE * _SAFETY_FACTOR
-
         if _FILE in params[_INPUTS][0]:
             input_files = self._stage_file_inputs(params[_INPUTS])
         else:
