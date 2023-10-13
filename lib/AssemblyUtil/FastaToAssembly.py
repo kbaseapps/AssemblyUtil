@@ -91,13 +91,13 @@ class FastaToAssembly:
         self._validate_mass_params(params)
         _validate_threads_param_input(threads_per_cpu, "THREADS_PER_CPU")
         _validate_threads_param_input(max_threads, "MAX_THREADS")
-        params[_MCS] = _validate_max_cumsize(max_cumsize)
+        max_cumsize = _validate_max_cumsize(max_cumsize)
         if not parallelize or len(params[_INPUTS]) == 1:
-            return self._import_fasta_mass(params)
+            return self._import_fasta_mass(params, max_cumsize)
         workers = _get_num_workers(threads_per_cpu, max_threads)
-        return self._run_parallel_import_fasta_mass(params, workers)
+        return self._run_parallel_import_fasta_mass(params, workers, max_cumsize)
 
-    def _import_fasta_mass(self, params):
+    def _import_fasta_mass(self, params, max_cumsize):
         # For now this is completely serial, but theoretically we could start uploading
         # Blobstore nodes when some fraction of the initial checks are done, start uploading
         # Workspace obects when some fraction of the Blobstore nodes are done, parallelize
@@ -110,7 +110,9 @@ class FastaToAssembly:
         # in DataFileUtils if it's not there already
         # Finally, if more than 1G worth of assembly object data is sent to the workspace at once,
         # the call will fail. May need to add some checking / splitting code around this.
-        max_cumsize = params.pop(_MCS) if _MCS in params else _MAX_DATA_SIZE * _SAFETY_FACTOR
+        if not max_cumsize:
+            max_cumsize = _MAX_DATA_SIZE * _SAFETY_FACTOR
+
         if _FILE in params[_INPUTS][0]:
             input_files = self._stage_file_inputs(params[_INPUTS])
         else:
@@ -165,7 +167,7 @@ class FastaToAssembly:
             out['upa'] = _upa(ai)
         return output
 
-    def _run_parallel_import_fasta_mass(self, params, workers):
+    def _run_parallel_import_fasta_mass(self, params, workers, max_cumsize):
         print(f' - running {workers} parallel workers')
 
         # distribute inputs evenly across workers
@@ -180,7 +182,8 @@ class FastaToAssembly:
             )
             for i in range(0, len(param_inputs), chunk_size)
         ]
-        batch_result = Pool(workers).map(self._import_fasta_mass, batch_input)
+        batch_max_cumsize = [max_cumsize] * workers
+        batch_result = Pool(workers).map(self._import_fasta_mass, batch_input, batch_max_cumsize)
         result = list(itertools.chain.from_iterable(batch_result))
         return result
 
