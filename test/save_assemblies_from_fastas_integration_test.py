@@ -739,3 +739,37 @@ def test_assembly_objects_generator_overflow(config, scratch):
     fta = FastaToAssembly(dfu, scratch)
     results = fta.import_fasta_mass(params, max_cumsize=100000, parallelize=False)
     _check_result_object_info_fields(config, results, file_names, object_metas)
+
+
+def test_parallelize_import_fasta_mass_worker_fail(config, impl, context, scratch):
+    tmp_dir = scratch / ("test_parallelize_import_fasta_mass_worker_fail" + str(uuid.uuid4()))
+    os.makedirs(tmp_dir)
+    data = Path('data')
+    file_names = [
+        'GCF_000979185.1_gtlEnvA5udCFS_genomic.fna.gz',
+        'GCF_000979585.1_gtlEnvA5udCFS_genomic.fna.gz',
+        'GCF_000979675.1_gtlEnvA5udCFS_genomic.fna.gz',
+        'GCF_000980175.1_gtlEnvA5udCFS_genomic.fna.gz'
+    ]
+ 
+    # copy 4 assembly files into the data dir
+    for file_name in file_names:
+        shutil.copy(data / file_name, tmp_dir)
+    params = {
+        'workspace_id': config['ws_id'],
+        'inputs': [
+            {'file': tmp_dir / 'GCF_000979185.1_gtlEnvA5udCFS_genomic.fna.gz', 'assembly_name': 'GCF_000979185.1_gtlEnvA5udCFS_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000979585.1_gtlEnvA5udCFS_genomic.fna.gz', 'assembly_name': '^%^%'},
+            {'file': tmp_dir / 'GCF_000979675.1_gtlEnvA5udCFS_genomic.fna.gz', 'assembly_name': 'GCF_000979675.1_gtlEnvA5udCFS_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000980175.1_gtlEnvA5udCFS_genomic.fna.gz', 'assembly_name': 'GCF_000980175.1_gtlEnvA5udCFS_genomic.fna.gz'}
+        ]
+    }
+
+    # print out cpu count for debug
+    print(f"CPU count is {os.cpu_count()}")
+    config_dict = config['file_config'].copy()
+    config_dict["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "1"
+    impl = AssemblyUtil(config_dict)
+    with raises(Exception):
+        impl.save_assemblies_from_fastas(context, params)
+    # _check_result_object_info_fields(config, results, file_names, object_metas)
