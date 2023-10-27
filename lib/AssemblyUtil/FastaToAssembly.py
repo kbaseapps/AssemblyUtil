@@ -1,3 +1,4 @@
+import dill
 import itertools
 import json
 import math
@@ -6,22 +7,22 @@ import sys
 import uuid
 from collections import Counter
 from hashlib import md5
+from multiprocessing import Pool
 from pathlib import Path
 from typing import Callable, List
 
 from Bio import SeqIO
 from installed_clients.DataFileUtilClient import DataFileUtil
-from pathos.multiprocessing import ProcessingPool as Pool
+from installed_clients.baseclient import ServerError
 
 # catalog params
 MAX_THREADS = 10
-THREADS_PER_CPU = 2
+THREADS_PER_CPU = 1
 
 # max_cumsize
 _MAX_DATA_SIZE = 1024 * 1024 * 1024 # 1 GB
 _SAFETY_FACTOR = 0.95
 
-_MCS = 'max_cumsize'
 _WSID = 'workspace_id'
 _MCL = 'min_contig_length'
 _INPUTS = 'inputs'
@@ -60,6 +61,20 @@ def _get_num_workers(threads_per_cpu, max_threads):
     threads = int(threads_per_cpu * os.cpu_count())
     workers = min(max(threads, 1), max_threads)
     return workers
+
+def _run_dill_encoded(fun, params, max_cumsize):
+    fun = dill.loads(fun)
+    try:
+        return fun(params, max_cumsize)
+    except ServerError as e:
+        print("\n*** caught ServerError ***\n")
+        raise ValueError(e.message)
+
+def _apply_starmap(workers, fun, batch_input, batch_max_cumsize):
+    pool = Pool(processes=workers)
+    fun = dill.dumps(fun)
+    payloads = [(fun, batch_input[idx], batch_max_cumsize[idx]) for idx in range(workers)]
+    return pool.starmap(_run_dill_encoded, payloads)
 
 class FastaToAssembly:
 
@@ -180,7 +195,7 @@ class FastaToAssembly:
             for i in range(0, len(param_inputs), chunk_size)
         ]
         batch_max_cumsize = [max_cumsize] * workers
-        batch_result = Pool(workers).map(self._import_fasta_mass, batch_input, batch_max_cumsize)
+        batch_result = _apply_starmap(workers, self._import_fasta_mass, batch_input, batch_max_cumsize)
         result = list(itertools.chain.from_iterable(batch_result))
         return result
 

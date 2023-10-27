@@ -42,7 +42,7 @@ def config():
 
     # add catalog secure params
     cfg['file_config']["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "10"
-    cfg['file_config']["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "2"
+    cfg['file_config']["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "1"
 
     auth_client = KBaseAuth(cfg['file_config']['auth-service-url'])
     cfg['user'] = auth_client.get_user(cfg['token'])
@@ -765,11 +765,9 @@ def test_parallelize_import_fasta_mass_worker_fail(config, impl, context, scratc
         ]
     }
 
-    # print out cpu count for debug
-    print(f"CPU count is {os.cpu_count()}")
     config_dict = config['file_config'].copy()
-    config_dict["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "1"
+    config_dict["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "0.25"
     impl = AssemblyUtil(config_dict)
-    with raises(Exception):
+    with raises(Exception) as got:
         impl.save_assemblies_from_fastas(context, params)
-    # _check_result_object_info_fields(config, results, file_names, object_metas)
+    assert_exception_correct(got.value, ValueError("'Object #2: Illegal character in object name ^%^%: ^'"))
