@@ -67,7 +67,7 @@ def _run_dill_encoded(fun, params, max_cumsize):
     try:
         return fun(params, max_cumsize)
     except ServerError as e:
-        print("\n*** caught ServerError ***\n")
+        print(f"Error:\n{e}\nfrom the server side stack trace")
         raise ValueError(e.message)
 
 def _apply_starmap(workers, fun, batch_input, batch_max_cumsize):
