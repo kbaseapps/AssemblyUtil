@@ -4,7 +4,7 @@ MAINTAINER KBase Developer
 
 # pin biopython version
 RUN pip install --upgrade biopython==1.70
-RUN pip install --upgrade pytest coverage pytest-cov python-dateutil dill==0.3.4
+RUN pip install --upgrade pytest==7.0.1 coverage==6.2 pytest-cov==4.0.0 python-dateutil==2.8.2 dill==0.3.4
 
 # Copy module files to image
 COPY ./ /kb/module
