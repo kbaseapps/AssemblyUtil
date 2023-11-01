@@ -73,7 +73,10 @@ def _run_dill_encoded(fun, params, max_cumsize):
 def _apply_starmap(workers, fun, batch_input, batch_max_cumsize):
     pool = Pool(processes=workers)
     fun = dill.dumps(fun)
-    payloads = [(fun, batch_input[idx], batch_max_cumsize[idx]) for idx in range(workers)]
+    payloads = [
+        (fun, params, max_cumsize)
+        for params, max_cumsize in zip(batch_input, batch_max_cumsize)
+    ]
     return pool.starmap(_run_dill_encoded, payloads)
 
 class FastaToAssembly:
@@ -194,7 +197,7 @@ class FastaToAssembly:
             )
             for i in range(0, len(param_inputs), chunk_size)
         ]
-        batch_max_cumsize = [max_cumsize] * workers
+        batch_max_cumsize = [max_cumsize] * len(batch_input)
         batch_result = _apply_starmap(workers, self._import_fasta_mass, batch_input, batch_max_cumsize)
         result = list(itertools.chain.from_iterable(batch_result))
         return result
