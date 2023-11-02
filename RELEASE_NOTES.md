@@ -1,3 +1,9 @@
+## 3.0.1
+### Update
+  - Added 2 catalog parameters in AssemblyUtilImpl
+  - Updated `save_assemblies_from_fastas` to parallelize `import_fasta_mass` function
+  - Added unit/integration tests for parallelization
+
 ## 3.0.0
     - BACKWARDS INCOMPATIBILIY: the output structure for the `save_assemblies_from_fastas`
       method has changed.
