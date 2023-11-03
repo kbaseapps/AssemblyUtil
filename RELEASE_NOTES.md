@@ -1,3 +1,10 @@
+## 3.1.0
+### Update
+  - Added 2 catalog parameters to control worker count for parallelization
+    - MAX_THREADS: the largest value taken by the worker count
+    - THREADS_PER_CPU: number of workers per cpu
+  - Updated `save_assemblies_from_fastas` to parallelize uploading workspace objects
+
 ## 3.0.0
     - BACKWARDS INCOMPATIBILIY: the output structure for the `save_assemblies_from_fastas`
       method has changed.

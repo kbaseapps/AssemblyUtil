@@ -8,8 +8,8 @@ expectations about the environment in which they run.
 '''
 
 import dateutil.parser
-import io
 import os
+import re
 import requests
 import uuid
 import shutil
@@ -21,6 +21,7 @@ from pytest import fixture, raises
 from AssemblyUtil.authclient import KBaseAuth
 from AssemblyUtil.AssemblyUtilImpl import AssemblyUtil
 from AssemblyUtil.AssemblyUtilServer import MethodContext
+from AssemblyUtil.FastaToAssembly import FastaToAssembly
 from installed_clients.AbstractHandleClient import AbstractHandle as HandleService
 from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.WorkspaceClient import Workspace
@@ -38,6 +39,10 @@ def config():
     parser = ConfigParser()
     parser.read(os.environ['KB_DEPLOYMENT_CONFIG'])
     cfg['file_config'] = {k: v for k, v in parser.items('AssemblyUtil')}
+
+    # add catalog secure params
+    cfg['file_config']["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "10"
+    cfg['file_config']["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "1"
 
     auth_client = KBaseAuth(cfg['file_config']['auth-service-url'])
     cfg['user'] = auth_client.get_user(cfg['token'])
@@ -62,6 +67,9 @@ def _clean_up(cfg):
     ws = _get_workspace(cfg)
     # assume here that the tests don't create 10K+ objects
     objects = ws.list_objects({'ids': [cfg['ws_id']], 'showAllVersions': 1})
+    if not objects:
+        ws.delete_workspace({'id': cfg['ws_id']})
+        return
     objdata = ws.get_objects2({
         'objects': [{'ref': _ref(oi)} for oi in objects],
         'no_data': 1,
@@ -535,6 +543,22 @@ def _reformat_1_line_fasta(file_lines, line_length=70):
     return '\n'.join(lines) + '\n'
 
 
+def _check_result_object_info_fields(config, results, file_names, object_metas):
+    ws = _get_workspace(config)
+    object_version_pattern = object_version_pattern = re.compile(r'^[0-9]+\/1$')
+    for idx, res in enumerate(results):
+        assert res['filtered_input'] is None
+        assert object_version_pattern.match("/".join(res['upa'].split("/")[-2:]))
+
+        # Check relevant object info fields
+        obj = ws.get_objects2({'objects': [{'ref': res['upa']}]})['data'][0]
+        info = obj['info']
+        assert info[1] == file_names[idx]
+        assert info[2].split('-')[0] == 'KBaseGenomeAnnotations.Assembly'
+        assert info[6] == config['ws_id']
+        assert info[10] == object_metas[idx]
+
+
 def test_fail_no_such_file(config, impl, context, scratch):
     tmp_dir = scratch / ("test_fail_no_such_file" + str(uuid.uuid4()))
     os.makedirs(tmp_dir)
@@ -577,3 +601,173 @@ def test_fail_mismatched_inputs(config, impl, context, scratch):
         )
     assert_exception_correct(got.value, ValueError(
         'Entry #2 in inputs must have a file field to match entry #1'))
+
+
+def test_parallelize_import_fasta_mass(config, impl, context, scratch):
+    tmp_dir = scratch / ("test_parallelize_import_fasta_mass" + str(uuid.uuid4()))
+    os.makedirs(tmp_dir)
+    data = Path('data')
+    file_names = [
+        'GCA_002506415.1_ASM250641v1_genomic.fna.gz',
+        'GCF_000007065.1_ASM706v1_genomic.fna.gz',
+        'GCF_000970165.1_ASM97016v1_genomic.fna.gz',
+        'GCF_000970185.1_ASM97018v1_genomic.fna.gz',
+        'GCF_000970205.1_ASM97020v1_genomic.fna.gz',
+        'GCF_000970245.1_ASM97024v1_genomic.fna.gz'
+    ]
+
+    object_metas = [
+        {'GC content': '0.41675', 'Size': '3839682', 'N Contigs': '130', 'MD5': '8118290bf6d3369f78ebb70a59d85dd3'},
+        {'GC content': '0.41485', 'Size': '4096345', 'N Contigs': '1', 'MD5': '418bf8e730b1b948ffb9cded9acfaf26'},
+        {'GC content': '0.41457', 'Size': '4096482', 'N Contigs': '1', 'MD5': '949a0fe665048cb917c8cf74f75c74b7'},
+        {'GC content': '0.41487', 'Size': '4066551', 'N Contigs': '1', 'MD5': 'd33802829ba0686714a5d74280527615'},
+        {'GC content': '0.41421', 'Size': '4142816', 'N Contigs': '1', 'MD5': 'cf47d74f66a16dffcbaa7a05eb9eec70'},
+        {'GC content': '0.41488', 'Size': '4166241', 'N Contigs': '1', 'MD5': '90178f629aa7bfbeea19bac8e616c467'}
+    ]
+
+    # copy 6 assembly files into the data dir
+    for file_name in file_names:
+        shutil.copy(data / file_name, tmp_dir)
+
+    params = {
+        'workspace_id': config['ws_id'],
+        'inputs': [
+            {'file': tmp_dir / 'GCA_002506415.1_ASM250641v1_genomic.fna.gz', 'assembly_name': 'GCA_002506415.1_ASM250641v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000007065.1_ASM706v1_genomic.fna.gz', 'assembly_name': 'GCF_000007065.1_ASM706v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000970165.1_ASM97016v1_genomic.fna.gz', 'assembly_name': 'GCF_000970165.1_ASM97016v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000970185.1_ASM97018v1_genomic.fna.gz', 'assembly_name': 'GCF_000970185.1_ASM97018v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000970205.1_ASM97020v1_genomic.fna.gz', 'assembly_name': 'GCF_000970205.1_ASM97020v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000970245.1_ASM97024v1_genomic.fna.gz', 'assembly_name': 'GCF_000970245.1_ASM97024v1_genomic.fna.gz'}
+        ]
+    }
+
+    results = impl.save_assemblies_from_fastas(context, params)[0]['results']
+    _check_result_object_info_fields(config, results, file_names, object_metas)
+
+
+def test_invalid_threads_param(config, context, scratch):
+    tmp_dir = scratch / ("test_invalid_threads_param" + str(uuid.uuid4()))
+    os.makedirs(tmp_dir)
+    data = Path('data')
+    file_names = [
+        'GCA_002506415.1_ASM250641v1_genomic.fna.gz',
+        'GCF_000007065.1_ASM706v1_genomic.fna.gz'
+    ]
+
+    # copy 2 assembly files into the data dir
+    for file_name in file_names:
+        shutil.copy(data / file_name, tmp_dir)
+
+    params = {
+        'workspace_id': config['ws_id'],
+        'inputs': [
+            {'file': tmp_dir / 'GCA_002506415.1_ASM250641v1_genomic.fna.gz', 'assembly_name': 'GCA_002506415.1_ASM250641v1_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000007065.1_ASM706v1_genomic.fna.gz', 'assembly_name': 'GCF_000007065.1_ASM706v1_genomic.fna.gz'}
+        ]
+    }
+
+    MAX_THREADS = "MAX_THREADS"
+    THREADS_PER_CPU = "THREADS_PER_CPU"
+    config_dict = config['file_config'].copy()
+
+    # max_threads type check fails
+    config_dict["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "10.5"
+    config_dict["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "2.5"
+    with raises(Exception) as got:
+        AssemblyUtil(config_dict)
+    assert_exception_correct(got.value, ValueError(f"{MAX_THREADS} must be an integer"))
+
+    # threads_per_cpu type check fails
+    config_dict["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "10"
+    config_dict["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "2.8e"
+    with raises(Exception) as got:
+        AssemblyUtil(config_dict)
+    assert_exception_correct(got.value, ValueError(f"{THREADS_PER_CPU} must be an integer or decimal"))
+
+    # max_threads input check fails
+    config_dict["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "0"
+    config_dict["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "2"
+    impl = AssemblyUtil(config_dict)
+    with raises(Exception) as got:
+        impl.save_assemblies_from_fastas(context, params)
+    assert_exception_correct(got.value, ValueError(f"{MAX_THREADS} must be > 0"))
+
+    # threads_per_cpu input check fails
+    config_dict["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "10"
+    config_dict["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "0"
+    impl = AssemblyUtil(config_dict)
+    with raises(Exception) as got:
+        impl.save_assemblies_from_fastas(context, params)
+    assert_exception_correct(got.value, ValueError(f"{THREADS_PER_CPU} must be > 0"))
+
+
+def test_assembly_objects_generator_overflow(config, scratch):
+    # This test is intented for _assembly_objects_generator function in FastaToAssembly
+    # Each batch contains a list of assembily files whose cumulative serialized object size must <= max_cumsize
+    # so that the workspace would not reject the data package
+    # With a max_cumsize set to 100000 below, the first two files will be in batch_1, the last file in batch_2
+    tmp_dir = scratch / ("test_generator_overflow" + str(uuid.uuid4()))
+    os.makedirs(tmp_dir)
+    data = Path('data')
+    file_names = [
+        'GCF_000979375.1_gtlEnvA5udCFS_genomic.fna.gz',
+        'GCF_000979555.1_gtlEnvA5udCFS_genomic.fna.gz',
+        'GCF_000980105.1_gtlEnvA5udCFS_genomic.fna.gz'
+    ]
+
+    object_metas = [
+        {'GC content': '0.41526', 'Size': '4092300', 'N Contigs': '136', 'MD5': '1e007bad0811a6d6e09a882d3bf802ab'},
+        {'GC content': '0.41622', 'Size': '4078931', 'N Contigs': '185', 'MD5': 'a26f200923f8c860f86a8d728055fd02'},
+        {'GC content': '0.41571', 'Size': '4079204', 'N Contigs': '260', 'MD5': '8aa6b1244e18c4f93bb3307902bd3a4d'}
+    ]
+
+    # copy 3 assembly files into the data dir
+    for file_name in file_names:
+        shutil.copy(data / file_name, tmp_dir)
+
+    # os_size: 40129, 53885, 75272
+    params = {
+        'workspace_id': config['ws_id'],
+        'inputs': [
+            {'file': tmp_dir / 'GCF_000979375.1_gtlEnvA5udCFS_genomic.fna.gz', 'assembly_name': 'GCF_000979375.1_gtlEnvA5udCFS_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000979555.1_gtlEnvA5udCFS_genomic.fna.gz', 'assembly_name': 'GCF_000979555.1_gtlEnvA5udCFS_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000980105.1_gtlEnvA5udCFS_genomic.fna.gz', 'assembly_name': 'GCF_000980105.1_gtlEnvA5udCFS_genomic.fna.gz'}
+        ]
+    }
+
+    dfu = DataFileUtil(config['callback_url'], token=config['token'])
+    fta = FastaToAssembly(dfu, scratch)
+    results = fta.import_fasta_mass(params, max_cumsize=100000, parallelize=False)
+    _check_result_object_info_fields(config, results, file_names, object_metas)
+
+
+def test_parallelize_import_fasta_mass_worker_fail(config, impl, context, scratch):
+    tmp_dir = scratch / ("test_parallelize_import_fasta_mass_worker_fail" + str(uuid.uuid4()))
+    os.makedirs(tmp_dir)
+    data = Path('data')
+    file_names = [
+        'GCF_000979185.1_gtlEnvA5udCFS_genomic.fna.gz',
+        'GCF_000979585.1_gtlEnvA5udCFS_genomic.fna.gz',
+        'GCF_000979675.1_gtlEnvA5udCFS_genomic.fna.gz',
+        'GCF_000980175.1_gtlEnvA5udCFS_genomic.fna.gz'
+    ]
+ 
+    # copy 4 assembly files into the data dir
+    for file_name in file_names:
+        shutil.copy(data / file_name, tmp_dir)
+    params = {
+        'workspace_id': config['ws_id'],
+        'inputs': [
+            {'file': tmp_dir / 'GCF_000979185.1_gtlEnvA5udCFS_genomic.fna.gz', 'assembly_name': 'GCF_000979185.1_gtlEnvA5udCFS_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000979585.1_gtlEnvA5udCFS_genomic.fna.gz', 'assembly_name': '^%^%'},
+            {'file': tmp_dir / 'GCF_000979675.1_gtlEnvA5udCFS_genomic.fna.gz', 'assembly_name': 'GCF_000979675.1_gtlEnvA5udCFS_genomic.fna.gz'},
+            {'file': tmp_dir / 'GCF_000980175.1_gtlEnvA5udCFS_genomic.fna.gz', 'assembly_name': 'GCF_000980175.1_gtlEnvA5udCFS_genomic.fna.gz'}
+        ]
+    }
+
+    config_dict = config['file_config'].copy()
+    config_dict["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "0.25"
+    impl = AssemblyUtil(config_dict)
+    with raises(Exception) as got:
+        impl.save_assemblies_from_fastas(context, params)
+    assert_exception_correct(got.value, ValueError("'Object #2: Illegal character in object name ^%^%: ^'"))

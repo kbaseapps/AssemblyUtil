@@ -1,17 +1,27 @@
+import dill
+import itertools
 import json
+import math
 import os
-import os.path
-from pathlib import Path
 import sys
 import uuid
-from typing import List, Callable
 from collections import Counter
 from hashlib import md5
+from multiprocessing import Pool
+from pathlib import Path
+from typing import Callable, List
 
 from Bio import SeqIO
-
 from installed_clients.DataFileUtilClient import DataFileUtil
+from installed_clients.baseclient import ServerError
 
+# catalog params
+MAX_THREADS = 10
+THREADS_PER_CPU = 1
+
+# max_cumsize
+_MAX_DATA_SIZE = 1024 * 1024 * 1024 # 1 GB
+_SAFETY_FACTOR = 0.95
 
 _WSID = 'workspace_id'
 _MCL = 'min_contig_length'
@@ -23,6 +33,51 @@ _ASSEMBLY_NAME = 'assembly_name'
 
 def _upa(object_info):
     return f'{object_info[6]}/{object_info[0]}/{object_info[4]}'
+
+def _get_serialized_object_size(assembly_object):
+    arg_hash = {'params': assembly_object}
+    serialized = json.dumps(arg_hash)
+    return len(serialized)
+
+def _validate_threads_param_input(threads_count, var_name):
+    # max_threads must be an integer and > 0
+    # threads_per_cpu could be either an integer or decimal, and > 0
+    if threads_count <= 0:
+        raise ValueError(f"{var_name} must be > 0")
+
+def _validate_max_cumsize(max_cumsize):
+    upper_bound = _MAX_DATA_SIZE * _SAFETY_FACTOR
+    if max_cumsize is None:
+        return upper_bound
+    if type(max_cumsize) not in (int, float):
+        raise ValueError("max_cumsize must be an integer or decimal")
+    if max_cumsize <= 0:
+        raise ValueError("max_cumsize must be > 0")
+    if max_cumsize > upper_bound:
+        raise ValueError(f"max_cumsize must be <= {upper_bound}")
+    return max_cumsize
+
+def _get_num_workers(threads_per_cpu, max_threads):
+    threads = int(threads_per_cpu * os.cpu_count())
+    workers = min(max(threads, 1), max_threads)
+    return workers
+
+def _run_dill_encoded(fun, params, max_cumsize):
+    fun = dill.loads(fun)
+    try:
+        return fun(params, max_cumsize)
+    except ServerError as e:
+        print(f"Error:\n{e}\nfrom the server side stack trace")
+        raise ValueError(e.message)
+
+def _apply_starmap(workers, fun, batch_input, batch_max_cumsize):
+    pool = Pool(processes=workers)
+    fun = dill.dumps(fun)
+    payloads = [
+        (fun, params, max_cumsize)
+        for params, max_cumsize in zip(batch_input, batch_max_cumsize)
+    ]
+    return pool.starmap(_run_dill_encoded, payloads)
 
 class FastaToAssembly:
 
@@ -42,12 +97,25 @@ class FastaToAssembly:
         mass_params = self._set_up_single_params(params)
         return self._import_fasta_mass(mass_params)[0]
 
-    def import_fasta_mass(self, params):
+    def import_fasta_mass(
+        self,
+        params,
+        threads_per_cpu=THREADS_PER_CPU,
+        max_threads=MAX_THREADS,
+        max_cumsize=None,
+        parallelize=True,
+    ):
         print('validating parameters')
         self._validate_mass_params(params)
-        return self._import_fasta_mass(params)
+        _validate_threads_param_input(threads_per_cpu, "THREADS_PER_CPU")
+        _validate_threads_param_input(max_threads, "MAX_THREADS")
+        max_cumsize = _validate_max_cumsize(max_cumsize)
+        if not parallelize or len(params[_INPUTS]) == 1:
+            return self._import_fasta_mass(params, max_cumsize)
+        workers = _get_num_workers(threads_per_cpu, max_threads)
+        return self._run_parallel_import_fasta_mass(params, workers, max_cumsize)
 
-    def _import_fasta_mass(self, params):
+    def _import_fasta_mass(self, params, max_cumsize=_MAX_DATA_SIZE * _SAFETY_FACTOR):
         # For now this is completely serial, but theoretically we could start uploading
         # Blobstore nodes when some fraction of the initial checks are done, start uploading
         # Workspace obects when some fraction of the Blobstore nodes are done, parallelize
@@ -100,14 +168,39 @@ class FastaToAssembly:
                 json.dump(ao, f)
 
         # save to WS and return
-        assembly_infos = self._save_assembly_objects(
-            params[_WSID],
-            [p[_ASSEMBLY_NAME] for p in params[_INPUTS]],
-            assobjects
-        )
+        assembly_infos = []
+        assembly_names = [p[_ASSEMBLY_NAME] for p in params[_INPUTS]]
+        # generator to process files in bach. Avoid memory issues
+        for assobject_batch, assembly_name_batch in self._assembly_objects_generator(
+            assobjects, assembly_names, max_cumsize
+        ):
+            assembly_infos.extend(
+                self._save_assembly_objects(params[_WSID], assembly_name_batch, assobject_batch)
+            )
+
         for out, ai in zip(output, assembly_infos):
             out['upa'] = _upa(ai)
         return output
+
+    def _run_parallel_import_fasta_mass(self, params, workers, max_cumsize):
+        print(f' - running {workers} parallel workers')
+
+        # distribute inputs evenly across workers
+        param_inputs = params.pop(_INPUTS)
+        chunk_size = math.ceil(len(param_inputs) / workers)
+        batch_input = [
+            (
+                {
+                    **params,
+                    _INPUTS: param_inputs[i : i + chunk_size]
+                }
+            )
+            for i in range(0, len(param_inputs), chunk_size)
+        ]
+        batch_max_cumsize = [max_cumsize] * len(batch_input)
+        batch_result = _apply_starmap(workers, self._import_fasta_mass, batch_input, batch_max_cumsize)
+        result = list(itertools.chain.from_iterable(batch_result))
+        return result
 
     def _build_assembly_object(self, assembly_data, fasta_file_handle_info, params):
         """ construct the WS object data to save based on the parsed info and params """
@@ -223,6 +316,22 @@ class FastaToAssembly:
             'num_contigs': len(all_contig_data)
         }
         return assembly_data
+
+    @staticmethod
+    def _assembly_objects_generator(assembly_objects, assembly_names, max_cumsize):
+        """ generates assembly objects iterator for uploading to the target workspace"""
+        start_idx = 0
+        cumsize = 0
+        for idx, ao in enumerate(assembly_objects):
+            aosize = _get_serialized_object_size(ao)
+            if aosize + cumsize <= max_cumsize:
+                cumsize += aosize
+            else:
+                yield assembly_objects[start_idx:idx], assembly_names[start_idx:idx]
+                start_idx = idx
+                cumsize = aosize
+        # yield the last batch
+        yield assembly_objects[start_idx:], assembly_names[start_idx:]
 
     @staticmethod
     def _fasta_filter_contigs_generator(fasta_record_iter, min_contig_length):

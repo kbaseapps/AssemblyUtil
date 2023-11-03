@@ -4,12 +4,33 @@
 import os
 from pathlib import Path
 
-from AssemblyUtil.FastaToAssembly import FastaToAssembly
+from AssemblyUtil.FastaToAssembly import FastaToAssembly, MAX_THREADS, THREADS_PER_CPU
 from AssemblyUtil.AssemblyToFasta import AssemblyToFasta
 from AssemblyUtil.TypeToFasta import TypeToFasta
 from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.WorkspaceClient import Workspace
 
+
+def _validate_max_threads_type(threads_count, var_name, default_val):
+    if threads_count is None:
+        print(f"Cannot retrieve {var_name} from the catalog, set {var_name}={default_val}")
+        return default_val
+    try:
+        threads_count = int(threads_count)
+    except ValueError as e:
+        raise ValueError(f"{var_name} must be an integer") from e
+    return threads_count
+
+
+def _validate_threads_per_cpu_type(threads_count, var_name, default_val):
+    if threads_count is None:
+        print(f"Cannot retrieve {var_name} from the catalog, set {var_name}={default_val}")
+        return default_val
+    try:
+        threads_count = float(threads_count)
+    except ValueError as e:
+        raise ValueError(f"{var_name} must be an integer or decimal") from e
+    return threads_count
 #END_HEADER
 
 
@@ -43,6 +64,11 @@ class AssemblyUtil:
         self.sharedFolder = config['scratch']
         self.callback_url = os.environ['SDK_CALLBACK_URL']
         self.ws_url = config['workspace-url']
+
+        max_threads = config.get("KBASE_SECURE_CONFIG_PARAM_MAX_THREADS")
+        threads_per_cpu = config.get("KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU")
+        self.max_threads = _validate_max_threads_type(max_threads, "MAX_THREADS", MAX_THREADS)
+        self.threads_per_cpu = _validate_threads_per_cpu_type(threads_per_cpu, "THREADS_PER_CPU", THREADS_PER_CPU)
         #END_CONSTRUCTOR
 
     def get_assembly_as_fasta(self, ctx, params):
@@ -332,7 +358,7 @@ class AssemblyUtil:
             'results': FastaToAssembly(
                 DataFileUtil(self.callback_url, token=ctx['token']),
                 Path(self.sharedFolder)
-            ).import_fasta_mass(params)
+            ).import_fasta_mass(params, self.threads_per_cpu, self.max_threads)
         }
         #END save_assemblies_from_fastas
 
