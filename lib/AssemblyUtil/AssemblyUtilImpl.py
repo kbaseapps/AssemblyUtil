@@ -66,7 +66,7 @@ class AssemblyUtil:
         self.sharedFolder = config['scratch']
         self.callback_url = os.environ['SDK_CALLBACK_URL']
         self.ws_url = config['workspace-url']
-        
+
         max_threads = os.environ.get("KBASE_SECURE_CONFIG_PARAM_MAX_THREADS")
         threads_per_cpu = os.environ.get("KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU")
         self.max_threads = _validate_max_threads_type(max_threads, "MAX_THREADS", MAX_THREADS)
