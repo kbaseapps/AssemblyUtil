@@ -41,8 +41,8 @@ def config():
     cfg['file_config'] = {k: v for k, v in parser.items('AssemblyUtil')}
 
     # add catalog secure params
-    cfg['file_config']["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "10"
-    cfg['file_config']["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "1"
+    os.environ["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "10"
+    os.environ["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "1"
 
     auth_client = KBaseAuth(cfg['file_config']['auth-service-url'])
     cfg['user'] = auth_client.get_user(cfg['token'])
@@ -668,33 +668,33 @@ def test_invalid_threads_param(config, context, scratch):
 
     MAX_THREADS = "MAX_THREADS"
     THREADS_PER_CPU = "THREADS_PER_CPU"
-    config_dict = config['file_config'].copy()
+    config_dict = config['file_config']
 
     # max_threads type check fails
-    config_dict["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "10.5"
-    config_dict["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "2.5"
+    os.environ["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "10.5"
+    os.environ["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "2.5"
     with raises(Exception) as got:
         AssemblyUtil(config_dict)
     assert_exception_correct(got.value, ValueError(f"{MAX_THREADS} must be an integer"))
 
     # threads_per_cpu type check fails
-    config_dict["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "10"
-    config_dict["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "2.8e"
+    os.environ["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "10"
+    os.environ["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "2.8e"
     with raises(Exception) as got:
         AssemblyUtil(config_dict)
     assert_exception_correct(got.value, ValueError(f"{THREADS_PER_CPU} must be an integer or decimal"))
 
     # max_threads input check fails
-    config_dict["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "0"
-    config_dict["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "2"
+    os.environ["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "0"
+    os.environ["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "2"
     impl = AssemblyUtil(config_dict)
     with raises(Exception) as got:
         impl.save_assemblies_from_fastas(context, params)
     assert_exception_correct(got.value, ValueError(f"{MAX_THREADS} must be > 0"))
 
     # threads_per_cpu input check fails
-    config_dict["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "10"
-    config_dict["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "0"
+    os.environ["KBASE_SECURE_CONFIG_PARAM_MAX_THREADS"] = "10"
+    os.environ["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "0"
     impl = AssemblyUtil(config_dict)
     with raises(Exception) as got:
         impl.save_assemblies_from_fastas(context, params)
@@ -765,8 +765,8 @@ def test_parallelize_import_fasta_mass_worker_fail(config, impl, context, scratc
         ]
     }
 
-    config_dict = config['file_config'].copy()
-    config_dict["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "0.25"
+    config_dict = config['file_config']
+    os.environ["KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU"] = "0.25"
     impl = AssemblyUtil(config_dict)
     with raises(Exception) as got:
         impl.save_assemblies_from_fastas(context, params)
