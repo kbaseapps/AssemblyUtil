@@ -15,6 +15,7 @@ def _validate_max_threads_type(threads_count, var_name, default_val):
     if threads_count is None:
         print(f"Cannot retrieve {var_name} from the catalog, set {var_name}={default_val}")
         return default_val
+    print(f"Successfully retrieve {var_name} from the catalog!")
     try:
         threads_count = int(threads_count)
     except ValueError as e:
@@ -26,6 +27,7 @@ def _validate_threads_per_cpu_type(threads_count, var_name, default_val):
     if threads_count is None:
         print(f"Cannot retrieve {var_name} from the catalog, set {var_name}={default_val}")
         return default_val
+    print(f"Successfully retrieve {var_name} from the catalog!")
     try:
         threads_count = float(threads_count)
     except ValueError as e:
@@ -65,8 +67,8 @@ class AssemblyUtil:
         self.callback_url = os.environ['SDK_CALLBACK_URL']
         self.ws_url = config['workspace-url']
 
-        max_threads = config.get("KBASE_SECURE_CONFIG_PARAM_MAX_THREADS")
-        threads_per_cpu = config.get("KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU")
+        max_threads = os.environ.get("KBASE_SECURE_CONFIG_PARAM_MAX_THREADS")
+        threads_per_cpu = os.environ.get("KBASE_SECURE_CONFIG_PARAM_THREADS_PER_CPU")
         self.max_threads = _validate_max_threads_type(max_threads, "MAX_THREADS", MAX_THREADS)
         self.threads_per_cpu = _validate_threads_per_cpu_type(threads_per_cpu, "THREADS_PER_CPU", THREADS_PER_CPU)
         #END_CONSTRUCTOR
