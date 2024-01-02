@@ -53,7 +53,7 @@ jobs:
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       run: |
-        set +e
+        set -e
         sh $GITHUB_WORKSPACE/kb_sdk_actions/bin/kb-sdk test
         returncode=$?
         if [ $returncode != 0 ]; then exit $returncode; fi
