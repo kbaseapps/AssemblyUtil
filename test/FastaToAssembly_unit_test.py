@@ -52,7 +52,7 @@ def _run_test_mass_fail(fta, params, max_cumsize, expected):
         assert_exception_correct(got.value, ValueError(expected))
 
 
-def terst_import_fasta_workspace_name_id_input_fail():
+def test_import_fasta_workspace_name_id_input_fail():
     '''
     Tests the cases where workspace identifiers are submitted incorrectly.
     '''
@@ -70,7 +70,7 @@ def terst_import_fasta_workspace_name_id_input_fail():
     _run_test_spec_fail(test_spec)
 
 
-def terst_import_fasta_no_assembly_name():
+def test_import_fasta_no_assembly_name():
     fta, dfu = _set_up_mocks()
     dfu.ws_name_to_id.return_value = 34
 
@@ -85,7 +85,7 @@ def _update(d1, d2):
     d.update(d2)
     return d
 
-def terst_import_fasta_file_source_fail():
+def test_import_fasta_file_source_fail():
     '''
     Tests the case where file source (e.g. file path, shock ID) info is submitted incorrectly.
     '''
@@ -102,7 +102,7 @@ def terst_import_fasta_file_source_fail():
     _run_test_spec_fail(test_spec)
 
 
-def terst_import_fasta_min_contig_length_fail():
+def test_import_fasta_min_contig_length_fail():
     '''
     Tests illegal min_contig_length values.
     '''
@@ -121,14 +121,14 @@ def terst_import_fasta_min_contig_length_fail():
 
 
 # https://docs.pytest.org/en/7.1.x/reference/reference.html#tmp-path
-def terst_import_fasta_mass_basic_file_no_mcl_key(tmp_path):
+def test_import_fasta_mass_basic_file_no_mcl_key(tmp_path):
     '''
     Test of the mass importer with file inputs and no min_contig_length key.
     '''
     _test_import_fasta_mass_file(tmp_path, {})
 
 
-def terst_import_fasta_mass_basic_file_None_mcl_key(tmp_path):
+def test_import_fasta_mass_basic_file_None_mcl_key(tmp_path):
     '''
     Test of the mass importer with file inputs and a min_contig_length key value of None.
     '''
@@ -337,7 +337,7 @@ def _test_import_fasta_mass_file(tmp_path, params_root):
     })
 
 
-def terst_import_fasta_mass_blobstore_min_contig_length(tmp_path):
+def test_import_fasta_mass_blobstore_min_contig_length(tmp_path):
     '''
     Test mass FASTA import with files sourced from the Blobstore and a > 0 min_contig_length
     parameter.
@@ -540,7 +540,7 @@ def terst_import_fasta_mass_blobstore_min_contig_length(tmp_path):
     })
 
 
-def terst_import_fasta_mass_fail_workspace_id_input():
+def test_import_fasta_mass_fail_workspace_id_input():
     '''
     Tests the cases where workspace identifiers are submitted incorrectly.
     '''
@@ -558,7 +558,7 @@ def terst_import_fasta_mass_fail_workspace_id_input():
     _run_test_spec_fail(test_spec, mass=True)
 
 
-def terst_import_fasta_mass_fail_bad_inputs_field():
+def test_import_fasta_mass_fail_bad_inputs_field():
     err1 = 'inputs field is required and must be a non-empty list'
     err2 = 'Entry #3 in inputs field is not a mapping as required'
     test_spec = [
@@ -570,7 +570,7 @@ def terst_import_fasta_mass_fail_bad_inputs_field():
     _run_test_spec_fail(test_spec, mass=True)
 
 
-def terst_import_fasta_mass_fail_mixed_input_types():
+def test_import_fasta_mass_fail_mixed_input_types():
     err1 = 'Entry #1 in inputs field must have exactly one of file or node specified'
     test_spec = [
         (err1, {'workspace_id': 3, 'inputs': [{}, {'node': 'a'}]}),
@@ -591,7 +591,7 @@ def terst_import_fasta_mass_fail_mixed_input_types():
     _run_test_spec_fail(test_spec, mass=True)
 
 
-def terst_import_fasta_mass_fail_missing_assembly_name():
+def test_import_fasta_mass_fail_missing_assembly_name():
     test_spec = [
         ('Missing assembly_name field in inputs entry #1',
          {'workspace_id': 3, 'inputs': [
@@ -609,7 +609,7 @@ def terst_import_fasta_mass_fail_missing_assembly_name():
     _run_test_spec_fail(test_spec, mass=True)
 
 
-def terst_import_fasta_mass_fail_min_contig_length():
+def test_import_fasta_mass_fail_min_contig_length():
     err1 = 'If provided, min_contig_length must be an integer >= 2'
     b = {'workspace_id': 1, 'inputs': [{'assembly_name': 'foo', 'node': 'fake_id'}]}
     test_spec = [
@@ -628,8 +628,7 @@ def terst_import_fasta_mass_fail_min_contig_length():
 def test_import_fasta_mass_fail_invalid_max_cumsize():
     b = {"workspace_id": 1, "inputs": [{"file": "b", "assembly_name": "x"}]}
     test_spec1 = [("max_cumsize must be an integer or decimal", b)]
-    # test_spec2 = [("max_cumsize must be > 0", b)]
-    test_spec2 = [("hfjwhdhjwhdwjdhw", b)]
+    test_spec2 = [("max_cumsize must be > 0", b)]
     test_spec3 = [(f"max_cumsize must be <= {1024 * 1024 * 1024 * 0.95}", b)]
     _run_test_spec_fail(test_spec1, max_cumsize="9999", mass=True)
     _run_test_spec_fail(test_spec2, max_cumsize=-1, mass=True)
