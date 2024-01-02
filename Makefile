@@ -54,15 +54,15 @@ build-test-script:
 	echo 'export PYTHONPATH=$$script_dir/../$(LIB_DIR):$$PATH:$$PYTHONPATH' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'cd $$script_dir/../$(TEST_DIR)' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'pytest  -vv --cov=$$lib --cov-config=coveragerc --cov-report=html --cov-report=xml $(TEST_SPEC)' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
-	echo 'mv .coverage /kb/module/work/' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
-	echo 'mv coverage.xml /kb/module/work/' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
-	echo 'rm -r /kb/module/work/test_coverage' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
-	echo 'mv htmlcov /kb/module/work/test_coverage' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	chmod +x $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 
 test:
 	if [ ! -f /kb/module/work/token ]; then echo -e '\nOutside a docker container please run "kb-sdk test" rather than "make test"\n' && exit 1; fi
 	bash $(TEST_DIR)/$(TEST_SCRIPT_NAME)
+	mv $(TEST_DIR)/.coverage /kb/module/work/
+	mv $(TEST_DIR)/coverage.xml /kb/module/work/
+	rm -rf /kb/module/work/test_coverage
+	mv $(TEST_DIR)/htmlcov /kb/module/work/test_coverage
 
 clean:
 	rm -rfv $(LBIN_DIR)
