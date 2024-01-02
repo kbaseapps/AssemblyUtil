@@ -53,8 +53,10 @@ jobs:
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       run: |
+        set +e
         sh $GITHUB_WORKSPACE/kb_sdk_actions/bin/kb-sdk test
-      continue-on-error: false
+        returncode=$?
+        if [ $returncode != 0 ]; then exit $returncode; fi
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
