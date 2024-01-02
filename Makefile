@@ -61,7 +61,7 @@ test:
 	bash $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	mv $(TEST_DIR)/.coverage /kb/module/work/
 	mv $(TEST_DIR)/coverage.xml /kb/module/work/
-	rm -r /kb/module/work/test_coverage
+	rm -rf /kb/module/work/test_coverage
 	mv $(TEST_DIR)/htmlcov /kb/module/work/test_coverage
 
 clean:
