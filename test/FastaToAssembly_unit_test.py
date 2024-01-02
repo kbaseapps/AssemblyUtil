@@ -628,7 +628,8 @@ def test_import_fasta_mass_fail_min_contig_length():
 def test_import_fasta_mass_fail_invalid_max_cumsize():
     b = {"workspace_id": 1, "inputs": [{"file": "b", "assembly_name": "x"}]}
     test_spec1 = [("max_cumsize must be an integer or decimal", b)]
-    test_spec2 = [("max_cumsize must be > 0", b)]
+    # test_spec2 = [("max_cumsize must be > 0", b)]
+    test_spec2 = [("djwhndjwndwjndjw", b)]
     test_spec3 = [(f"max_cumsize must be <= {1024 * 1024 * 1024 * 0.95}", b)]
     _run_test_spec_fail(test_spec1, max_cumsize="9999", mass=True)
     _run_test_spec_fail(test_spec2, max_cumsize=-1, mass=True)
