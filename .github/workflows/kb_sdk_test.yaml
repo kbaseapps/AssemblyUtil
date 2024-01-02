@@ -53,7 +53,7 @@ jobs:
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       run: |
-        $GITHUB_WORKSPACE/kb_sdk_actions/bin/kb-sdk test
+        sh $GITHUB_WORKSPACE/kb_sdk_actions/bin/kb-sdk test
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
