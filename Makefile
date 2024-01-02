@@ -59,10 +59,10 @@ build-test-script:
 test:
 	if [ ! -f /kb/module/work/token ]; then echo -e '\nOutside a docker container please run "kb-sdk test" rather than "make test"\n' && exit 1; fi
 	bash $(TEST_DIR)/$(TEST_SCRIPT_NAME)
-	mv .coverage /kb/module/work/
-	mv coverage.xml /kb/module/work/
+	mv $(TEST_DIR)/.coverage /kb/module/work/
+	mv $(TEST_DIR)/coverage.xml /kb/module/work/
 	rm -r /kb/module/work/test_coverage
-	mv htmlcov /kb/module/work/test_coverage
+	mv $(TEST_DIR)/htmlcov /kb/module/work/test_coverage
 
 clean:
 	rm -rfv $(LBIN_DIR)
