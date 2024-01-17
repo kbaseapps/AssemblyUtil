@@ -4,6 +4,8 @@
     - MAX_THREADS: the largest value taken by the worker count
     - THREADS_PER_CPU: number of workers per cpu
   - Updated `save_assemblies_from_fastas` to parallelize uploading workspace objects
+  - add `object_metadata` parameter to `save_assemblies_from_fastas` to allow passing
+    metadata to the workspace service when saving the assembly objects
 
 ## 3.0.0
     - BACKWARDS INCOMPATIBILIY: the output structure for the `save_assemblies_from_fastas`

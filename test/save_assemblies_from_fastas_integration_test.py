@@ -622,7 +622,8 @@ def test_parallelize_import_fasta_mass(config, impl, context, scratch):
         {'GC content': '0.41457', 'Size': '4096482', 'N Contigs': '1', 'MD5': '949a0fe665048cb917c8cf74f75c74b7'},
         {'GC content': '0.41487', 'Size': '4066551', 'N Contigs': '1', 'MD5': 'd33802829ba0686714a5d74280527615'},
         {'GC content': '0.41421', 'Size': '4142816', 'N Contigs': '1', 'MD5': 'cf47d74f66a16dffcbaa7a05eb9eec70'},
-        {'GC content': '0.41488', 'Size': '4166241', 'N Contigs': '1', 'MD5': '90178f629aa7bfbeea19bac8e616c467'}
+        {'GC content': '0.41488', 'Size': '4166241', 'N Contigs': '1', 'MD5': '90178f629aa7bfbeea19bac8e616c467',
+         'foo': 'bar'},
     ]
 
     # copy 6 assembly files into the data dir
@@ -637,7 +638,10 @@ def test_parallelize_import_fasta_mass(config, impl, context, scratch):
             {'file': tmp_dir / 'GCF_000970165.1_ASM97016v1_genomic.fna.gz', 'assembly_name': 'GCF_000970165.1_ASM97016v1_genomic.fna.gz'},
             {'file': tmp_dir / 'GCF_000970185.1_ASM97018v1_genomic.fna.gz', 'assembly_name': 'GCF_000970185.1_ASM97018v1_genomic.fna.gz'},
             {'file': tmp_dir / 'GCF_000970205.1_ASM97020v1_genomic.fna.gz', 'assembly_name': 'GCF_000970205.1_ASM97020v1_genomic.fna.gz'},
-            {'file': tmp_dir / 'GCF_000970245.1_ASM97024v1_genomic.fna.gz', 'assembly_name': 'GCF_000970245.1_ASM97024v1_genomic.fna.gz'}
+            {'file': tmp_dir / 'GCF_000970245.1_ASM97024v1_genomic.fna.gz',
+             'assembly_name': 'GCF_000970245.1_ASM97024v1_genomic.fna.gz',
+             'object_metadata': {'foo': 'bar'},
+             }  # test object_metadata
         ]
     }
 

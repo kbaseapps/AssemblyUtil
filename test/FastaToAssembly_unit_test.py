@@ -45,7 +45,7 @@ def _run_test_fail(fta, params, expected):
             fta.import_fasta(params)
         assert_exception_correct(got.value, ValueError(expected))
 
-    
+
 def _run_test_mass_fail(fta, params, max_cumsize, expected):
         with raises(Exception) as got:
             fta.import_fasta_mass(params, 2.5, 10, max_cumsize, parallelize=False)
@@ -135,7 +135,15 @@ def test_import_fasta_mass_basic_file_None_mcl_key(tmp_path):
     _test_import_fasta_mass_file(tmp_path, {'min_contig_length': None})
 
 
-def _test_import_fasta_mass_file(tmp_path, params_root):
+def test_import_fasta_mass_with_obj_meta(tmp_path):
+    '''
+    Test of the mass importer with file inputs including object_metadata.
+    '''
+    _test_import_fasta_mass_file(tmp_path, {}, obj_meta={'foo': 'bar'})
+
+
+def _test_import_fasta_mass_file(tmp_path, params_root, obj_meta=None):
+
     ### Set up input files ###
     with open(tmp_path / 'f1.fasta', 'w') as f1:
         f1.writelines([
@@ -205,7 +213,11 @@ def _test_import_fasta_mass_file(tmp_path, params_root):
     params_root.update({
         'workspace_id': 42,
         'inputs': [
-            {'file': str(tmp_path / 'f1.fasta'), 'assembly_name': 'foo1'},
+            {
+                'file': str(tmp_path / 'f1.fasta'),
+                'assembly_name': 'foo1',
+                'object_metadata': obj_meta
+            },
             {
                 'file': str(tmp_path / 'f2.fasta'),
                 'assembly_name': 'foo2',
@@ -216,7 +228,8 @@ def _test_import_fasta_mass_file(tmp_path, params_root):
                 'contig_info': {
                     'contig3': {'is_circ': 1, 'description': 'desc goes here'},
                     'contig4': {'is_circ': -2}
-                }
+                },
+                'object_metadata': obj_meta
             }
         ]
     })
@@ -230,7 +243,7 @@ def _test_import_fasta_mass_file(tmp_path, params_root):
     dfu.unpack_files.assert_called_once_with([
         {'file_path': str(dir1 / 'f1.fasta'), 'unpack': 'uncompress'},
         {'file_path': str(dir2 / 'f2.fasta'), 'unpack': 'uncompress'}
-    ])    
+    ])
     dfu.file_to_shock_mass.assert_called_once_with([
         {'file_path': str(dir1 / 'f1.fasta'), 'make_handle': 1},
         {'file_path': str(dir2 / 'f2.fasta'), 'make_handle': 1}
@@ -282,6 +295,7 @@ def _test_import_fasta_mass_file(tmp_path, params_root):
                         'size': 78},
                     'type': 'Unknown'
                 },
+                'meta': obj_meta,
                 'name': 'foo1'
             },
             {
@@ -331,6 +345,7 @@ def _test_import_fasta_mass_file(tmp_path, params_root):
                     'external_source': 'ext source',
                     'external_source_id': 'ext source id',
                 },
+                'meta': obj_meta,
                 'name': 'foo2'
             }
         ]
@@ -489,6 +504,7 @@ def test_import_fasta_mass_blobstore_min_contig_length(tmp_path):
                         'size': 78},
                     'type': 'Unknown'
                 },
+                'meta': {},
                 'name': 'foo1'
             },
             {
@@ -534,6 +550,7 @@ def test_import_fasta_mass_blobstore_min_contig_length(tmp_path):
                     },
                     'type': 'Unknown',
                 },
+                'meta': {},
                 'name': 'foo2'
             }
         ]
@@ -621,6 +638,24 @@ def test_import_fasta_mass_fail_min_contig_length():
         (err1, _update(b, {'min_contig_length': -100})),
         ('If provided, min_contig_length must be an integer, got: {}',
           _update(b, {'min_contig_length': {}})),
+    ]
+    _run_test_spec_fail(test_spec, mass=True)
+
+
+def test_import_fasta_mass_fail_invalid_obj_meta():
+    err1 = 'object_metadata must be a mapping if provided for entry #1'
+    err2 = "object_metadata value for key foo is not a string for entry #1"
+    err3 = "object_metadata key 1 is not a string for entry #1"
+
+    test_spec = [
+        (err1,
+         {'workspace_id': 3, 'inputs': [{'node': 'a', 'assembly_name': 'x', 'object_metadata': 'foo'}]}),
+        (err1,
+         {'workspace_id': 3, 'inputs': [{'node': 'a', 'assembly_name': 'x', 'object_metadata': []}]}),
+        (err2,
+         {'workspace_id': 3, 'inputs': [{'node': 'a', 'assembly_name': 'x', 'object_metadata': {'foo': 1}}]}),
+        (err3,
+         {'workspace_id': 3, 'inputs': [{'node': 'a', 'assembly_name': 'x', 'object_metadata': {1: 'foo'}}]}),
     ]
     _run_test_spec_fail(test_spec, mass=True)
 
