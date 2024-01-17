@@ -176,6 +176,7 @@ module AssemblyUtil {
             external_source_id - the ID of the input data at the source.
             contig_info - map from contig_id to a small structure that can be used to set the
                 is_circular and description fields for Assemblies
+            object_metadata - An arbitrary key-value pair intended for addition to the metadata of the Assembly object.
     */
     typedef structure {
         string file;
