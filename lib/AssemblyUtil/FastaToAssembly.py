@@ -485,7 +485,7 @@ class FastaToAssembly:
         # validate object_metadata is a mapping if provided
         obj_metas = [i.get(_OBJ_META) for i in inputs]
         for obj_meta in obj_metas:
-            if obj_meta and type(obj_meta) != dict:
+            if obj_meta is not None and type(obj_meta) != dict:
                 raise ValueError(f"{_OBJ_META} must be a mapping if provided")
 
     def _get_int(self, putative_int, name, minimum=1):
