@@ -640,10 +640,12 @@ def test_import_fasta_mass_fail_min_contig_length():
 
 
 def test_import_fasta_mass_fail_invalid_obj_meta():
-    err1 = 'object_metadata must be a mapping if provided'
+    err1 = 'object_metadata must be a mapping if provided for entry #1'
     test_spec = [
         (err1,
          {'workspace_id': 3, 'inputs': [{'node': 'a', 'assembly_name': 'x', 'object_metadata': 'foo'}]}),
+        (err1,
+         {'workspace_id': 3, 'inputs': [{'node': 'a', 'assembly_name': 'x', 'object_metadata': []}]})
     ]
     _run_test_spec_fail(test_spec, mass=True)
 
