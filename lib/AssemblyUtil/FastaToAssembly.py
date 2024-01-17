@@ -29,6 +29,7 @@ _INPUTS = 'inputs'
 _FILE = 'file'
 _NODE = 'node'
 _ASSEMBLY_NAME = 'assembly_name'
+_OBJ_META = 'object_metadata'
 
 
 def _upa(object_info):
@@ -229,7 +230,7 @@ class FastaToAssembly:
             # format, and deprecate this field
             assembly_data['external_source_origination_date'] = params['external_source_origination_date']
 
-        assembly_meta = params.get('object_metadata') or {}
+        assembly_meta = params.get(_OBJ_META)
 
         return assembly_data, assembly_meta
 
@@ -372,7 +373,7 @@ class FastaToAssembly:
                 'type': 'KBaseGenomeAnnotations.Assembly',  # This should really be versioned...
                 'data': assdata_singular,
                 'name': assname,
-                'meta': assmeta_singular
+                **({'meta': assmeta_singular} if assmeta_singular else {})
             })
         return self._dfu.save_objects({'id': workspace_id, 'objects': ws_inputs})
 
@@ -480,6 +481,12 @@ class FastaToAssembly:
             if not inp.get(_ASSEMBLY_NAME):
                 raise ValueError(f"Missing {_ASSEMBLY_NAME} field in {_INPUTS} entry #{i}")
         self._get_int(params.get(_MCL), f"If provided, {_MCL}", minimum=2)
+
+        # validate object_metadata is a mapping if provided
+        obj_metas = [i.get(_OBJ_META) for i in inputs]
+        for obj_meta in obj_metas:
+            if obj_meta and type(obj_meta) != dict:
+                raise ValueError(f"{_OBJ_META} must be a mapping if provided")
 
     def _get_int(self, putative_int, name, minimum=1):
         if putative_int is not None:
