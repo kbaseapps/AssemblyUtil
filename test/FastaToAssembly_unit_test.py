@@ -644,8 +644,8 @@ def test_import_fasta_mass_fail_min_contig_length():
 
 def test_import_fasta_mass_fail_invalid_obj_meta():
     err1 = 'object_metadata must be a mapping if provided for entry #1'
-    err2 = 'object_metadata values must be strings for entry #1'
-    err3 = 'object_metadata keys must be strings for entry #1'
+    err2 = "object_metadata values must be strings for entry #1: {'foo': 1}"
+    err3 = "object_metadata keys must be strings for entry #1: {1: 'foo'}"
 
     test_spec = [
         (err1,
