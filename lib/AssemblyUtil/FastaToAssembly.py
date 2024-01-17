@@ -230,7 +230,7 @@ class FastaToAssembly:
             # format, and deprecate this field
             assembly_data['external_source_origination_date'] = params['external_source_origination_date']
 
-        assembly_meta = params.get(_OBJ_META)
+        assembly_meta = params.get(_OBJ_META, {})
 
         return assembly_data, assembly_meta
 
