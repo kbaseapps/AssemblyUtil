@@ -334,7 +334,7 @@ class FastaToAssembly:
             if aosize + cumsize <= max_cumsize:
                 cumsize += aosize
             else:
-                yield assembly_objects[start_idx:idx], assembly_names[start_idx:idx]
+                yield assembly_objects[start_idx:idx], assembly_metas[start_idx:], assembly_names[start_idx:idx]
                 start_idx = idx
                 cumsize = aosize
         # yield the last batch
