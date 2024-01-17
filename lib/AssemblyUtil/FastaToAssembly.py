@@ -482,10 +482,11 @@ class FastaToAssembly:
                 raise ValueError(f"Missing {_ASSEMBLY_NAME} field in {_INPUTS} entry #{i}")
         self._get_int(params.get(_MCL), f"If provided, {_MCL}", minimum=2)
 
-        # validate object_metadata is a mapping if provided
+        # validate object_metadata
         obj_metas = [i.get(_OBJ_META) for i in inputs]
         for i, obj_meta in enumerate(obj_metas, start=1):
             if obj_meta is not None:
+                # validate object_metadata is a mapping
                 if not isinstance(obj_meta, dict):
                     raise ValueError(f"{_OBJ_META} must be a mapping if provided for entry #{i}")
                 # validate object_metadata keys and values are strings
