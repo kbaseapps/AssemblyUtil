@@ -177,6 +177,8 @@ module AssemblyUtil {
             contig_info - map from contig_id to a small structure that can be used to set the
                 is_circular and description fields for Assemblies
             object_metadata - An arbitrary key-value pair intended for addition to the metadata of the Assembly object.
+                Saved along with the object in the Workspace. Note that any auto metadata keys in the Assembly
+                typespec will take precedence over any user-submitted keys.
     */
     typedef structure {
         string file;
