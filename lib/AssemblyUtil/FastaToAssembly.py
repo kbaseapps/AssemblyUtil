@@ -487,6 +487,12 @@ class FastaToAssembly:
         for i, obj_meta in enumerate(obj_metas, start=1):
             if obj_meta is not None and type(obj_meta) != dict:
                 raise ValueError(f"{_OBJ_META} must be a mapping if provided for entry #{i}")
+            # validate object_metadata keys and values are strings
+            if obj_meta:
+                if any(not isinstance(v, str) for v in obj_meta.values()):
+                    raise ValueError(f"{_OBJ_META} values must be strings for entry #{i}")
+                if any(not isinstance(k, str) for k in obj_meta):
+                    raise ValueError(f"{_OBJ_META} keys must be strings for entry #{i}")
 
     def _get_int(self, putative_int, name, minimum=1):
         if putative_int is not None:

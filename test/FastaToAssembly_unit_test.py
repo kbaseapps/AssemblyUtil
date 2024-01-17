@@ -641,11 +641,18 @@ def test_import_fasta_mass_fail_min_contig_length():
 
 def test_import_fasta_mass_fail_invalid_obj_meta():
     err1 = 'object_metadata must be a mapping if provided for entry #1'
+    err2 = 'object_metadata values must be strings for entry #1'
+    err3 = 'object_metadata keys must be strings for entry #1'
+
     test_spec = [
         (err1,
          {'workspace_id': 3, 'inputs': [{'node': 'a', 'assembly_name': 'x', 'object_metadata': 'foo'}]}),
         (err1,
-         {'workspace_id': 3, 'inputs': [{'node': 'a', 'assembly_name': 'x', 'object_metadata': []}]})
+         {'workspace_id': 3, 'inputs': [{'node': 'a', 'assembly_name': 'x', 'object_metadata': []}]}),
+        (err2,
+         {'workspace_id': 3, 'inputs': [{'node': 'a', 'assembly_name': 'x', 'object_metadata': {'foo': 1}}]}),
+        (err3,
+         {'workspace_id': 3, 'inputs': [{'node': 'a', 'assembly_name': 'x', 'object_metadata': {1: 'foo'}}]}),
     ]
     _run_test_spec_fail(test_spec, mass=True)
 
