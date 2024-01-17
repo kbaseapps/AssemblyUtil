@@ -51,7 +51,7 @@ class AssemblyUtil:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "3.0.0"
+    VERSION = "3.1.0"
     GIT_URL = "https://github.com/kbaseapps/AssemblyUtil"
     GIT_COMMIT_HASH = "72183303c99ec8e88534173adbc47499da2e9b56"
 
@@ -339,6 +339,7 @@ class AssemblyUtil:
            sets the description of the field in the assembly object which may
            override what was in the fasta file) -> structure: parameter
            "is_circ" of Long, parameter "description" of String, parameter
+           "object_metadata" of mapping from String to String, parameter
            "min_contig_length" of Long
         :returns: instance of type "SaveAssembliesResults" (Results for the
            save_assemblies_from_fastas function. results - the results of the

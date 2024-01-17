@@ -159,10 +159,12 @@ class FastaToAssembly:
         print('saving assemblies to KBase')
         file_handles = self._save_files_to_blobstore(input_files)
         assobjects = []
+        assmetas = []
         for assdata, file_handle, inputs, sourcefile in zip(
                 assembly_data, file_handles, params[_INPUTS], input_files):
-            ao = self._build_assembly_object(assdata, file_handle, inputs)
+            ao, am = self._build_assembly_object(assdata, file_handle, inputs)
             assobjects.append(ao)
+            assmetas.append(am)
             # this appears to be completely unused
             with open(sourcefile.parent / "example.json", "w") as f:
                 json.dump(ao, f)
@@ -171,11 +173,14 @@ class FastaToAssembly:
         assembly_infos = []
         assembly_names = [p[_ASSEMBLY_NAME] for p in params[_INPUTS]]
         # generator to process files in bach. Avoid memory issues
-        for assobject_batch, assembly_name_batch in self._assembly_objects_generator(
-            assobjects, assembly_names, max_cumsize
+        for assobject_batch, assmeta_batch, assembly_name_batch in self._assembly_objects_generator(
+            assobjects, assmetas, assembly_names, max_cumsize
         ):
             assembly_infos.extend(
-                self._save_assembly_objects(params[_WSID], assembly_name_batch, assobject_batch)
+                self._save_assembly_objects(params[_WSID],
+                                            assembly_name_batch,
+                                            assobject_batch,
+                                            assmeta_batch)
             )
 
         for out, ai in zip(output, assembly_infos):
@@ -224,7 +229,9 @@ class FastaToAssembly:
             # format, and deprecate this field
             assembly_data['external_source_origination_date'] = params['external_source_origination_date']
 
-        return assembly_data
+        assembly_meta = params.get('object_metadata') or {}
+
+        return assembly_data, assembly_meta
 
     def _parse_fasta(self, fasta_file_path: Path, extra_contig_info):
         """ Do the actual work of inspecting each contig """
@@ -318,7 +325,7 @@ class FastaToAssembly:
         return assembly_data
 
     @staticmethod
-    def _assembly_objects_generator(assembly_objects, assembly_names, max_cumsize):
+    def _assembly_objects_generator(assembly_objects, assembly_metas, assembly_names, max_cumsize):
         """ generates assembly objects iterator for uploading to the target workspace"""
         start_idx = 0
         cumsize = 0
@@ -331,7 +338,7 @@ class FastaToAssembly:
                 start_idx = idx
                 cumsize = aosize
         # yield the last batch
-        yield assembly_objects[start_idx:], assembly_names[start_idx:]
+        yield assembly_objects[start_idx:], assembly_metas[start_idx:], assembly_names[start_idx:]
 
     @staticmethod
     def _fasta_filter_contigs_generator(fasta_record_iter, min_contig_length):
@@ -356,15 +363,16 @@ class FastaToAssembly:
 
         return filtered_fasta_file_path
 
-    def _save_assembly_objects(self, workspace_id, assembly_names, ass_data):
+    def _save_assembly_objects(self, workspace_id, assembly_names, ass_data, ass_meta):
         print('Saving Assemblies to Workspace')
         sys.stdout.flush()
         ws_inputs = []
-        for assname, assdata_singular in zip(assembly_names, ass_data):
+        for assname, assdata_singular, assmeta_singular in zip(assembly_names, ass_data, ass_meta):
             ws_inputs.append({
                 'type': 'KBaseGenomeAnnotations.Assembly',  # This should really be versioned...
                 'data': assdata_singular,
-                'name': assname
+                'name': assname,
+                'meta': assmeta_singular
             })
         return self._dfu.save_objects({'id': workspace_id, 'objects': ws_inputs})
 

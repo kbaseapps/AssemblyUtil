@@ -184,7 +184,8 @@ module AssemblyUtil {
         string type;
         string external_source;
         string external_source_id;
-        mapping<string, ExtraContigInfo> contig_info; 
+        mapping<string, ExtraContigInfo> contig_info;
+        mapping<string, string> object_metadata;
     } FASTAInput;
 
     /* Input for the save_assemblies_from_fastas function.

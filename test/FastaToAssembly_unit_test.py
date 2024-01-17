@@ -282,6 +282,7 @@ def _test_import_fasta_mass_file(tmp_path, params_root):
                         'size': 78},
                     'type': 'Unknown'
                 },
+                'meta': {},
                 'name': 'foo1'
             },
             {
@@ -331,6 +332,7 @@ def _test_import_fasta_mass_file(tmp_path, params_root):
                     'external_source': 'ext source',
                     'external_source_id': 'ext source id',
                 },
+                'meta': {},
                 'name': 'foo2'
             }
         ]
@@ -489,6 +491,7 @@ def test_import_fasta_mass_blobstore_min_contig_length(tmp_path):
                         'size': 78},
                     'type': 'Unknown'
                 },
+                'meta': {},
                 'name': 'foo1'
             },
             {
@@ -534,6 +537,7 @@ def test_import_fasta_mass_blobstore_min_contig_length(tmp_path):
                     },
                     'type': 'Unknown',
                 },
+                'meta': {},
                 'name': 'foo2'
             }
         ]
