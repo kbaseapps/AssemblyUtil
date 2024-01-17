@@ -373,7 +373,7 @@ class FastaToAssembly:
                 'type': 'KBaseGenomeAnnotations.Assembly',  # This should really be versioned...
                 'data': assdata_singular,
                 'name': assname,
-                **({'meta': assmeta_singular} if assmeta_singular else {})
+                'meta': assmeta_singular
             })
         return self._dfu.save_objects({'id': workspace_id, 'objects': ws_inputs})
 
