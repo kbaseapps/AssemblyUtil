@@ -205,7 +205,7 @@ def _test_import_fasta_mass_file(tmp_path, params_root, obj_meta=None):
         },
     ]
     dfu.save_objects.return_value = [
-        [4, 'name', 'type', 'time', 75, 'user', 42, 'wsname', 'md5', 78, {}],
+        [4, 'name', 'type', 'time', 75, 'user', 42, 'wsname', 'md5', 78, {'foo': 'bar'}],
         [7, 'name', 'type', 'time', 1, 'user', 42, 'wsname', 'md5', 78, {}],
     ]
 
@@ -235,8 +235,10 @@ def _test_import_fasta_mass_file(tmp_path, params_root, obj_meta=None):
     })
     res = fta.import_fasta_mass(params_root, parallelize=False)
     assert res == [
-        {'upa': '42/4/75', 'filtered_input': None},
-        {'upa': '42/7/1', 'filtered_input': None}
+        {'upa': '42/4/75', 'filtered_input': None,
+         'object_info': [4, 'name', 'type', 'time', 75, 'user', 42, 'wsname', 'md5', 78, {'foo': 'bar'}]},
+        {'upa': '42/7/1', 'filtered_input': None,
+         'object_info': [7, 'name', 'type', 'time', 1, 'user', 42, 'wsname', 'md5', 78, {}]}
     ]
 
     ### Check mock calls ###
@@ -423,7 +425,7 @@ def test_import_fasta_mass_blobstore_min_contig_length(tmp_path):
         },
     ]
     dfu.save_objects.return_value = [
-        [3, 'name', 'type', 'time', 75, 'user', 42, 'wsname', 'md5', 78, {}],
+        [3, 'name', 'type', 'time', 75, 'user', 42, 'wsname', 'md5', 78, {'foo': 'bar'}],
         [6, 'name', 'type', 'time', 1, 'user', 42, 'wsname', 'md5', 78, {}],
     ]
 
@@ -437,8 +439,10 @@ def test_import_fasta_mass_blobstore_min_contig_length(tmp_path):
         ]
     }, parallelize=False)
     assert res == [
-        {'upa': '42/3/75', 'filtered_input': str(dir1 / 'f1.blobstore.fasta.filtered.fa')},
-        {'upa': '42/6/1', 'filtered_input': str(dir2 / 'f2.blobstore.fasta.filtered.fa')}
+        {'upa': '42/3/75', 'filtered_input': str(dir1 / 'f1.blobstore.fasta.filtered.fa'),
+         'object_info': [3, 'name', 'type', 'time', 75, 'user', 42, 'wsname', 'md5', 78, {'foo': 'bar'}]},
+        {'upa': '42/6/1', 'filtered_input': str(dir2 / 'f2.blobstore.fasta.filtered.fa'),
+         'object_info': [6, 'name', 'type', 'time', 1, 'user', 42, 'wsname', 'md5', 78, {}]}
     ]
 
     ### Check mock calls ###

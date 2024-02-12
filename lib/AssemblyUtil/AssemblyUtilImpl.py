@@ -52,8 +52,8 @@ class AssemblyUtil:
     # the latter method is running.
     ######################################### noqa
     VERSION = "3.1.0"
-    GIT_URL = "https://github.com/kbaseapps/AssemblyUtil"
-    GIT_COMMIT_HASH = "72183303c99ec8e88534173adbc47499da2e9b56"
+    GIT_URL = "git@github.com:kbaseapps/AssemblyUtil.git"
+    GIT_COMMIT_HASH = "507b1196531429ea131971a6f18a5482f86d108d"
 
     #BEGIN_CLASS_HEADER
 
@@ -72,6 +72,8 @@ class AssemblyUtil:
         self.max_threads = _validate_max_threads_type(max_threads, "MAX_THREADS", MAX_THREADS)
         self.threads_per_cpu = _validate_threads_per_cpu_type(threads_per_cpu, "THREADS_PER_CPU", THREADS_PER_CPU)
         #END_CONSTRUCTOR
+        pass
+
 
     def get_assembly_as_fasta(self, ctx, params):
         """
@@ -228,7 +230,22 @@ class AssemblyUtil:
            structure: parameter "upa" of type "upa" (A Unique Permanent
            Address for a workspace object, which is of the form W/O/V, where
            W is the numeric workspace ID, O is the numeric object ID, and V
-           is the object version.), parameter "filtered_input" of String
+           is the object version.), parameter "filtered_input" of String,
+           parameter "object_info" of type "object_info" (Information about
+           an object, including user provided metadata. objid - the numerical
+           id of the object. name - the name of the object. type - the type
+           of the object. save_date - the save date of the object. ver - the
+           version of the object. saved_by - the user that saved or copied
+           the object. wsid - the id of the workspace containing the object.
+           workspace - the name of the workspace containing the object. chsum
+           - the md5 checksum of the object. size - the size of the object in
+           bytes. meta - arbitrary user-supplied metadata about the object.)
+           -> tuple of size 11: parameter "objid" of Long, parameter "name"
+           of String, parameter "type" of String, parameter "save_date" of
+           String, parameter "version" of Long, parameter "saved_by" of
+           String, parameter "wsid" of Long, parameter "workspace" of String,
+           parameter "chsum" of String, parameter "size" of Long, parameter
+           "meta" of mapping from String to String
         """
         # ctx is the context object
         # return variables are: result
@@ -328,19 +345,23 @@ class AssemblyUtil:
            source of the input data. E.g. JGI, NCBI, etc. external_source_id
            - the ID of the input data at the source. contig_info - map from
            contig_id to a small structure that can be used to set the
-           is_circular and description fields for Assemblies) -> structure:
-           parameter "file" of String, parameter "node" of String, parameter
-           "assembly_name" of String, parameter "type" of String, parameter
-           "external_source" of String, parameter "external_source_id" of
-           String, parameter "contig_info" of mapping from String to type
-           "ExtraContigInfo" (Structure for setting additional Contig
-           information per contig is_circ - flag if contig is circular, 0 is
-           false, 1 is true, missing indicates unknown description - if set,
-           sets the description of the field in the assembly object which may
-           override what was in the fasta file) -> structure: parameter
-           "is_circ" of Long, parameter "description" of String, parameter
-           "object_metadata" of mapping from String to String, parameter
-           "min_contig_length" of Long
+           is_circular and description fields for Assemblies object_metadata
+           - An arbitrary key-value pair intended for addition to the
+           metadata of the Assembly object. Saved along with the object in
+           the Workspace. Note that any auto metadata keys in the Assembly
+           typespec will take precedence over any user-submitted keys.) ->
+           structure: parameter "file" of String, parameter "node" of String,
+           parameter "assembly_name" of String, parameter "type" of String,
+           parameter "external_source" of String, parameter
+           "external_source_id" of String, parameter "contig_info" of mapping
+           from String to type "ExtraContigInfo" (Structure for setting
+           additional Contig information per contig is_circ - flag if contig
+           is circular, 0 is false, 1 is true, missing indicates unknown
+           description - if set, sets the description of the field in the
+           assembly object which may override what was in the fasta file) ->
+           structure: parameter "is_circ" of Long, parameter "description" of
+           String, parameter "object_metadata" of mapping from String to
+           String, parameter "min_contig_length" of Long
         :returns: instance of type "SaveAssembliesResults" (Results for the
            save_assemblies_from_fastas function. results - the results of the
            save operation in the same order as the input.) -> structure:
@@ -352,7 +373,22 @@ class AssemblyUtil:
            Permanent Address for a workspace object, which is of the form
            W/O/V, where W is the numeric workspace ID, O is the numeric
            object ID, and V is the object version.), parameter
-           "filtered_input" of String
+           "filtered_input" of String, parameter "object_info" of type
+           "object_info" (Information about an object, including user
+           provided metadata. objid - the numerical id of the object. name -
+           the name of the object. type - the type of the object. save_date -
+           the save date of the object. ver - the version of the object.
+           saved_by - the user that saved or copied the object. wsid - the id
+           of the workspace containing the object. workspace - the name of
+           the workspace containing the object. chsum - the md5 checksum of
+           the object. size - the size of the object in bytes. meta -
+           arbitrary user-supplied metadata about the object.) -> tuple of
+           size 11: parameter "objid" of Long, parameter "name" of String,
+           parameter "type" of String, parameter "save_date" of String,
+           parameter "version" of Long, parameter "saved_by" of String,
+           parameter "wsid" of Long, parameter "workspace" of String,
+           parameter "chsum" of String, parameter "size" of Long, parameter
+           "meta" of mapping from String to String
         """
         # ctx is the context object
         # return variables are: results

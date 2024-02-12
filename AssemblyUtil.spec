@@ -143,6 +143,26 @@ module AssemblyUtil {
 
     } SaveAssemblyParams;
 
+    /* Information about an object, including user provided metadata.
+
+        objid - the numerical id of the object.
+        name - the name of the object.
+        type - the type of the object.
+        save_date - the save date of the object.
+        ver - the version of the object.
+        saved_by - the user that saved or copied the object.
+        wsid - the id of the workspace containing the object.
+        workspace - the name of the workspace containing the object.
+        chsum - the md5 checksum of the object.
+        size - the size of the object in bytes.
+        meta - arbitrary user-supplied metadata about
+            the object.
+
+    */
+    typedef tuple<int objid, string name, string type, string save_date,
+        int version, string saved_by, int wsid, string workspace, string chsum,
+        int size, mapping<string, string> meta> object_info;
+
     /* Results from saving an assembly.
         upa - the address of the resulting workspace object.
         filtered_input - the filtered input file if the minimum contig length parameter is
@@ -151,6 +171,7 @@ module AssemblyUtil {
     typedef structure {
         upa upa;
         string filtered_input;
+        object_info object_info;
     } SaveAssemblyResult;
 
     /* Save a KBase Workspace assembly object from a FASTA file. */

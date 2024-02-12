@@ -149,6 +149,7 @@ def test_import_local_files(config, impl, context, scratch):
     handleid, blobid = _check_object(
         config,
         res[0]['upa'],
+        res[0]['object_info'],
         {
             'name': 'legacy',
             'meta': {
@@ -219,6 +220,7 @@ def test_import_local_files(config, impl, context, scratch):
     handleid, blobid = _check_object(
         config,
         res[1]['upa'],
+        res[1]['object_info'],
         {
             'name': 'test2',
             'meta': {
@@ -318,6 +320,7 @@ def test_import_blobstore_files(config, impl, context, scratch):
     handleid, blobid = _check_object(
         config,
         res[0]['upa'],
+        res[0]['object_info'],
         {
             'name': 'legacy2',
             'meta': {
@@ -403,6 +406,7 @@ def test_import_blobstore_files(config, impl, context, scratch):
     handleid, blobid = _check_object(
         config,
         res[1]['upa'],
+        res[1]['object_info'],
         {
             'name': 'test22',
             'meta': {
@@ -469,12 +473,13 @@ def test_import_blobstore_files(config, impl, context, scratch):
     )
 
 
-def _check_object(config, upa, expected):
+def _check_object(config, upa, obj_info, expected):
     ws = _get_workspace(config)
     obj = ws.get_objects2({'objects': [{'ref': upa}]})['data'][0]
 
     # Check relevant object info fields
     info = obj['info']
+    assert info == obj_info
     assert info[1] == expected['name']
     assert info[2].split('-')[0] == 'KBaseGenomeAnnotations.Assembly'
     assert info[6] == config['ws_id']
@@ -553,6 +558,7 @@ def _check_result_object_info_fields(config, results, file_names, object_metas):
         # Check relevant object info fields
         obj = ws.get_objects2({'objects': [{'ref': res['upa']}]})['data'][0]
         info = obj['info']
+        assert info == res['object_info']
         assert info[1] == file_names[idx]
         assert info[2].split('-')[0] == 'KBaseGenomeAnnotations.Assembly'
         assert info[6] == config['ws_id']
