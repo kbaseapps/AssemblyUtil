@@ -407,6 +407,7 @@ class AssemblyUtil:
                              'results is not type dict as required.')
         # return the results
         return [results]
+
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK", 'message': "", 'version': self.VERSION, 
