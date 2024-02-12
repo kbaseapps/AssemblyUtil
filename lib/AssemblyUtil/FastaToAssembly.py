@@ -186,6 +186,7 @@ class FastaToAssembly:
 
         for out, ai in zip(output, assembly_infos):
             out['upa'] = _upa(ai)
+            out['object_info'] = ai
         return output
 
     def _run_parallel_import_fasta_mass(self, params, workers, max_cumsize):

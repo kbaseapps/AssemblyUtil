@@ -18,4 +18,5 @@ def assert_close_to_time(time_, seconds_slop=1):
     """
     now_ms = time.time()
     assert now_ms + seconds_slop > time_
+
     assert now_ms - seconds_slop < time_
