@@ -1,3 +1,6 @@
+## 3.1.1
+ - return supplementary Assembly object info for `save_assemblies_from_fastas` and `save_assembly_from_fasta2`
+
 ## 3.1.0
 ### Update
   - Added 2 catalog parameters to control worker count for parallelization

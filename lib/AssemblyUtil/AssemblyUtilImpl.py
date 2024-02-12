@@ -51,9 +51,9 @@ class AssemblyUtil:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "3.1.0"
+    VERSION = "3.1.1"
     GIT_URL = "git@github.com:kbaseapps/AssemblyUtil.git"
-    GIT_COMMIT_HASH = "507b1196531429ea131971a6f18a5482f86d108d"
+    GIT_COMMIT_HASH = "b8ec572828e81b81be9f434b8189c2e8771bca33"
 
     #BEGIN_CLASS_HEADER
 
