@@ -550,7 +550,7 @@ def _reformat_1_line_fasta(file_lines, line_length=70):
 
 def _check_result_object_info_fields(config, results, file_names, object_metas):
     ws = _get_workspace(config)
-    object_version_pattern = object_version_pattern = re.compile(r'^[0-9]+\/1$')
+    object_version_pattern = re.compile(r'^[0-9]+\/1$')
     for idx, res in enumerate(results):
         assert res['filtered_input'] is None
         assert object_version_pattern.match("/".join(res['upa'].split("/")[-2:]))
