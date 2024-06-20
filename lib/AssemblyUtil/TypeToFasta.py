@@ -120,6 +120,27 @@ class TypeToFasta:
             assembly_obj_type = self.ws.get_object_info3({'objects': [{'ref': assembly_ref}]})['infos'][0][2]
             self.assembly_obj_to_fasta(assembly_ref, assembly_obj_type, input_ref=ref, input_type=obj_type)
 
+    def protein_seq_set_to_fasta(self, ref, obj_type):
+        """
+        Convert a KBaseSequences.ProteinSequenceSet object to a FASTA file.
+        """
+
+        # Check if the object type is ProteinSequenceSet
+        if 'KBaseSequences.ProteinSequenceSet' in obj_type:
+            # Fetch the ProteinSequenceSet object
+            protein_seq_set = self.ws.get_objects2({'objects': [{'ref': ref}]})['data'][0]['data']
+            
+            # Create a FASTA file
+            fasta_file_path = os.path.join(self.scratch, ref.replace('/', '_') + '.fasta')
+            with open(fasta_file_path, 'w') as fasta_file:
+                for protein_sequence in protein_seq_set['sequences']:
+                    # Define a FASTA format record
+                    fasta_record = f">{protein_sequence['id']}\n{protein_sequence['sequence']}\n"
+                    fasta_file.write(fasta_record)
+
+            # Add the path to the fasta_dict
+            self.add_to_dict(ref, {'paths': [fasta_file_path], 'type': obj_type, 'parent_refs': [ref]})
+    
     def type_to_fasta(self, ref_lst):
         """type_to_fasta takes in a list of KBase objects references. The object type of each reference
         is checked in functions: assembly_obj_to_fasta, metagenome_obj_to_fasta, and genome_obj_to_fasta. Depending
@@ -144,6 +165,7 @@ class TypeToFasta:
             self.genome_obj_to_fasta(ref, obj_type)
             self.assembly_obj_to_fasta(ref, obj_type)
             self.metagenome_obj_to_fasta(ref, obj_type)
+            self.protein_seq_set_to_fasta(ref, obj_type)
             # Append all individual object dictionaries to complete fasta dictionary for reference list
-
+        
         return self.fasta_dict
